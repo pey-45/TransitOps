@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="TransitOps.Api/TransitOps.Api.csproj" />
+  <Project Path="TransitOps.Tests/TransitOps.Tests.csproj" Id="3a8e33cd-1988-4cc0-90ac-0a4a86273416" />
+</Solution>
