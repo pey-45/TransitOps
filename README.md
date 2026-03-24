@@ -1,48 +1,48 @@
 # TransitOps
 
-Backend de gestión de transportes como proyecto personal con foco en arquitectura cloud y prácticas DevOps.
+Transport management backend as a personal project focused on cloud architecture and DevOps practices.
 
-## Estado actual
+## Current Status
 
-Fecha de referencia: 24 de marzo de 2026.
+Reference date: March 24, 2026.
 
-El repositorio contiene una solución inicial en ASP.NET Core con dos proyectos:
+The repository contains an initial ASP.NET Core solution with two projects:
 
-- `TransitOps.Api`: API base.
-- `TransitOps.Tests`: proyecto de pruebas.
+- `TransitOps.Api`: base API.
+- `TransitOps.Tests`: test project.
 
-Con el estado actual del repositorio, el hito del 24 de marzo puede darse por cerrado: alcance, stack, base de solución y documentación inicial ya están definidos. La estructura de carpetas debe entenderse como orientativa, no como criterio rígido de aceptación.
+With the current state of the repository, the March 24 milestone can be considered complete: scope, stack, solution baseline, and initial documentation are already defined. The folder structure should be understood as indicative, not as a rigid acceptance criterion.
 
-El código sigue en fase de arranque respecto al MVP funcional. La documentación ya deja fijado el alcance del MVP y el roadmap completo hacia una entrega con AWS, Terraform y CI/CD.
+The code is still in a bootstrap phase with respect to the functional MVP. The documentation already defines the MVP scope and the full roadmap toward a delivery with AWS, Terraform, and CI/CD.
 
-## Objetivo del proyecto
+## Project Objective
 
-Construir un backend pequeño en funcionalidad y sólido en operación:
+Build a backend that is small in functionality and strong in operation:
 
-- gestión de transportes;
-- asignación de vehículos y conductores;
-- trazabilidad mediante eventos logísticos;
-- autenticación y autorización básicas;
-- despliegue posterior en AWS con infraestructura como código;
-- observabilidad, seguridad y documentación defendible.
+- transport management;
+- vehicle and driver assignment;
+- traceability through logistics events;
+- basic authentication and authorization;
+- later deployment to AWS with infrastructure as code;
+- observability, security, and defensible documentation.
 
-## Alcance del MVP
+## MVP Scope
 
-El MVP cubre el backend funcional ejecutable en local con:
+The MVP covers a functional backend that can run locally with:
 
 - API ASP.NET Core;
-- persistencia en PostgreSQL;
-- CRUD de transportes, vehículos y conductores;
-- asignaciones y transiciones de estado;
-- autenticación JWT con roles básicos;
-- pruebas iniciales;
-- empaquetado local con Docker.
+- PostgreSQL persistence;
+- CRUD for transports, vehicles, and drivers;
+- assignments and state transitions;
+- JWT authentication with basic roles;
+- initial tests;
+- local packaging with Docker.
 
-Queda fuera del MVP la parte cloud avanzada: Terraform, ECS, ECR, RDS en AWS, CloudWatch, alarmas y despliegue automatizado completo.
+Advanced cloud work is outside the MVP: Terraform, ECS, ECR, RDS on AWS, CloudWatch, alarms, and full automated deployment.
 
-El detalle cerrado del alcance está en [docs/MVP-Backlog.md](docs/MVP-Backlog.md).
+The fixed scope details are in [docs/MVP-Backlog.md](docs/MVP-Backlog.md).
 
-## Stack objetivo
+## Target Stack
 
 - ASP.NET Core
 - PostgreSQL
@@ -56,7 +56,7 @@ El detalle cerrado del alcance está en [docs/MVP-Backlog.md](docs/MVP-Backlog.m
 - ALB
 - CloudWatch
 
-## Estructura de la solución
+## Solution Structure
 
 ```text
 TransitOps/
@@ -77,70 +77,70 @@ TransitOps/
     `-- TransitOps.Tests.csproj
 ```
 
-La distribución exacta de carpetas puede evolucionar. Lo importante en esta fase es que la solución, la documentación base y los proyectos principales ya existen y son coherentes con el roadmap.
+The exact folder distribution may evolve. What matters at this stage is that the solution, the baseline documentation, and the main projects already exist and are consistent with the roadmap.
 
-## Documentación disponible
+## Available Documentation
 
-- Roadmap completo en Markdown: [docs/Roadmap.md](docs/Roadmap.md)
-- Backlog cerrado del MVP: [docs/MVP-Backlog.md](docs/MVP-Backlog.md)
-- Fuente original del roadmap: [docs/DailyRoadmap.pdf](docs/DailyRoadmap.pdf)
+- Full roadmap in Markdown: [docs/Roadmap.md](docs/Roadmap.md)
+- Fixed MVP backlog: [docs/MVP-Backlog.md](docs/MVP-Backlog.md)
+- Original roadmap source: [docs/DailyRoadmap.pdf](docs/DailyRoadmap.pdf)
 
-## Requisitos locales
+## Local Requirements
 
 - .NET SDK 10
 - Docker Desktop
-- PostgreSQL 16 o superior, si se ejecuta sin contenedores
+- PostgreSQL 16 or later, if run without containers
 
-## Arranque local
+## Local Startup
 
-### Estado actual del repositorio
+### Current Repository Status
 
-El repositorio ya cubre la base esperada para el hito inicial: solución creada, API base, proyecto de tests, `README`, backlog del MVP y roadmap versionados en GitHub.
+The repository already covers the expected baseline for the initial milestone: solution created, base API, test project, `README`, MVP backlog, and roadmap versioned in GitHub.
 
-Todavía no existe integración con PostgreSQL, `docker-compose`, infraestructura como código ni automatización CI/CD. Eso forma parte de hitos posteriores.
+There is still no integration with PostgreSQL, `docker-compose`, infrastructure as code, or CI/CD automation. That belongs to later milestones.
 
-### Comandos base
+### Base Commands
 
-Restaurar dependencias:
+Restore dependencies:
 
 ```powershell
 dotnet restore TransitOps.slnx
 ```
 
-Compilar la solución:
+Build the solution:
 
 ```powershell
 dotnet build TransitOps.slnx
 ```
 
-Ejecutar la API:
+Run the API:
 
 ```powershell
 dotnet run --project .\TransitOps.Api\TransitOps.Api.csproj
 ```
 
-Ejecutar tests:
+Run tests:
 
 ```powershell
 dotnet test .\TransitOps.Tests\TransitOps.Tests.csproj
 ```
 
-## Próximos hitos
+## Next Milestones
 
-1. Cerrar el modelo de dominio y reglas de negocio.
-2. Añadir persistencia real con PostgreSQL y migraciones.
-3. Implementar el núcleo funcional del MVP.
-4. Hacer el entorno local reproducible con Docker.
-5. Preparar la transición a AWS, Terraform y CI/CD.
+1. Finalize the domain model and business rules.
+2. Add real PostgreSQL persistence and migrations.
+3. Implement the functional core of the MVP.
+4. Make the local environment reproducible with Docker.
+5. Prepare the transition to AWS, Terraform, and CI/CD.
 
-## Criterios de calidad del roadmap
+## Roadmap Quality Criteria
 
-- La solución debe compilar limpiamente.
-- Los tests deben ser ejecutables en local y en CI.
-- El entorno debe ser reproducible.
-- La infraestructura cloud debe quedar versionada.
-- Cada semana debe poder demostrarse un resultado verificable.
+- The solution must build cleanly.
+- Tests must be runnable locally and in CI.
+- The environment must be reproducible.
+- Cloud infrastructure must be versioned.
+- Each week must end with a verifiable result.
 
-## Nota sobre verificación
+## Verification Note
 
-La documentación se ha generado a partir del roadmap PDF existente y se ha ajustado al estado real del repositorio en esta fecha. El proyecto todavía está en fase inicial, así que algunos apartados del roadmap describen trabajo planificado y no funcionalidad ya implementada.
+The documentation was generated from the existing roadmap PDF and adjusted to the actual state of the repository on this date. The project is still in an initial phase, so some sections of the roadmap describe planned work rather than functionality that has already been implemented.

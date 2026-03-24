@@ -1,109 +1,109 @@
-# TransitOps · Backlog cerrado del MVP
+# TransitOps · Fixed MVP Backlog
 
-## Propósito
+## Purpose
 
-Definir un alcance fijo, pequeño y defendible para el MVP de TransitOps. Este backlog queda cerrado: cualquier incorporación nueva debe sustituir a otra ya aprobada.
+Define a fixed, small, and defensible scope for the TransitOps MVP. This backlog is closed: any new addition must replace another item that has already been approved.
 
-## Definición operativa del MVP
+## Operational Definition of the MVP
 
-El MVP es un backend funcional de gestión de transportes, ejecutable en local, con persistencia en PostgreSQL, autenticación básica, reglas de negocio principales, pruebas iniciales y empaquetado reproducible.
+The MVP is a functional transport management backend, runnable locally, with PostgreSQL persistence, basic authentication, core business rules, initial tests, and reproducible packaging.
 
-El MVP no incluye todavía despliegue en AWS, Terraform, observabilidad en CloudWatch, alarmas, dashboards ni automatización completa de CI/CD cloud.
+The MVP does not yet include deployment on AWS, Terraform, observability in CloudWatch, alarms, dashboards, or full cloud CI/CD automation.
 
-## Objetivos del MVP
+## MVP Objectives
 
-- Gestionar transportes, vehículos y conductores.
-- Permitir asignaciones válidas entre transporte, vehículo y conductor.
-- Controlar el ciclo de vida del transporte mediante estados.
-- Registrar eventos logísticos asociados al transporte.
-- Ejecutar el sistema en local con una base de datos real y arranque repetible.
-- Dejar una base técnica apta para la fase cloud posterior.
+- Manage transports, vehicles, and drivers.
+- Allow valid assignments between transport, vehicle, and driver.
+- Control the transport lifecycle through states.
+- Record logistics events associated with the transport.
+- Run the system locally with a real database and repeatable startup.
+- Leave a technical baseline suitable for the later cloud phase.
 
 ## Definition of Done
 
-Un ítem del MVP se considera cerrado cuando:
+An MVP item is considered complete when:
 
-- Tiene código integrado en la solución.
-- Dispone de criterio de aceptación verificable.
-- Puede demostrarse manualmente o mediante test.
-- No introduce deuda estructural que bloquee la siguiente fase.
-- Está reflejado en documentación mínima del repositorio.
+- It has code integrated into the solution.
+- It has a verifiable acceptance criterion.
+- It can be demonstrated manually or through tests.
+- It does not introduce structural debt that blocks the next phase.
+- It is reflected in the repository's minimum documentation.
 
-## Alcance incluido
+## Included Scope
 
-### Épica 1 · Base de solución
+### Epic 1 · Solution Foundation
 
-| ID | Ítem | Prioridad | Criterios de aceptación |
+| ID | Item | Priority | Acceptance Criteria |
 | --- | --- | --- | --- |
-| MVP-01 | Estructurar la solución por proyectos y carpetas base | Must | Existen proyecto API y proyecto de tests. La solución compila. La estructura admite evolución hacia capas sin rehacer el arranque. |
-| MVP-02 | Definir configuración por entorno | Must | Existen `appsettings` y perfiles de ejecución locales. La API arranca en desarrollo sin cambios manuales ambiguos. |
-| MVP-03 | Documentar arranque y alcance inicial | Must | Existe `README.md` de solución y backlog cerrado del MVP enlazado desde documentación. |
+| MVP-01 | Structure the solution by projects and base folders | Must | An API project and a test project exist. The solution builds. The structure allows evolution toward layers without redoing the bootstrap. |
+| MVP-02 | Define configuration by environment | Must | `appsettings` and local execution profiles exist. The API starts in development without ambiguous manual changes. |
+| MVP-03 | Document startup and initial scope | Must | A solution `README.md` exists and the fixed MVP backlog is linked from the documentation. |
 
-### Épica 2 · Dominio y persistencia
+### Epic 2 · Domain and Persistence
 
-| ID | Ítem | Prioridad | Criterios de aceptación |
+| ID | Item | Priority | Acceptance Criteria |
 | --- | --- | --- | --- |
-| MVP-04 | Modelar `Transport` con estados de negocio | Must | La entidad existe con identificador, datos operativos y estado inicial. Las transiciones válidas quedan definidas y documentadas. |
-| MVP-05 | Modelar `Vehicle` y `Driver` | Must | Existen entidades persistibles con restricciones básicas y relación utilizable desde `Transport`. |
-| MVP-06 | Modelar `ShipmentEvent` | Should | Se pueden registrar eventos cronológicos asociados a un transporte. |
-| MVP-07 | Integrar PostgreSQL y migraciones iniciales | Must | La solución crea el esquema mediante migraciones. La conexión local a PostgreSQL es estable y reproducible. |
+| MVP-04 | Model `Transport` with business states | Must | The entity exists with identifier, operational data, and initial state. Valid transitions are defined and documented. |
+| MVP-05 | Model `Vehicle` and `Driver` | Must | Persistable entities exist with basic constraints and a usable relationship from `Transport`. |
+| MVP-06 | Model `ShipmentEvent` | Should | Chronological events associated with a transport can be recorded. |
+| MVP-07 | Integrate PostgreSQL and initial migrations | Must | The solution creates the schema through migrations. The local PostgreSQL connection is stable and reproducible. |
 
-### Épica 3 · Casos de uso API
+### Epic 3 · API Use Cases
 
-| ID | Ítem | Prioridad | Criterios de aceptación |
+| ID | Item | Priority | Acceptance Criteria |
 | --- | --- | --- | --- |
-| MVP-08 | CRUD de transportes | Must | Existen endpoints de alta, detalle, listado, actualización y baja lógica o física. Los contratos devuelven códigos HTTP coherentes. |
-| MVP-09 | CRUD de vehículos | Must | Existen endpoints operativos para alta, consulta, edición y baja. |
-| MVP-10 | CRUD de conductores | Must | Existen endpoints operativos para alta, consulta, edición y baja. |
-| MVP-11 | Asignar vehículo y conductor a transporte | Must | Solo se permiten asignaciones coherentes con el estado del transporte. Los errores de negocio son claros. |
-| MVP-12 | Transiciones de estado del transporte | Must | El flujo `planned -> in_transit -> delivered/cancelled` está implementado y protegido contra transiciones inválidas. |
-| MVP-13 | Registro y consulta de eventos logísticos | Should | Se puede registrar un evento y recuperar el histórico ordenado de un transporte. |
-| MVP-14 | Listados con filtros mínimos | Should | Se puede listar por estado, rango de fechas y asignación con paginación básica. |
+| MVP-08 | Transport CRUD | Must | Endpoints exist for create, detail, list, update, and logical or physical delete. Contracts return coherent HTTP codes. |
+| MVP-09 | Vehicle CRUD | Must | Operational endpoints exist for create, query, edit, and delete. |
+| MVP-10 | Driver CRUD | Must | Operational endpoints exist for create, query, edit, and delete. |
+| MVP-11 | Assign vehicle and driver to transport | Must | Only assignments coherent with the transport state are allowed. Business errors are clear. |
+| MVP-12 | Transport state transitions | Must | The `planned -> in_transit -> delivered/cancelled` flow is implemented and protected against invalid transitions. |
+| MVP-13 | Logistics event registration and query | Should | An event can be recorded and the ordered history of a transport can be retrieved. |
+| MVP-14 | Listings with minimum filters | Should | Listing by state, date range, and assignment is possible with basic pagination. |
 
-### Épica 4 · Seguridad y contrato
+### Epic 4 · Security and Contract
 
-| ID | Ítem | Prioridad | Criterios de aceptación |
+| ID | Item | Priority | Acceptance Criteria |
 | --- | --- | --- | --- |
-| MVP-15 | Autenticación JWT con roles `admin` y `operator` | Must | Existe login funcional. Los endpoints sensibles quedan protegidos por rol. |
-| MVP-16 | Manejo homogéneo de errores | Must | Existe middleware global o equivalente. Las respuestas de error siguen un contrato consistente. |
-| MVP-17 | Validación de entrada | Must | La API rechaza entradas inválidas con mensajes claros y sin dejar estados inconsistentes. |
-| MVP-18 | Logging estructurado básico | Should | Cada petición relevante deja trazabilidad mínima con identificador de correlación o equivalente. |
+| MVP-15 | JWT authentication with roles `admin` and `operator` | Must | A functional login exists. Sensitive endpoints are protected by role. |
+| MVP-16 | Homogeneous error handling | Must | A global middleware or equivalent exists. Error responses follow a consistent contract. |
+| MVP-17 | Input validation | Must | The API rejects invalid input with clear messages and without leaving inconsistent states. |
+| MVP-18 | Basic structured logging | Should | Each relevant request leaves minimum traceability with a correlation identifier or equivalent. |
 
-### Épica 5 · Calidad y operación local
+### Epic 5 · Quality and Local Operation
 
-| ID | Ítem | Prioridad | Criterios de aceptación |
+| ID | Item | Priority | Acceptance Criteria |
 | --- | --- | --- | --- |
-| MVP-19 | Tests unitarios del núcleo | Must | Existen tests para reglas de estado y validaciones críticas. |
-| MVP-20 | Tests de integración de endpoints clave | Should | Existen tests sobre al menos los flujos principales de transportes y autenticación. |
-| MVP-21 | Dockerfile multi-stage | Must | La API puede construirse en imagen Docker de forma repetible. |
-| MVP-22 | Entorno local reproducible con API y PostgreSQL | Must | Existe composición local con contenedores o procedimiento equivalente claramente documentado. |
-| MVP-23 | Health checks | Should | Existen endpoints de salud separados para vida y disponibilidad. |
+| MVP-19 | Core unit tests | Must | Tests exist for state rules and critical validations. |
+| MVP-20 | Integration tests for key endpoints | Should | Tests exist for at least the main transport and authentication flows. |
+| MVP-21 | Multi-stage Dockerfile | Must | The API can be built into a Docker image in a repeatable way. |
+| MVP-22 | Reproducible local environment with API and PostgreSQL | Must | A local composition with containers or an equivalent procedure exists and is clearly documented. |
+| MVP-23 | Health checks | Should | Separate health endpoints exist for liveness and readiness. |
 
-## Alcance excluido del MVP
+## Scope Excluded from the MVP
 
-- Terraform y definición de infraestructura AWS.
-- Despliegue en ECS Fargate.
-- ECR, ALB y RDS en cloud.
-- GitHub Actions con despliegue automático.
-- CloudWatch, dashboards, métricas y alarmas.
-- Secrets Manager o SSM.
-- OpenTelemetry, rate limiting y resiliencia avanzada.
-- Pruebas de carga, costes, ADRs y memoria técnica final.
-- Frontend o panel visual.
+- Terraform and AWS infrastructure definition.
+- Deployment on ECS Fargate.
+- ECR, ALB, and RDS in the cloud.
+- GitHub Actions with automatic deployment.
+- CloudWatch, dashboards, metrics, and alarms.
+- Secrets Manager or SSM.
+- OpenTelemetry, rate limiting, and advanced resilience.
+- Load testing, costs, ADRs, and the final technical report.
+- Frontend or visual panel.
 
-## Dependencias principales
+## Main Dependencies
 
-- SDK de .NET 10.
-- PostgreSQL local o contenedor Docker.
-- Credenciales y configuración por entorno separadas del código.
+- .NET 10 SDK.
+- Local PostgreSQL or Docker container.
+- Credentials and environment-specific configuration separated from the code.
 
-## Riesgos a vigilar dentro del MVP
+## Risks to Watch Within the MVP
 
-- Sobredimensionar el modelo funcional y perder tiempo antes de llegar a la parte cloud.
-- Acoplar controladores, lógica y persistencia en exceso.
-- Posponer pruebas y validación hasta el final.
-- Introducir autenticación demasiado tarde y romper contratos ya usados.
+- Oversizing the functional model and losing time before reaching the cloud part.
+- Excessively coupling controllers, logic, and persistence.
+- Postponing testing and validation until the end.
+- Introducing authentication too late and breaking already used contracts.
 
-## Criterio de cierre del MVP
+## MVP Closure Criterion
 
-El MVP queda cerrado cuando el sistema puede arrancarse desde cero en local, autenticar usuarios, gestionar transportes con sus asignaciones y estados, persistir datos en PostgreSQL, ejecutar tests mínimos y exponerse de forma empaquetable para la fase de despliegue posterior.
+The MVP is considered complete when the system can start from scratch locally, authenticate users, manage transports with their assignments and states, persist data in PostgreSQL, run minimum tests, and be exposed in a packageable way for the later deployment phase.

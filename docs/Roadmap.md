@@ -1,12 +1,12 @@
-# TransitOps · Roadmap en Markdown
+# TransitOps · Roadmap in Markdown
 
-Fuente base: `TransitOps.Api/Docs/DailyRoadmap.pdf`
+Source file: `TransitOps.Api/Docs/DailyRoadmap.pdf`
 
-## Objetivo final
+## Final Objective
 
-Construir y entregar un backend de gestión de transportes con despliegue en AWS, infraestructura como código, CI/CD, observabilidad, seguridad básica y memoria técnica defendible.
+Build and deliver a transport management backend with deployment on AWS, infrastructure as code, CI/CD, observability, basic security, and defensible technical documentation.
 
-## Stack propuesto
+## Proposed Stack
 
 - ASP.NET Core
 - PostgreSQL
@@ -18,162 +18,162 @@ Construir y entregar un backend de gestión de transportes con despliegue en AWS
 - Amazon RDS
 - Application Load Balancer
 - CloudWatch
-- Secrets Manager o SSM Parameter Store
+- Secrets Manager or SSM Parameter Store
 
-## Criterio de ejecución
+## Execution Criterion
 
-El proyecto debe mantenerse pequeño en funcionalidad y profundo en operación cloud. Cada día debe cerrar con un resultado verificable. Si un día se retrasa, se mueve el detalle accesorio, no el núcleo del roadmap.
+The project must remain small in functionality and deep in cloud operation. Each day must end with a verifiable result. If one day slips, the accessory detail moves, not the core of the roadmap.
 
-## Semana 1 · 24/03 al 29/03
+## Week 1 · 24/03 to 29/03
 
-### Fase 1 · Definición y base
+### Phase 1 · Definition and Foundation
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 24 mar | Definición de alcance y stack | Cerrar alcance funcional: transportes, vehículos, conductores, eventos y usuarios. Fijar stack definitivo: ASP.NET Core, PostgreSQL, Docker, Terraform, GitHub Actions y AWS ECS Fargate. Crear repositorio, ramas base y estructura de carpetas para `src`, `tests`, `infra` y `docs`. | README inicial, backlog cerrado de MVP y estructura de solución creada. |
-| 25 mar | Modelado del dominio | Definir entidades principales y sus relaciones. Diseñar estados de transporte y reglas de transición. Escribir esquema inicial de base de datos. | Diagrama entidad-relación inicial y lista de reglas de negocio. |
-| 26 mar | Arranque del backend | Crear proyecto Web API y proyectos auxiliares por capas. Configurar inyección de dependencias, `appsettings` y perfiles por entorno. Definir convenciones de rutas, DTOs y estructura de respuestas. | La solución compila y la API base arranca en local. |
-| 27 mar | Persistencia inicial | Integrar PostgreSQL y configurar cadena de conexión por entorno. Crear `DbContext`, configuraciones de entidades y primera migración. Verificar que la base de datos se crea correctamente. | Primera migración aplicada y conexión local estable. |
-| 28 mar | CRUD de transportes | Implementar `create`, `get by id`, `list`, `update` y `delete` lógico o físico de transportes. Separar capa de aplicación de persistencia. Probar manualmente todos los endpoints. | CRUD de `Transport` operativo y colección Postman o archivo `.http`. |
-| 29 mar | Vehículos y conductores | Implementar entidades, endpoints y persistencia de `Vehicle` y `Driver`. Añadir validaciones de negocio básicas. Revisar relaciones y restricciones. | CRUD de `Vehicle` y `Driver` funcional y modelo relacional ajustado. |
+| 24 Mar | Scope and stack definition | Finalize functional scope: transports, vehicles, drivers, events, and users. Lock the final stack: ASP.NET Core, PostgreSQL, Docker, Terraform, GitHub Actions, and AWS ECS Fargate. Create repository, base branches, and folder structure for `src`, `tests`, `infra`, and `docs`. | Initial README, fixed MVP backlog, and solution structure created. |
+| 25 Mar | Domain modeling | Define the main entities and their relationships. Design transport states and transition rules. Write the initial database schema. | Initial entity-relationship diagram and list of business rules. |
+| 26 Mar | Backend bootstrap | Create the Web API project and supporting layered projects. Configure dependency injection, `appsettings`, and environment profiles. Define route conventions, DTOs, and response structure. | The solution builds and the base API starts locally. |
+| 27 Mar | Initial persistence | Integrate PostgreSQL and configure the connection string by environment. Create `DbContext`, entity configurations, and the first migration. Verify that the database is created correctly. | First migration applied and stable local connection. |
+| 28 Mar | Transport CRUD | Implement `create`, `get by id`, `list`, `update`, and logical or physical `delete` for transports. Separate application and persistence layers. Manually test all endpoints. | Operational `Transport` CRUD and Postman collection or `.http` file. |
+| 29 Mar | Vehicles and drivers | Implement entities, endpoints, and persistence for `Vehicle` and `Driver`. Add basic business validations. Review relationships and constraints. | Functional `Vehicle` and `Driver` CRUD and adjusted relational model. |
 
-## Semana 2 · 30/03 al 05/04
+## Week 2 · 30/03 to 05/04
 
-### Fase 2 · Lógica y calidad
+### Phase 2 · Logic and Quality
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 30 mar | Asignaciones | Implementar caso de uso de asignar vehículo y conductor a un transporte. Bloquear asignaciones inválidas según estado. Probar flujos completos de alta y asignación. | Caso de uso de asignación completo y pruebas manuales documentadas. |
-| 31 mar | Estados de transporte | Implementar transición `planned -> in_transit -> delivered/cancelled`. Centralizar validación de transiciones. Añadir errores de dominio claros. | Máquina de estados básica y reglas documentadas. |
-| 01 abr | Eventos logísticos | Crear `ShipmentEvent` para registrar incidencias y cambios. Permitir asociar eventos al transporte. Diseñar histórico cronológico consultable. | Endpoint de alta de eventos y consulta de histórico. |
-| 02 abr | Listados y filtrado | Implementar filtros por estado, rango de fechas y asignación. Añadir paginación y ordenación básica. Optimizar el contrato de respuesta para listados. | Listado paginado y filtros útiles para demo. |
-| 03 abr | Autenticación | Implementar autenticación con JWT. Definir roles mínimos: `admin` y `operator`. Proteger endpoints sensibles. | Login funcional y autorización por roles. |
-| 04 abr | Errores y contrato API | Crear middleware global de excepciones. Normalizar códigos HTTP y `payloads` de error. Documentar respuestas de error más comunes. | Manejo de errores homogéneo y API más defendible. |
-| 05 abr | Logging estructurado | Integrar logging estructurado con contexto por petición. Añadir `request id` o `correlation id`. Registrar operaciones críticas sin ruido excesivo. | Logs útiles para operación y trazabilidad por petición. |
+| 30 Mar | Assignments | Implement the use case for assigning a vehicle and driver to a transport. Block invalid assignments according to state. Test complete creation and assignment flows. | Complete assignment use case and documented manual tests. |
+| 31 Mar | Transport states | Implement the `planned -> in_transit -> delivered/cancelled` transition. Centralize transition validation. Add clear domain errors. | Basic state machine and documented rules. |
+| 01 Apr | Logistics events | Create `ShipmentEvent` to record incidents and changes. Allow events to be associated with the transport. Design a queryable chronological history. | Event creation endpoint and history query. |
+| 02 Apr | Listing and filtering | Implement filters by state, date range, and assignment. Add basic pagination and sorting. Optimize the response contract for listings. | Paginated listing and useful filters for the demo. |
+| 03 Apr | Authentication | Implement JWT authentication. Define minimum roles: `admin` and `operator`. Protect sensitive endpoints. | Functional login and role-based authorization. |
+| 04 Apr | Errors and API contract | Create global exception middleware. Normalize HTTP codes and error `payloads`. Document the most common error responses. | Homogeneous error handling and a more defensible API. |
+| 05 Apr | Structured logging | Integrate structured logging with per-request context. Add `request id` or `correlation id`. Log critical operations without excessive noise. | Useful logs for operation and per-request traceability. |
 
-## Semana 3 · 06/04 al 12/04
+## Week 3 · 06/04 to 12/04
 
-### Fase 3 · Producción local
+### Phase 3 · Local Production
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 06 abr | Tests iniciales | Crear tests unitarios para reglas de estado y validaciones. Crear tests de integración para endpoints principales. Configurar proyecto de test y ejecución local estable. | Base de testing lista y cobertura inicial del núcleo. |
-| 07 abr | Dockerfile | Crear `Dockerfile` multi-stage para la API. Reducir tamaño y simplificar runtime. Verificar build local de imagen. | Imagen Docker construida y `Dockerfile` reutilizable. |
-| 08 abr | `docker-compose` local | Levantar API y PostgreSQL con `docker-compose`. Pasar variables por entorno. Asegurar que cualquier clon del repo arranca rápido. | Entorno local reproducible y onboarding técnico rápido. |
-| 09 abr | Migraciones y arranque limpio | Decidir estrategia de migraciones en arranque o script separado. Verificar recreación completa desde cero. Documentar el flujo de bootstrap local. | Proyecto reiniciable sin pasos manuales ambiguos. |
-| 10 abr | Health checks | Crear `/health/live` y `/health/ready`. Comprobar conectividad con base de datos en readiness. Preparar la app para despliegue detrás de balanceador. | Health checks útiles para ECS y ALB. |
-| 11 abr | Rendimiento de consultas | Detectar consultas críticas y mejorar `includes` y `joins`. Crear índices iniciales en columnas de búsqueda. Medir tiempos antes y después. | Consultas principales optimizadas y notas para la memoria. |
-| 12 abr | Validaciones de entrada | Refinar validaciones con FluentValidation o solución equivalente. Asegurar mensajes de error claros. Evitar estados inconsistentes desde la entrada. | Validación robusta y menor acoplamiento en controladores. |
+| 06 Apr | Initial tests | Create unit tests for state rules and validations. Create integration tests for the main endpoints. Configure the test project and stable local execution. | Testing baseline ready and initial core coverage. |
+| 07 Apr | Dockerfile | Create a multi-stage `Dockerfile` for the API. Reduce size and simplify runtime. Verify local image build. | Docker image built and reusable `Dockerfile`. |
+| 08 Apr | Local `docker-compose` | Bring up API and PostgreSQL with `docker-compose`. Pass variables by environment. Ensure that any clone of the repository starts quickly. | Reproducible local environment and fast technical onboarding. |
+| 09 Apr | Migrations and clean startup | Decide on a migration strategy at startup or as a separate script. Verify full recreation from scratch. Document the local bootstrap flow. | Project restartable without ambiguous manual steps. |
+| 10 Apr | Health checks | Create `/health/live` and `/health/ready`. Check database connectivity in readiness. Prepare the app for deployment behind a load balancer. | Useful health checks for ECS and ALB. |
+| 11 Apr | Query performance | Detect critical queries and improve `includes` and `joins`. Create initial indexes on search columns. Measure times before and after. | Main queries optimized and notes for the technical report. |
+| 12 Apr | Input validations | Refine validations with FluentValidation or an equivalent solution. Ensure clear error messages. Avoid inconsistent states from input. | Robust validation and lower coupling in controllers. |
 
-## Semana 4 · 13/04 al 19/04
+## Week 4 · 13/04 to 19/04
 
-### Fase 4 · AWS + Terraform
+### Phase 4 · AWS + Terraform
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 13 abr | Refactor y limpieza | Eliminar duplicidad. Revisar nombres, responsabilidades y separación de capas. Dejar el backend listo antes del salto a AWS. | Código más limpio y estable. |
-| 14 abr | Preparación AWS y Terraform | Configurar credenciales AWS y estructura del proyecto Terraform. Definir módulos o carpetas base por recurso. Preparar variables, outputs y backend local inicial. | Terraform inicializado y base para IaC. |
-| 15 abr | Red: VPC y subredes | Crear VPC, subredes públicas y privadas con Terraform. Diseñar un esquema mínimo pero correcto para app y RDS. Etiquetar recursos de forma consistente. | Topología de red creada. |
-| 16 abr | Seguridad de red | Definir security groups para ALB, ECS y RDS. Permitir solo tráfico estrictamente necesario. Revisar exposición pública y segmentación. | Base de seguridad de red funcional. |
-| 17 abr | Base de datos en AWS | Crear instancia RDS PostgreSQL. Configurar almacenamiento, credenciales y conectividad privada. Probar conexión desde entorno controlado. | RDS desplegado y persistencia cloud operativa. |
-| 18 abr | Registro de imágenes | Crear repositorio ECR. Etiquetar imagen y subir primera versión manualmente. Validar autenticación desde local o CI. | Flujo de imagen hacia AWS funcionando. |
-| 19 abr | ECS Cluster y Task Definition | Crear cluster ECS. Definir task definition con CPU, memoria, variables y logs. Preparar execution role y task role. | Aplicación lista para ejecutarse en Fargate. |
+| 13 Apr | Refactor and cleanup | Remove duplication. Review names, responsibilities, and layer separation. Leave the backend ready before the jump to AWS. | Cleaner and more stable code. |
+| 14 Apr | AWS and Terraform preparation | Configure AWS credentials and the Terraform project structure. Define modules or base folders per resource. Prepare variables, outputs, and an initial local backend. | Terraform initialized and baseline ready for IaC. |
+| 15 Apr | Network: VPC and subnets | Create VPC, public subnets, and private subnets with Terraform. Design a minimal but correct scheme for the app and RDS. Tag resources consistently. | Network topology created. |
+| 16 Apr | Network security | Define security groups for ALB, ECS, and RDS. Allow only strictly necessary traffic. Review public exposure and segmentation. | Functional network security baseline. |
+| 17 Apr | Database on AWS | Create an RDS PostgreSQL instance. Configure storage, credentials, and private connectivity. Test the connection from a controlled environment. | RDS deployed and cloud persistence operational. |
+| 18 Apr | Image registry | Create an ECR repository. Tag the image and push the first version manually. Validate authentication from local or CI. | Image flow to AWS working. |
+| 19 Apr | ECS Cluster and Task Definition | Create the ECS cluster. Define the task definition with CPU, memory, variables, and logs. Prepare execution role and task role. | Application ready to run on Fargate. |
 
-## Semana 5 · 20/04 al 26/04
+## Week 5 · 20/04 to 26/04
 
-### Fase 5 · CI/CD
+### Phase 5 · CI/CD
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 20 abr | Servicio ECS y ALB | Crear Application Load Balancer y target group. Desplegar ECS Service en Fargate. Verificar acceso externo a la API y health checks. | Primera versión en AWS accesible. |
-| 21 abr | CI básica | Crear workflow de GitHub Actions para `restore`, `build` y `test`. Fallar pipeline ante errores de compilación o tests. Publicar badges opcionalmente. | CI mínima operativa. |
-| 22 abr | Build Docker y push a ECR | Automatizar build de imagen en GitHub Actions. Autenticarse en AWS y subir imagen a ECR. Versionar tags de imagen de forma coherente. | Pipeline de artefactos completado. |
-| 23 abr | Terraform plan en CI | Ejecutar `terraform fmt`, `validate` y `plan` desde pipeline. Separar variables sensibles. Guardar plan o resumen para revisión. | Control de cambios infraestructurales automatizado. |
-| 24 abr | Terraform apply controlado | Definir cómo aplicar cambios: aprobación manual o rama concreta. Evitar despliegues accidentales. Comprobar idempotencia. | Proceso de despliegue más seguro. |
-| 25 abr | Despliegue automático de ECS | Actualizar task definition con nueva imagen. Forzar nuevo deployment tras merge. Confirmar que la nueva versión queda activa. | CD funcional. |
-| 26 abr | Smoke tests post-deploy | Añadir comprobaciones básicas después del despliegue. Verificar login, health y caso mínimo de negocio. Fallar el pipeline si el despliegue no es usable. | Pipeline end-to-end más fiable. |
+| 20 Apr | ECS service and ALB | Create the Application Load Balancer and target group. Deploy ECS Service on Fargate. Verify external access to the API and health checks. | First accessible version on AWS. |
+| 21 Apr | Basic CI | Create a GitHub Actions workflow for `restore`, `build`, and `test`. Fail the pipeline on build or test errors. Optionally publish badges. | Minimal CI operational. |
+| 22 Apr | Docker build and push to ECR | Automate image build in GitHub Actions. Authenticate to AWS and push the image to ECR. Version image tags consistently. | Artifact pipeline completed. |
+| 23 Apr | Terraform plan in CI | Run `terraform fmt`, `validate`, and `plan` from the pipeline. Separate sensitive variables. Save the plan or summary for review. | Automated infrastructure change control. |
+| 24 Apr | Controlled Terraform apply | Define how changes are applied: manual approval or a specific branch. Avoid accidental deployments. Check idempotency. | Safer deployment process. |
+| 25 Apr | Automatic ECS deployment | Update the task definition with the new image. Force a new deployment after merge. Confirm that the new version becomes active. | Functional CD. |
+| 26 Apr | Post-deploy smoke tests | Add basic checks after deployment. Verify login, health, and a minimum business case. Fail the pipeline if the deployment is not usable. | More reliable end-to-end pipeline. |
 
-## Semana 6 · 27/04 al 03/05
+## Week 6 · 27/04 to 03/05
 
-### Fase 6 · Observabilidad y seguridad
+### Phase 6 · Observability and Security
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 27 abr | Consolidación CI/CD | Revisar pipelines completos y tiempos. Limpiar pasos redundantes. Documentar el flujo de integración y entrega. | CI/CD listo para presentar. |
-| 28 abr | Logs en CloudWatch | Enviar logs del contenedor a CloudWatch. Verificar formato, filtros y búsqueda. Asegurar que los logs sirven para diagnosticar fallos reales. | Observabilidad básica en producción. |
-| 29 abr | Métricas operativas | Revisar métricas de ECS, ALB y RDS. Elegir las que aparecerán en demo y memoria. Anotar indicadores relevantes: CPU, memoria, errores y latencia. | Set mínimo de métricas definido. |
-| 30 abr | Dashboard | Crear dashboard en CloudWatch. Agrupar métricas de infraestructura y aplicación. Preparar visualización clara para defensa. | Dashboard de operación disponible. |
-| 01 may | Alarmas | Crear alarmas de CPU alta, errores o indisponibilidad. Definir umbrales razonables para un entorno académico. Probar que se disparan ante un escenario controlado si es posible. | Base de alertado implementada. |
-| 02 may | Gestión de secretos | Mover credenciales y secretos a AWS Secrets Manager o SSM. Eliminar cualquier secreto del código y del pipeline. Documentar estrategia de configuración segura. | Configuración segura externalizada. |
-| 03 may | IAM mínimo privilegio | Revisar roles de ECS, GitHub Actions y acceso Terraform. Reducir permisos innecesarios. Documentar el principio de mínimo privilegio. | IAM más defendible. |
+| 27 Apr | CI/CD consolidation | Review complete pipelines and timings. Clean redundant steps. Document the integration and delivery flow. | CI/CD ready to present. |
+| 28 Apr | Logs in CloudWatch | Send container logs to CloudWatch. Verify format, filters, and search. Ensure the logs are useful to diagnose real failures. | Basic observability in production. |
+| 29 Apr | Operational metrics | Review ECS, ALB, and RDS metrics. Choose the ones that will appear in the demo and technical report. Note relevant indicators: CPU, memory, errors, and latency. | Minimum set of metrics defined. |
+| 30 Apr | Dashboard | Create a dashboard in CloudWatch. Group infrastructure and application metrics. Prepare a clear visualization for the defense. | Operations dashboard available. |
+| 01 May | Alarms | Create alarms for high CPU, errors, or unavailability. Define reasonable thresholds for an academic environment. Test that they trigger in a controlled scenario if possible. | Alerting baseline implemented. |
+| 02 May | Secrets management | Move credentials and secrets to AWS Secrets Manager or SSM. Remove any secret from the code and the pipeline. Document the secure configuration strategy. | Secure configuration externalized. |
+| 03 May | Least-privilege IAM | Review ECS roles, GitHub Actions roles, and Terraform access. Reduce unnecessary permissions. Document the principle of least privilege. | More defensible IAM. |
 
-## Semana 7 · 04/05 al 10/05
+## Week 7 · 04/05 to 10/05
 
-### Fase 7 · Mejora técnica
+### Phase 7 · Technical Improvement
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 04 may | Revisión general de seguridad | Comprobar puertos expuestos, logs sensibles y configuración pública. Revisar autenticación y autorización. Cerrar deuda de seguridad detectada. | Baseline de seguridad aceptable. |
-| 05 may | OpenTelemetry o trazas básicas | Instrumentar la aplicación con trazas o telemetría equivalente. Propagar identificadores entre logs y peticiones. Preparar historia clara de observabilidad para la memoria. | Telemetría superior al mínimo. |
-| 06 may | Mejora del logging | Añadir contexto de negocio: `transport id`, estado y usuario. Evitar loggear datos innecesarios. Hacer que un fallo real pueda seguirse mejor. | Logs más útiles para soporte. |
-| 07 may | Rate limiting o protección básica | Aplicar limitación de peticiones o protección equivalente. Restringir abusos sencillos. Documentar por qué se incluye como medida operativa. | API más robusta frente a abuso básico. |
-| 08 may | Resiliencia | Introducir `retry` controlado donde tenga sentido. Revisar timeouts y manejo de dependencias. Evitar fallos silenciosos o bloqueos innecesarios. | Comportamiento más estable ante errores transitorios. |
-| 09 may | Estrategia de migraciones | Definir cómo evolucionará el esquema en despliegues futuros. Separar migración de arranque de aplicación si es necesario. Redactar justificación técnica. | Historia clara de cambios de base de datos. |
-| 10 may | Backups y recuperación | Revisar snapshots o backups de RDS. Documentar RPO y RTO aproximados a nivel académico. Explicar qué se recupera y qué no. | Sección de continuidad operativa lista. |
+| 04 May | General security review | Check exposed ports, sensitive logs, and public configuration. Review authentication and authorization. Close detected security debt. | Acceptable security baseline. |
+| 05 May | OpenTelemetry or basic traces | Instrument the application with traces or equivalent telemetry. Propagate identifiers between logs and requests. Prepare a clear observability story for the technical report. | Telemetry above the minimum. |
+| 06 May | Logging improvement | Add business context: `transport id`, state, and user. Avoid logging unnecessary data. Make a real failure easier to trace. | More useful logs for support. |
+| 07 May | Rate limiting or basic protection | Apply request limiting or equivalent protection. Restrict simple abuse. Document why it is included as an operational measure. | API more robust against basic abuse. |
+| 08 May | Resilience | Introduce controlled `retry` where it makes sense. Review timeouts and dependency handling. Avoid silent failures or unnecessary blocking. | More stable behavior under transient errors. |
+| 09 May | Migration strategy | Define how the schema will evolve in future deployments. Separate migration from application startup if necessary. Write the technical justification. | Clear story of database changes. |
+| 10 May | Backups and recovery | Review RDS snapshots or backups. Document approximate RPO and RTO at an academic level. Explain what is recovered and what is not. | Operational continuity section ready. |
 
-## Semana 8 · 11/05 al 17/05
+## Week 8 · 11/05 to 17/05
 
-### Fase 8 · Diagramas y documentación
+### Phase 8 · Diagrams and Documentation
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 11 may | Pruebas de carga simples | Ejecutar una carga ligera con `k6`, `hey` o herramienta similar. Medir tiempos y errores en escenario básico. Extraer 2 o 3 conclusiones útiles, no solo números. | Resultados medibles para la memoria. |
-| 12 may | Diagrama de contexto | Crear C4 nivel 1 con actores y sistema. Representar empresa operadora, API y servicios externos relevantes. Alinear diagrama con el alcance real. | Diagrama de contexto listo. |
-| 13 may | Diagrama de contenedores | Crear C4 nivel 2. Reflejar API, base de datos, CI/CD y componentes AWS clave. Evitar incluir elementos no implementados. | Diagrama de contenedores consistente. |
-| 14 may | Diagrama de despliegue AWS | Representar VPC, subredes, ALB, ECS, RDS y flujos. Indicar qué está en red pública y qué en privada. Usar el diagrama para explicar seguridad y operación. | Diagrama de despliegue claro. |
-| 15 may | Diagrama de pipeline | Dibujar CI/CD desde commit hasta despliegue. Incluir build, test, imagen, ECR, Terraform y ECS. Dejar clara la automatización. | Pipeline visual defendible. |
-| 16 may | Modelo de datos | Generar modelo de datos final. Revisar nombres, claves e índices. Ajustar documentación a lo realmente desplegado. | Modelo relacional final. |
-| 17 may | Redacción de arquitectura | Escribir sección de arquitectura backend y razones del monolito modular. Explicar capas y responsabilidades. Justificar por qué no se usaron microservicios. | Sección de arquitectura casi cerrada. |
+| 11 May | Simple load testing | Run a light load with `k6`, `hey`, or a similar tool. Measure times and errors in a basic scenario. Extract 2 or 3 useful conclusions, not just numbers. | Measurable results for the technical report. |
+| 12 May | Context diagram | Create C4 level 1 with actors and system. Represent the operating company, API, and relevant external services. Align the diagram with the real scope. | Context diagram ready. |
+| 13 May | Container diagram | Create C4 level 2. Reflect API, database, CI/CD, and key AWS components. Avoid including elements that were not implemented. | Consistent container diagram. |
+| 14 May | AWS deployment diagram | Represent VPC, subnets, ALB, ECS, RDS, and flows. Indicate what is in the public network and what is in the private network. Use the diagram to explain security and operation. | Clear deployment diagram. |
+| 15 May | Pipeline diagram | Draw CI/CD from commit to deployment. Include build, test, image, ECR, Terraform, and ECS. Make the automation clear. | Defensible visual pipeline. |
+| 16 May | Data model | Generate the final data model. Review names, keys, and indexes. Adjust the documentation to what was actually deployed. | Final relational model. |
+| 17 May | Architecture writing | Write the backend architecture section and the reasons for the modular monolith. Explain layers and responsibilities. Justify why microservices were not used. | Architecture section almost complete. |
 
-## Semana 9 · 18/05 al 24/05
+## Week 9 · 18/05 to 24/05
 
-### Fase 9 · Memoria técnica
+### Phase 9 · Technical Report
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 18 may | Decisiones técnicas | Redactar ADRs resumidas o tabla de decisiones. Justificar ECS frente a EKS, Terraform frente a consola y RDS frente a alternativa local. Anotar trade-offs reales. | Sección de decisiones lista. |
-| 19 may | Introducción y objetivos | Redactar motivación del TFG. Describir problema, objetivo general y objetivos específicos. Alinear texto con la transición a cloud y DevOps. | Apertura de memoria preparada. |
-| 20 may | Requisitos funcionales | Documentar casos de uso implementados. Separar claramente lo realizado de lo descartado. Añadir criterios de aceptación resumidos. | Requisitos funcionales cerrados. |
-| 21 may | Requisitos no funcionales | Redactar disponibilidad, seguridad, mantenibilidad, despliegue y observabilidad. Relacionarlos con decisiones implementadas. Evitar requisitos que no se puedan demostrar. | Requisitos no funcionales defendibles. |
-| 22 may | Sección backend | Explicar estructura de la API, capas, endpoints y persistencia. Añadir ejemplos de flujo. Insertar capturas o fragmentos pequeños si aportan valor. | Capítulo backend avanzado. |
-| 23 may | Sección cloud | Explicar AWS, red, despliegue y operación básica. Incluir Terraform como eje de reproducibilidad. Relacionar arquitectura con seguridad. | Capítulo cloud avanzado. |
-| 24 may | CI/CD y observabilidad | Redactar pipeline, estrategia de despliegue, logging, métricas y alarmas. Incluir capturas del dashboard si conviene. Destacar automatización y operación. | Capítulo DevOps casi listo. |
+| 18 May | Technical decisions | Write summarized ADRs or a decision table. Justify ECS over EKS, Terraform over console, and RDS over a local alternative. Note real trade-offs. | Decisions section ready. |
+| 19 May | Introduction and objectives | Write the motivation for the TFG. Describe the problem, general objective, and specific objectives. Align the text with the transition to cloud and DevOps. | Opening of the technical report prepared. |
+| 20 May | Functional requirements | Document the implemented use cases. Clearly separate what was done from what was discarded. Add summarized acceptance criteria. | Functional requirements closed. |
+| 21 May | Non-functional requirements | Write availability, security, maintainability, deployment, and observability requirements. Relate them to the implemented decisions. Avoid requirements that cannot be demonstrated. | Defensible non-functional requirements. |
+| 22 May | Backend section | Explain the structure of the API, layers, endpoints, and persistence. Add flow examples. Insert screenshots or small fragments if they add value. | Advanced backend chapter. |
+| 23 May | Cloud section | Explain AWS, network, deployment, and basic operation. Include Terraform as the axis of reproducibility. Relate architecture to security. | Advanced cloud chapter. |
+| 24 May | CI/CD and observability | Write the pipeline, deployment strategy, logging, metrics, and alarms. Include dashboard screenshots if appropriate. Highlight automation and operation. | DevOps chapter almost ready. |
 
-## Semana 10 · 25/05 al 31/05
+## Week 10 · 25/05 to 31/05
 
-### Fase 10 · Cierre
+### Phase 10 · Closure
 
-| Fecha | Foco | Tareas concretas | Resultado esperado |
+| Date | Focus | Specific Tasks | Expected Result |
 | --- | --- | --- | --- |
-| 25 may | Seguridad y pruebas | Redactar autenticación, IAM, secretos, pruebas unitarias, integración y carga. Resumir resultados de forma concreta. Evitar promesas excesivas. | Capítulo de calidad y seguridad completado. |
-| 26 may | Resultados | Redactar qué se consiguió exactamente. Comparar objetivo inicial y alcance final. Añadir métricas o hitos verificables. | Sección de resultados terminada. |
-| 27 may | Costes | Estimar coste mensual aproximado del despliegue. Identificar qué servicios impactan más. Explicar que el entorno es académico y acotado. | Análisis de costes incluido. |
-| 28 may | Limitaciones | Indicar qué no se implementó: frontend, escalado avanzado, multi-región y similares. Convertir limitaciones en honestidad técnica. Evitar que parezcan fallos conceptuales. | Limitaciones bien argumentadas. |
-| 29 may | Trabajo futuro | Proponer mejoras realistas: colas, eventos, más observabilidad, autoscaling o frontend. Relacionar con una evolución profesional hacia Cloud Engineer o DevOps. Mantener foco en continuidad del sistema. | Trabajo futuro coherente. |
-| 30 may | Revisión integral | Revisar memoria, diagramas, ortografía, enlaces y consistencia técnica. Comprobar que el repositorio está limpio y presentable. Ejecutar demo completa una última vez. | Versión candidata final. |
-| 31 may | Entrega final | Preparar ZIP o repositorio, memoria, presentación y guion de demo. Verificar capturas, comandos, credenciales y materiales de defensa. Cerrar checklist final de entrega. | Proyecto listo para entregar y defender. |
+| 25 May | Security and testing | Write authentication, IAM, secrets, unit, integration, and load testing. Summarize results concretely. Avoid excessive promises. | Quality and security chapter completed. |
+| 26 May | Results | Write exactly what was achieved. Compare the initial objective and the final scope. Add metrics or verifiable milestones. | Results section finished. |
+| 27 May | Costs | Estimate the approximate monthly deployment cost. Identify which services have the greatest impact. Explain that the environment is academic and limited. | Cost analysis included. |
+| 28 May | Limitations | Indicate what was not implemented: frontend, advanced scaling, multi-region, and similar items. Turn limitations into technical honesty. Avoid making them seem like conceptual failures. | Well-argued limitations. |
+| 29 May | Future work | Propose realistic improvements: queues, events, more observability, autoscaling, or frontend. Relate them to professional growth toward Cloud Engineer or DevOps. Keep the focus on system continuity. | Coherent future work. |
+| 30 May | Full review | Review the technical report, diagrams, spelling, links, and technical consistency. Check that the repository is clean and presentable. Run the full demo one last time. | Final candidate version. |
+| 31 May | Final delivery | Prepare ZIP or repository, technical report, presentation, and demo script. Verify screenshots, commands, credentials, and defense materials. Close the final delivery checklist. | Project ready to deliver and defend. |
 
-## Checklist de control semanal
+## Weekly Control Checklist
 
-| # | Control | Qué validar |
+| # | Control | What to Validate |
 | --- | --- | --- |
-| 1 | Compilación limpia | La solución compila sin pasos manuales extraños. |
-| 2 | Tests ejecutables | Los tests existentes corren localmente y en CI. |
-| 3 | Entorno reproducible | Otro equipo podría levantar el proyecto con instrucciones claras. |
-| 4 | Infraestructura versionada | Los cambios de AWS pasan por Terraform. |
-| 5 | Demo operativa | La funcionalidad implementada esa semana se puede enseñar en 5 minutos. |
-| 6 | Documentación al día | README, diagramas y notas no quedan desplazados al final. |
+| 1 | Clean build | The solution builds without strange manual steps. |
+| 2 | Runnable tests | Existing tests run locally and in CI. |
+| 3 | Reproducible environment | Another team could start the project with clear instructions. |
+| 4 | Versioned infrastructure | AWS changes go through Terraform. |
+| 5 | Operational demo | The functionality implemented that week can be shown in 5 minutes. |
+| 6 | Up-to-date documentation | README, diagrams, and notes are not pushed to the end. |
 
-## Resultado esperado al 31 de mayo
+## Expected Result by May 31
 
-Backend funcional, desplegado en AWS, infraestructura definida con Terraform, pipeline CI/CD operativo, logs y métricas visibles, memoria técnica escrita y material de defensa preparado.
+Functional backend, deployed on AWS, infrastructure defined with Terraform, operational CI/CD pipeline, visible logs and metrics, technical report written, and defense material prepared.
