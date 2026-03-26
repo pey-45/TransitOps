@@ -62,6 +62,7 @@ The fixed scope details are in [docs/MVP-Backlog.md](docs/MVP-Backlog.md).
 TransitOps/
 |-- TransitOps.slnx
 |-- README.md
+|-- docker-compose.yml
 |-- docs/
 |   |-- MVP-Backlog.md
 |   |-- DailyRoadmap.pdf
@@ -97,7 +98,7 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 The repository already covers the expected baseline for the initial milestone: solution created, base API, test project, `README`, MVP backlog, and roadmap versioned in GitHub.
 
-There is still no integration with PostgreSQL, `docker-compose`, infrastructure as code, or CI/CD automation. That belongs to later milestones.
+The repository now includes an initial PostgreSQL schema under `database/postgres/` and a `docker-compose.yml` for local API + database startup. Infrastructure as code and CI/CD automation still belong to later milestones.
 
 ### Base Commands
 
@@ -119,6 +120,19 @@ Run the API:
 dotnet run --project .\TransitOps.Api\TransitOps.Api.csproj
 ```
 
+Run API + PostgreSQL with Docker Compose:
+
+```powershell
+docker compose up --build
+```
+
+Reset the local database volume and rerun the initialization script:
+
+```powershell
+docker compose down -v
+docker compose up --build
+```
+
 Run tests:
 
 ```powershell
@@ -130,7 +144,7 @@ dotnet test .\TransitOps.Tests\TransitOps.Tests.csproj
 1. Finalize the domain model and business rules.
 2. Add real PostgreSQL persistence and migrations.
 3. Implement the functional core of the MVP.
-4. Make the local environment reproducible with Docker.
+4. Refine the reproducible local environment and keep it aligned with the evolving application.
 5. Prepare the transition to AWS, Terraform, and CI/CD.
 
 ## Roadmap Quality Criteria
