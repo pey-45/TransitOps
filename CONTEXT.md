@@ -10,7 +10,7 @@ It should contain the current state of the project, recent decisions, relevant a
 
 - Project: `TransitOps`
 - Reference date: 2026-03-26
-- Repository status: backend bootstrap in progress
+- Repository status: local backend baseline established, CRUD still pending
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -20,7 +20,9 @@ It should contain the current state of the project, recent decisions, relevant a
 
 - The project goal is to build a transport management backend with a deliberately small functional scope and stronger focus on cloud architecture and DevOps practices.
 - The current repository already includes the API bootstrap, initial PostgreSQL schema script, local Docker composition, and planning documentation.
-- The functional MVP is not implemented yet, but the API surface and simplified internal folder structure now support the next persistence and CRUD steps without redoing the bootstrap.
+- The API now includes EF Core PostgreSQL persistence wiring with a `TransitOpsDbContext`, entity configurations, and a first baseline migration under `TransitOps.Api/Persistence/Migrations`.
+- The API readiness endpoint now validates real PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()`.
+- The functional MVP is not implemented yet, but the API surface, persistence layer, and simplified internal folder structure now support the next CRUD and command/query steps without reworking the baseline.
 
 ## MVP Direction
 
@@ -75,8 +77,12 @@ These are planned later and should not distort near-term implementation prioriti
 - 2026-03-26: Added `docker-compose.yml` to run the API and PostgreSQL together locally, with the initial schema mounted into `/docker-entrypoint-initdb.d/` for first-time database initialization.
 - 2026-03-26: Replaced the template weather endpoint with versioned transport/vehicle/driver/shipment-event controllers, a common API response envelope, and initial domain contracts inside `TransitOps.Api`.
 - 2026-03-26: Simplified the solution to a KISS structure with only `TransitOps.Api` and `TransitOps.Tests`, removing bootstrap service abstractions and keeping only minimal internal folders (`Controllers`, `Contracts`, `Domain`, `Common`, `Middleware`, `Errors`).
+- 2026-03-26: Integrated EF Core with PostgreSQL inside `TransitOps.Api/Persistence`, added `TransitOpsDbContext`, entity configurations, a design-time factory, and the baseline `InitialCreate` migration aligned with the current schema, including partial unique indexes and `set_updated_at` triggers.
+- 2026-03-26: Updated `api/v1/health/ready` to check PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()` and return `503 Service Unavailable` when the database is unreachable.
 
 ## Open Notes
 
-- Persistence is not implemented yet; the current GET endpoints intentionally return empty lists or `404` placeholders until `DbContext` and real PostgreSQL integration are added.
+- Persistence is now wired at infrastructure level, but the current GET endpoints still return empty lists or `404` placeholders because query/CRUD logic has not been implemented yet.
+- The PostgreSQL database already exists locally, so the generated EF Core migration should be treated as a baseline artifact and not auto-applied blindly to that existing database.
+- `GET /api/v1/health/ready` already confirms whether the API can connect to PostgreSQL in the current environment.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.

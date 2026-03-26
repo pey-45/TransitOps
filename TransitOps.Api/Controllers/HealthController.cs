@@ -1,18 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using TransitOps.Api.Common;
+using TransitOps.Api.Persistence;
 
 namespace TransitOps.Api.Controllers;
 
 [Route("api/v1/health")]
 public sealed class HealthController : ApiControllerBase
 {
-    private readonly IConfiguration _configuration;
     private readonly IHostEnvironment _environment;
+    private readonly TransitOpsDbContext _dbContext;
 
-    public HealthController(IConfiguration configuration, IHostEnvironment environment)
+    public HealthController(IHostEnvironment environment, TransitOpsDbContext dbContext)
     {
-        _configuration = configuration;
         _environment = environment;
+        _dbContext = dbContext;
     }
 
     [HttpGet("live")]
@@ -29,17 +30,27 @@ public sealed class HealthController : ApiControllerBase
 
     [HttpGet("ready")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<ApiResponse<object>> Ready()
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiResponse<object>>> Ready(CancellationToken cancellationToken)
     {
-        var hasConnectionString = !string.IsNullOrWhiteSpace(
-            _configuration.GetConnectionString("DefaultConnection"));
+        var canConnect = await _dbContext.Database.CanConnectAsync(cancellationToken);
+
+        if (!canConnect)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                ApiErrorResponse.Create(
+                    code: "database_unavailable",
+                    message: "The API cannot connect to PostgreSQL.",
+                    requestId: HttpContext.TraceIdentifier));
+        }
 
         return OkResponse<object>(new
         {
             status = "ready",
             service = "TransitOps.Api",
             environment = _environment.EnvironmentName,
-            databaseConfigurationPresent = hasConnectionString
+            databaseConnectionAvailable = true
         });
     }
 }

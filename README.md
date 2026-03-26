@@ -4,16 +4,16 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: March 24, 2026.
+Reference date: March 26, 2026.
 
-The repository contains an ASP.NET Core solution with the initial backend bootstrap already in place:
+The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
-- `TransitOps.Api`: HTTP entry point and API composition root, internally separated only into the minimal folders needed by the current bootstrap.
+- `TransitOps.Api`: HTTP entry point, EF Core PostgreSQL persistence, versioned controllers, common response contracts, and minimal domain structure.
 - `TransitOps.Tests`: test project.
 
-With the current state of the repository, the March 24 milestone can be considered complete: scope, stack, solution baseline, and initial documentation are already defined. The folder structure should be understood as indicative, not as a rigid acceptance criterion.
+The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still in a bootstrap phase with respect to the functional MVP. The documentation already defines the MVP scope and the full roadmap toward a delivery with AWS, Terraform, and CI/CD.
+The code is still before the functional MVP. Persistence is wired and validated at connectivity level, but CRUD/query behavior is still largely pending.
 
 ## Project Objective
 
@@ -75,6 +75,7 @@ TransitOps/
 |   |-- Domain/
 |   |-- Errors/
 |   |-- Middleware/
+|   |-- Persistence/
 |   |-- Properties/
 |   |-- Dockerfile
 |   |-- Program.cs
@@ -102,9 +103,15 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 ### Current Repository Status
 
-The repository already covers the expected baseline for the initial milestone and now includes the day-26 backend bootstrap: base API conventions, a minimal internal folder structure inside `TransitOps.Api`, and initial domain contracts aligned with the current schema.
+The repository already includes:
 
-The repository now includes an initial PostgreSQL schema under `database/postgres/` and a `docker-compose.yml` for local API + database startup. Infrastructure as code and CI/CD automation still belong to later milestones.
+- an initial PostgreSQL schema under `database/postgres/`;
+- `docker-compose.yml` for local API + PostgreSQL startup;
+- EF Core PostgreSQL persistence under `TransitOps.Api/Persistence`;
+- a baseline `InitialCreate` migration;
+- a real readiness check at `GET /api/v1/health/ready` that verifies PostgreSQL connectivity.
+
+The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Middleware`, and `Persistence`.
 
 ### Base Commands
 
@@ -118,6 +125,12 @@ Build the solution:
 
 ```powershell
 dotnet build TransitOps.slnx
+```
+
+Or build only the API:
+
+```powershell
+dotnet build .\TransitOps.Api\TransitOps.Api.csproj
 ```
 
 Run the API:
@@ -145,13 +158,28 @@ Run tests:
 dotnet test .\TransitOps.Tests\TransitOps.Tests.csproj
 ```
 
+Create a new EF Core migration:
+
+```powershell
+dotnet tool restore
+dotnet tool run dotnet-ef migrations add <MigrationName> --project .\TransitOps.Api\TransitOps.Api.csproj --startup-project .\TransitOps.Api\TransitOps.Api.csproj --output-dir Persistence\Migrations
+```
+
+Note: the local PostgreSQL database may already exist and may already have the schema created from `database/postgres/001_initial_schema.sql`. In that case, do not apply the baseline migration blindly without reconciling EF migration history with the existing database.
+
+Check API readiness against PostgreSQL:
+
+```text
+GET http://localhost:8080/api/v1/health/ready
+```
+
 ## Next Milestones
 
-1. Finalize the domain model and business rules.
-2. Add real PostgreSQL persistence and migrations.
-3. Implement the functional core of the MVP.
-4. Refine the reproducible local environment and keep it aligned with the evolving application.
-5. Prepare the transition to AWS, Terraform, and CI/CD.
+1. Implement real CRUD/query behavior on top of `TransitOpsDbContext`.
+2. Replace placeholder GET endpoints with real database-backed queries.
+3. Add write flows for transports, vehicles, drivers, and shipment events.
+4. Introduce authentication and authorization for the MVP.
+5. Keep the local environment and migrations aligned before moving to the cloud phase.
 
 ## Roadmap Quality Criteria
 
@@ -163,4 +191,4 @@ dotnet test .\TransitOps.Tests\TransitOps.Tests.csproj
 
 ## Verification Note
 
-The documentation was generated from the existing roadmap PDF and adjusted to the actual state of the repository on this date. The project is still in an initial phase, so some sections of the roadmap describe planned work rather than functionality that has already been implemented.
+As of March 26, 2026, the API project builds, EF Core persistence is configured, the baseline migration exists, and the readiness endpoint can confirm PostgreSQL connectivity. Functional CRUD behavior is still pending.

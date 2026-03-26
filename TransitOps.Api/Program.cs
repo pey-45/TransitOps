@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Middleware;
+using TransitOps.Api.Domain.Enums;
+using TransitOps.Api.Persistence;
 
 namespace TransitOps.Api;
 
@@ -40,6 +43,19 @@ public class Program
             options.LowercaseUrls = true;
             options.LowercaseQueryStrings = true;
         });
+
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+
+        builder.Services.AddDbContext<TransitOpsDbContext>(
+            options => options.UseNpgsql(
+                connectionString,
+                npgsqlOptions =>
+                {
+                    npgsqlOptions.MapEnum<TransportStatus>("transport_status");
+                    npgsqlOptions.MapEnum<ShipmentEventType>("shipment_event_type");
+                    npgsqlOptions.MapEnum<UserRole>("user_role");
+                }));
 
         builder.Services.AddOpenApi();
 
