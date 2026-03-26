@@ -1,34 +1,59 @@
+using Microsoft.AspNetCore.Mvc;
+using TransitOps.Api.Middleware;
 
-namespace TransitOps.Api
+namespace TransitOps.Api;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+        builder.Services
+            .AddControllers()
+            .ConfigureApiBehaviorOptions(options =>
             {
-                app.MapOpenApi();
-            }
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var validationErrors = context.ModelState
+                        .Where(modelState => modelState.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            keySelector: modelState => modelState.Key,
+                            elementSelector: modelState => modelState.Value!.Errors
+                                .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                    ? "The submitted value is invalid."
+                                    : error.ErrorMessage)
+                                .ToArray());
 
-            app.UseHttpsRedirection();
+                    var response = Common.ApiErrorResponse.Create(
+                        code: "validation_error",
+                        message: "One or more validation errors occurred.",
+                        requestId: context.HttpContext.TraceIdentifier,
+                        details: validationErrors);
 
-            app.UseAuthorization();
+                    return new BadRequestObjectResult(response);
+                };
+            });
 
+        builder.Services.AddRouting(options =>
+        {
+            options.LowercaseUrls = true;
+            options.LowercaseQueryStrings = true;
+        });
 
-            app.MapControllers();
+        builder.Services.AddOpenApi();
 
-            app.Run();
+        var app = builder.Build();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapOpenApi();
         }
+
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseAuthorization();
+        app.MapControllers();
+
+        app.Run();
     }
 }

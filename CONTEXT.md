@@ -9,8 +9,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Repository Snapshot
 
 - Project: `TransitOps`
-- Reference date: 2026-03-25
-- Repository status: early bootstrap phase
+- Reference date: 2026-03-26
+- Repository status: backend bootstrap in progress
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -19,8 +19,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Current Understanding
 
 - The project goal is to build a transport management backend with a deliberately small functional scope and stronger focus on cloud architecture and DevOps practices.
-- The current repository already includes the initial .NET solution, a base API, a test project, and planning documentation.
-- The functional MVP is not implemented yet; the codebase is still at a setup/bootstrap stage.
+- The current repository already includes the API bootstrap, initial PostgreSQL schema script, local Docker composition, and planning documentation.
+- The functional MVP is not implemented yet, but the API surface and simplified internal folder structure now support the next persistence and CRUD steps without redoing the bootstrap.
 
 ## MVP Direction
 
@@ -73,8 +73,10 @@ These are planned later and should not distort near-term implementation prioriti
 - 2026-03-26: Updated `database/postgres/001_initial_schema.sql` to use partial unique indexes on active rows (`deleted_at IS NULL`) so business keys can be reused after soft delete.
 - 2026-03-26: Hardened `database/postgres/001_initial_schema.sql` with transactional execution and idempotent named-constraint guards so reruns are safer after partial setup attempts.
 - 2026-03-26: Added `docker-compose.yml` to run the API and PostgreSQL together locally, with the initial schema mounted into `/docker-entrypoint-initdb.d/` for first-time database initialization.
+- 2026-03-26: Replaced the template weather endpoint with versioned transport/vehicle/driver/shipment-event controllers, a common API response envelope, and initial domain contracts inside `TransitOps.Api`.
+- 2026-03-26: Simplified the solution to a KISS structure with only `TransitOps.Api` and `TransitOps.Tests`, removing bootstrap service abstractions and keeping only minimal internal folders (`Controllers`, `Contracts`, `Domain`, `Common`, `Middleware`, `Errors`).
 
 ## Open Notes
 
-- The repository still contains the default starter API/testing artifacts and has not yet been shaped into the intended domain model.
+- Persistence is not implemented yet; the current GET endpoints intentionally return empty lists or `404` placeholders until `DbContext` and real PostgreSQL integration are added.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.

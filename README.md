@@ -6,9 +6,9 @@ Transport management backend as a personal project focused on cloud architecture
 
 Reference date: March 24, 2026.
 
-The repository contains an initial ASP.NET Core solution with two projects:
+The repository contains an ASP.NET Core solution with the initial backend bootstrap already in place:
 
-- `TransitOps.Api`: base API.
+- `TransitOps.Api`: HTTP entry point and API composition root, internally separated only into the minimal folders needed by the current bootstrap.
 - `TransitOps.Tests`: test project.
 
 With the current state of the repository, the March 24 milestone can be considered complete: scope, stack, solution baseline, and initial documentation are already defined. The folder structure should be understood as indicative, not as a rigid acceptance criterion.
@@ -63,18 +63,24 @@ TransitOps/
 |-- TransitOps.slnx
 |-- README.md
 |-- docker-compose.yml
+|-- database/
 |-- docs/
 |   |-- MVP-Backlog.md
 |   |-- DailyRoadmap.pdf
 |   `-- Roadmap.md
 |-- TransitOps.Api/
+|   |-- Common/
 |   |-- Controllers/
+|   |-- Contracts/
+|   |-- Domain/
+|   |-- Errors/
+|   |-- Middleware/
 |   |-- Properties/
 |   |-- Dockerfile
 |   |-- Program.cs
 |   `-- TransitOps.Api.csproj
 `-- TransitOps.Tests/
-    |-- UnitTest1.cs
+    |-- TransportStateMachineTests.cs
     `-- TransitOps.Tests.csproj
 ```
 
@@ -96,7 +102,7 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 ### Current Repository Status
 
-The repository already covers the expected baseline for the initial milestone: solution created, base API, test project, `README`, MVP backlog, and roadmap versioned in GitHub.
+The repository already covers the expected baseline for the initial milestone and now includes the day-26 backend bootstrap: base API conventions, a minimal internal folder structure inside `TransitOps.Api`, and initial domain contracts aligned with the current schema.
 
 The repository now includes an initial PostgreSQL schema under `database/postgres/` and a `docker-compose.yml` for local API + database startup. Infrastructure as code and CI/CD automation still belong to later milestones.
 
