@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using TransitOps.Api.Domain.Enums;
 
-namespace TransitOps.Api.Persistence;
+namespace TransitOps.Api.Infrastructure.Persistence;
 
 public sealed class TransitOpsDbContextFactory : IDesignTimeDbContextFactory<TransitOpsDbContext>
 {

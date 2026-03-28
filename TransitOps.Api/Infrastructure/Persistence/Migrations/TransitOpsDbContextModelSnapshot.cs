@@ -2,22 +2,19 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TransitOps.Api.Domain.Enums;
-using TransitOps.Api.Persistence;
+using TransitOps.Api.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace TransitOps.Api.Persistence.Migrations
+namespace TransitOps.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TransitOpsDbContext))]
-    [Migration("20260326203720_InitialCreate")]
-    partial class InitialCreate
+    partial class TransitOpsDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

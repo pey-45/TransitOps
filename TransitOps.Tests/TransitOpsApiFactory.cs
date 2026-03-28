@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TransitOps.Api;
-using TransitOps.Api.Persistence;
+using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Tests;
 

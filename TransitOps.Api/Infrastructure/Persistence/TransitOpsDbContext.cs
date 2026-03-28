@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Domain.Entities;
 using TransitOps.Api.Domain.Enums;
-using TransitOps.Api.Persistence.Configurations;
+using TransitOps.Api.Infrastructure.Persistence.Configurations;
 
-namespace TransitOps.Api.Persistence;
+namespace TransitOps.Api.Infrastructure.Persistence;
 
 public sealed class TransitOpsDbContext : DbContext
 {

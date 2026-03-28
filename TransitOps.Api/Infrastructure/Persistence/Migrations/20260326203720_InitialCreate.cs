@@ -4,7 +4,7 @@ using TransitOps.Api.Domain.Enums;
 
 #nullable disable
 
-namespace TransitOps.Api.Persistence.Migrations
+namespace TransitOps.Api.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

@@ -4,7 +4,7 @@ using TransitOps.Api.Application.Queries.Transports;
 using TransitOps.Api.Infrastructure.Queries.Transports;
 using TransitOps.Api.Middleware;
 using TransitOps.Api.Domain.Enums;
-using TransitOps.Api.Persistence;
+using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Api;
 

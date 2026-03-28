@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TransitOps.Api.Common;
-using TransitOps.Api.Persistence;
+using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Api.Controllers;
 

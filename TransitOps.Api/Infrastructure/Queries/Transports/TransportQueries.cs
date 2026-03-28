@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Application.Queries.Transports;
 using TransitOps.Api.Contracts.Responses.Transports;
-using TransitOps.Api.Persistence;
+using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Api.Infrastructure.Queries.Transports;
 

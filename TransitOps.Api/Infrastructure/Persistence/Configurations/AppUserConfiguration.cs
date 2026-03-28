@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TransitOps.Api.Domain.Entities;
 
-namespace TransitOps.Api.Persistence.Configurations;
+namespace TransitOps.Api.Infrastructure.Persistence.Configurations;
 
 public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 {
