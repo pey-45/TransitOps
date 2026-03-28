@@ -8,8 +8,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/postgres/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+      - postgres_data_migrations:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U transitops -d transitops"]
       interval: 10s
@@ -25,6 +24,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=transitops;Username=transitops;Password=transitops_dev
+      Database__ApplyMigrationsOnStartup: "true"
     ports:
       - "8080:8080"
     depends_on:
@@ -32,4 +32,4 @@ services:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  postgres_data_migrations:

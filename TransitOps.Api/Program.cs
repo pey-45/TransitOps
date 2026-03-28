@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TransitOps.Api.Application.Queries.Transports;
+using TransitOps.Api.Infrastructure.Queries.Transports;
 using TransitOps.Api.Middleware;
 using TransitOps.Api.Domain.Enums;
 using TransitOps.Api.Persistence;
@@ -57,9 +59,24 @@ public class Program
                     npgsqlOptions.MapEnum<UserRole>("user_role");
                 }));
 
+        builder.Services.AddScoped<ITransportQueries, TransportQueries>();
+
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
+
+        var applyMigrationsOnStartup = app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+
+        if (applyMigrationsOnStartup)
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+
+            if (dbContext.Database.IsRelational())
+            {
+                dbContext.Database.Migrate();
+            }
+        }
 
         if (app.Environment.IsDevelopment())
         {

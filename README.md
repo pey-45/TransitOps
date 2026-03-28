@@ -68,10 +68,12 @@ TransitOps/
 |-- TransitOps.slnx
 |-- README.md
 |-- docker-compose.yml
-|-- database/
 |-- docs/
 |   |-- Requirements.md
 |   `-- Roadmap.md
+|-- scripts/
+|   `-- postgres/
+|       `-- manual/
 |-- TransitOps.Api/
 |   |-- Common/
 |   |-- Controllers/
@@ -109,13 +111,15 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 The repository already includes:
 
-- an initial PostgreSQL schema under `database/postgres/`;
 - `docker-compose.yml` for local API + PostgreSQL startup;
 - EF Core PostgreSQL persistence under `TransitOps.Api/Persistence`;
 - a baseline `InitialCreate` migration;
+- optional manual sample-data scripts under `scripts/postgres/manual/`;
 - a real readiness check at `GET /api/v1/health/ready` that verifies PostgreSQL connectivity.
 
-The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Middleware`, and `Persistence`.
+The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Middleware`, `Persistence`, `Application`, and `Infrastructure`.
+
+`TransitOps.Api/Persistence/Migrations` is now the only source of truth for the database schema. Local Docker startup relies on EF Core migrations, not on separate SQL schema bootstrap files.
 
 ### Base Commands
 
@@ -149,7 +153,7 @@ Run API + PostgreSQL with Docker Compose:
 docker compose up --build
 ```
 
-Reset the local database volume and rerun the initialization script:
+Reset the local database volume and rerun the stack with a fresh migrations-managed database:
 
 ```powershell
 docker compose down -v
@@ -169,7 +173,14 @@ dotnet tool restore
 dotnet tool run dotnet-ef migrations add <MigrationName> --project .\TransitOps.Api\TransitOps.Api.csproj --startup-project .\TransitOps.Api\TransitOps.Api.csproj --output-dir Persistence\Migrations
 ```
 
-Note: the local PostgreSQL database may already exist and may already have the schema created from `database/postgres/001_initial_schema.sql`. In that case, do not apply the baseline migration blindly without reconciling EF migration history with the existing database.
+Apply migrations manually to a local PostgreSQL database:
+
+```powershell
+dotnet tool restore
+dotnet tool run dotnet-ef database update --project .\TransitOps.Api\TransitOps.Api.csproj --startup-project .\TransitOps.Api\TransitOps.Api.csproj
+```
+
+`docker compose up --build` starts PostgreSQL on a fresh named volume and the API applies pending EF Core migrations automatically on startup. If you still have an old local volume from the retired SQL-bootstrap flow, reset it with `docker compose down -v`.
 
 Check API readiness against PostgreSQL:
 
@@ -194,4 +205,4 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Verification Note
 
-As of March 28, 2026, the API project builds, EF Core persistence is configured, the baseline migration exists, and the readiness endpoint confirms PostgreSQL connectivity. Functional CRUD behavior, authentication, and AWS deployment remain pending.
+As of March 28, 2026, the API project builds, EF Core persistence is configured, the baseline migration exists, the local Docker flow is migrations-managed, and the readiness endpoint confirms PostgreSQL connectivity. Functional CRUD behavior, authentication, and AWS deployment remain pending.
