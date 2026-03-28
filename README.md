@@ -4,7 +4,7 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: March 26, 2026.
+Reference date: March 28, 2026.
 
 The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
@@ -13,7 +13,9 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP. Persistence is wired and validated at connectivity level, but CRUD/query behavior is still largely pending.
+The code is still before the functional MVP. Persistence is wired and validated at connectivity level, but CRUD/query behavior, authentication, and the cloud rollout are still pending.
+
+Planning has now been restructured around an explicit requirements specification and a daily roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
 ## Project Objective
 
@@ -26,6 +28,8 @@ Build a backend that is small in functionality and strong in operation:
 - later deployment to AWS with infrastructure as code;
 - observability, security, and defensible documentation.
 
+The local MVP is not the final objective by itself. It is the minimum credible base for the cloud deployment phase, so scope must stay intentionally tight.
+
 ## MVP Scope
 
 The MVP covers a functional backend that can run locally with:
@@ -35,12 +39,13 @@ The MVP covers a functional backend that can run locally with:
 - CRUD for transports, vehicles, and drivers;
 - assignments and state transitions;
 - JWT authentication with basic roles;
+- basic user bootstrap and admin user management;
 - initial tests;
 - local packaging with Docker.
 
 Advanced cloud work is outside the MVP: Terraform, ECS, ECR, RDS on AWS, CloudWatch, alarms, and full automated deployment.
 
-The fixed scope details are in [docs/MVP-Backlog.md](docs/MVP-Backlog.md).
+The detailed requirements baseline is in [docs/Requirements.md](docs/Requirements.md), and the current day-by-day execution plan is in [docs/Roadmap.md](docs/Roadmap.md).
 
 ## Target Stack
 
@@ -65,8 +70,7 @@ TransitOps/
 |-- docker-compose.yml
 |-- database/
 |-- docs/
-|   |-- MVP-Backlog.md
-|   |-- DailyRoadmap.pdf
+|   |-- Requirements.md
 |   `-- Roadmap.md
 |-- TransitOps.Api/
 |   |-- Common/
@@ -89,9 +93,9 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 ## Available Documentation
 
-- Full roadmap in Markdown: [docs/Roadmap.md](docs/Roadmap.md)
-- Fixed MVP backlog: [docs/MVP-Backlog.md](docs/MVP-Backlog.md)
-- Original roadmap source: [docs/DailyRoadmap.pdf](docs/DailyRoadmap.pdf)
+- Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
+- Daily delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
+- Architecture/model source: [docs/ClassDiagramV1.drawio](docs/ClassDiagramV1.drawio)
 
 ## Local Requirements
 
@@ -175,11 +179,10 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Next Milestones
 
-1. Implement real CRUD/query behavior on top of `TransitOpsDbContext`.
-2. Replace placeholder GET endpoints with real database-backed queries.
-3. Add write flows for transports, vehicles, drivers, and shipment events.
-4. Introduce authentication and authorization for the MVP.
-5. Keep the local environment and migrations aligned before moving to the cloud phase.
+1. Replace placeholder controller behavior with real CRUD/query flows on top of `TransitOpsDbContext`.
+2. Introduce user bootstrap, basic admin user management, JWT authentication, and role-based authorization.
+3. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
+4. Move immediately into Terraform, AWS runtime, and delivery automation once the local MVP core is closed.
 
 ## Roadmap Quality Criteria
 
@@ -191,4 +194,4 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Verification Note
 
-As of March 26, 2026, the API project builds, EF Core persistence is configured, the baseline migration exists, and the readiness endpoint can confirm PostgreSQL connectivity. Functional CRUD behavior is still pending.
+As of March 28, 2026, the API project builds, EF Core persistence is configured, the baseline migration exists, and the readiness endpoint confirms PostgreSQL connectivity. Functional CRUD behavior, authentication, and AWS deployment remain pending.

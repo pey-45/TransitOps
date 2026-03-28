@@ -9,8 +9,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Repository Snapshot
 
 - Project: `TransitOps`
-- Reference date: 2026-03-26
-- Repository status: local backend baseline established, CRUD still pending
+- Reference date: 2026-03-28
+- Repository status: local backend baseline established, planning artifacts restructured, CRUD/auth/cloud rollout still pending
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -23,6 +23,11 @@ It should contain the current state of the project, recent decisions, relevant a
 - The API now includes EF Core PostgreSQL persistence wiring with a `TransitOpsDbContext`, entity configurations, and a first baseline migration under `TransitOps.Api/Persistence/Migrations`.
 - The API readiness endpoint now validates real PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()`.
 - The functional MVP is not implemented yet, but the API surface, persistence layer, and simplified internal folder structure now support the next CRUD and command/query steps without reworking the baseline.
+- Planning is now anchored in `docs/Requirements.md` for scope and acceptance, and `docs/Roadmap.md` for daily execution from the real repository state as of March 28, 2026.
+- The project still follows a local-MVP-first sequence, but the planning emphasis now makes the cloud rollout start immediately after the minimum usable business flows are closed.
+- The requirements specification now explicitly defines user management, role permissions for `admin` and `operator`, main operational flows, and stronger acceptance detail.
+- The roadmap is now structured around coherent slices of roughly one hour of work per day, avoiding endpoint-sized tasks that are too small to represent a real day of work.
+- The current planning target end date is 2026-05-12, which is still shorter than the earlier longer plans while now covering explicit user-administration work.
 
 ## MVP Direction
 
@@ -33,6 +38,7 @@ According to the repository documentation, the MVP is intended to include:
 - Transport lifecycle/state transitions
 - Shipment/logistics events
 - JWT authentication and basic roles
+- Basic user bootstrap and admin user management
 - PostgreSQL persistence
 - Initial tests
 - Local Docker-based reproducibility
@@ -59,7 +65,7 @@ These are planned later and should not distort near-term implementation prioriti
 ## Source Documents
 
 - `README.md`
-- `docs/MVP-Backlog.md`
+- `docs/Requirements.md`
 - `docs/Roadmap.md`
 
 ## Working Convention
@@ -79,10 +85,14 @@ These are planned later and should not distort near-term implementation prioriti
 - 2026-03-26: Simplified the solution to a KISS structure with only `TransitOps.Api` and `TransitOps.Tests`, removing bootstrap service abstractions and keeping only minimal internal folders (`Controllers`, `Contracts`, `Domain`, `Common`, `Middleware`, `Errors`).
 - 2026-03-26: Integrated EF Core with PostgreSQL inside `TransitOps.Api/Persistence`, added `TransitOpsDbContext`, entity configurations, a design-time factory, and the baseline `InitialCreate` migration aligned with the current schema, including partial unique indexes and `set_updated_at` triggers.
 - 2026-03-26: Updated `api/v1/health/ready` to check PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()` and return `503 Service Unavailable` when the database is unreachable.
+- 2026-03-28: Replaced backlog-based planning with `docs/Requirements.md` as the formal scope and acceptance baseline, and `docs/Roadmap.md` as the daily execution plan, preserving March 24-27 as completed historical baseline.
+- 2026-03-28: Expanded `docs/Requirements.md` with explicit user-management requirements, admin/operator permission boundaries, main flows, and stronger functional detail.
+- 2026-03-28: Replanned `docs/Roadmap.md` again so each day represents a coherent slice of roughly one hour, incorporates the new user-administration work, and adjusts the target end date to 2026-05-12.
 
 ## Open Notes
 
 - Persistence is now wired at infrastructure level, but the current GET endpoints still return empty lists or `404` placeholders because query/CRUD logic has not been implemented yet.
 - The PostgreSQL database already exists locally, so the generated EF Core migration should be treated as a baseline artifact and not auto-applied blindly to that existing database.
 - `GET /api/v1/health/ready` already confirms whether the API can connect to PostgreSQL in the current environment.
+- Roadmap entries through 2026-03-27 should be treated as completed history, while remaining dates in `docs/Roadmap.md` are the actionable one-hour-per-day plan.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.

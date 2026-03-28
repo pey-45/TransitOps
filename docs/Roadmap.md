@@ -1,179 +1,109 @@
-# TransitOps · Roadmap in Markdown
+# TransitOps · Daily Delivery Roadmap
 
-Source file: `TransitOps.Api/Docs/DailyRoadmap.pdf`
+## Purpose
 
-## Final Objective
+Translate the requirements into a daily plan with consistent workload. Each day is intentionally sized as one coherent slice of approximately one hour, not as a single tiny endpoint task.
 
-Build and deliver a transport management backend with deployment on AWS, infrastructure as code, CI/CD, observability, basic security, and defensible technical documentation.
+## Planning Rules
 
-## Proposed Stack
+- Dates through March 27, 2026 are treated as completed historical baseline.
+- The target daily load is about `45-75 minutes`.
+- A daily slice should normally include implementation or configuration, a quick verification pass, and a small documentation/context update if something material changed.
+- If a task cannot reasonably fit into about one hour, it should be split before execution.
+- The scope stays small so cloud deployment happens early enough and the rest of the time goes to verification, operations, and delivery quality.
 
-- ASP.NET Core
-- PostgreSQL
-- Docker
-- Terraform
-- GitHub Actions
-- AWS ECS Fargate
-- Amazon ECR
-- Amazon RDS
-- Application Load Balancer
-- CloudWatch
-- Secrets Manager or SSM Parameter Store
+## Estimated Remaining Effort
 
-## Execution Criterion
+- Estimated remaining effort from March 28 onward: about `46 hours`.
+- Planned end date for the current roadmap: `May 12, 2026`.
+- This is still shorter than the earlier longer plans, but now includes explicit user-administration work that the stronger requirements specification demands.
 
-The project must remain small in functionality and deep in cloud operation. Each day must end with a verifiable result. If one day slips, the accessory detail moves, not the core of the roadmap.
+## Historical Baseline Already Completed
 
-## Week 1 · 24/03 to 29/03
-
-### Phase 1 · Definition and Foundation
-
-| Date | Focus | Specific Tasks | Expected Result |
+| Date | Status | Focus | Result Already Present |
 | --- | --- | --- | --- |
-| 24 Mar | Scope and stack definition | Finalize functional scope: transports, vehicles, drivers, events, and users. Lock the final stack: ASP.NET Core, PostgreSQL, Docker, Terraform, GitHub Actions, and AWS ECS Fargate. Create repository, base branches, and folder structure for `src`, `tests`, `infra`, and `docs`. | Initial README, fixed MVP backlog, and solution structure created. |
-| 25 Mar | Domain modeling | Define the main entities and their relationships. Design transport states and transition rules. Write the initial database schema. | Initial entity-relationship diagram and list of business rules. |
-| 26 Mar | Backend bootstrap | Create the Web API project and supporting layered projects. Configure dependency injection, `appsettings`, and environment profiles. Define route conventions, DTOs, and response structure. | The solution builds and the base API starts locally. |
-| 27 Mar | Initial persistence | Integrate PostgreSQL and configure the connection string by environment. Create `DbContext`, entity configurations, and the first migration. Verify that the database is created correctly. | First migration applied and stable local connection. |
-| 28 Mar | Transport CRUD | Implement `create`, `get by id`, `list`, `update`, and logical or physical `delete` for transports. Separate application and persistence layers. Manually test all endpoints. | Operational `Transport` CRUD and Postman collection or `.http` file. |
-| 29 Mar | Vehicles and drivers | Implement entities, endpoints, and persistence for `Vehicle` and `Driver`. Add basic business validations. Review relationships and constraints. | Functional `Vehicle` and `Driver` CRUD and adjusted relational model. |
+| 24 Mar | Completed | Scope, repository, and initial documentation | Repository structure, README, and initial planning baseline exist. |
+| 25 Mar | Completed | Domain and PostgreSQL schema | Main entities, transport states, and initial schema script are already defined. |
+| 26 Mar | Completed | API bootstrap and common contract | The API starts, common response/error structure exists, and controllers are in place. |
+| 27 Mar | Completed | EF Core persistence baseline | `TransitOpsDbContext`, entity configurations, baseline migration, and DB-backed readiness are implemented. |
 
-## Week 2 · 30/03 to 05/04
+## Phase 1 · Close the Local MVP Core
 
-### Phase 2 · Logic and Quality
+| Date | Focus | Requirements | Specific Work | Exit Criterion |
+| --- | --- | --- | --- | --- |
+| 28 Mar | Transport read slice | FR-06, FR-13, FR-14 | Implement the real transport list and detail reads, including active-row filtering and coherent `404` behavior. | `GET /transports` and `GET /transports/{id}` work from PostgreSQL. |
+| 29 Mar | Transport write slice | FR-06, FR-13, FR-14 | Implement create and update for transports with the minimum request validation and persistence checks. | Transport create and update are operational. |
+| 30 Mar | Transport close slice | FR-06, FR-13, FR-14 | Implement logical delete and polish transport validation or mapping gaps found while closing CRUD. | Transport CRUD behaves coherently end to end. |
+| 31 Mar | Vehicle read slice | FR-07, FR-13, FR-14 | Implement vehicle list and detail reads with active-row filtering. | Vehicle reads work from PostgreSQL. |
+| 01 Apr | Vehicle write slice | FR-07, FR-13, FR-14 | Implement vehicle create and update with basic constraints. | Vehicle create and update are operational. |
+| 02 Apr | Vehicle close slice | FR-07, FR-13, FR-14 | Implement logical delete and close the main uniqueness or active-state gaps for vehicles. | Vehicle CRUD behaves coherently end to end. |
+| 03 Apr | Driver read slice | FR-08, FR-13, FR-14 | Implement driver list and detail reads with active-row filtering. | Driver reads work from PostgreSQL. |
+| 04 Apr | Driver write slice | FR-08, FR-13, FR-14 | Implement driver create and update with the minimum constraints needed by the MVP. | Driver create and update are operational. |
+| 05 Apr | Driver close slice | FR-08, FR-13, FR-14 | Implement logical delete and close the main uniqueness or active-state gaps for drivers. | Driver CRUD behaves coherently end to end. |
+| 06 Apr | Assignment rules | FR-09, FR-13 | Implement the core assignment preconditions between transport, vehicle, and driver. | Assignment rules are explicit in code. |
+| 07 Apr | Assignment API flow | FR-09, FR-13 | Implement the API flow that assigns a vehicle and driver to a planned transport. | Valid assignments work through the API. |
+| 08 Apr | Lifecycle transition API | FR-10, FR-13 | Expose transport state transitions through an explicit API flow. | The API can move transport state through valid transitions. |
+| 09 Apr | Lifecycle verification | FR-10, FR-13 | Add tests and business error handling for invalid transitions and terminal states. | Lifecycle rules are verified and clearly rejected when invalid. |
+| 10 Apr | Shipment event create | FR-11, FR-13, FR-14 | Implement shipment event registration tied to a valid transport and the authenticated actor. | Events can be recorded correctly. |
+| 11 Apr | Shipment event history | FR-11, FR-12, FR-14 | Implement chronological shipment event retrieval for a transport. | Event history is returned in the right order. |
+| 12 Apr | Transport filters | FR-12, NFR-10 | Add basic state, assignment, and date filters plus minimal pagination for transport listings. | The main listing is usable beyond raw CRUD. |
 
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 30 Mar | Assignments | Implement the use case for assigning a vehicle and driver to a transport. Block invalid assignments according to state. Test complete creation and assignment flows. | Complete assignment use case and documented manual tests. |
-| 31 Mar | Transport states | Implement the `planned -> in_transit -> delivered/cancelled` transition. Centralize transition validation. Add clear domain errors. | Basic state machine and documented rules. |
-| 01 Apr | Logistics events | Create `ShipmentEvent` to record incidents and changes. Allow events to be associated with the transport. Design a queryable chronological history. | Event creation endpoint and history query. |
-| 02 Apr | Listing and filtering | Implement filters by state, date range, and assignment. Add basic pagination and sorting. Optimize the response contract for listings. | Paginated listing and useful filters for the demo. |
-| 03 Apr | Authentication | Implement JWT authentication. Define minimum roles: `admin` and `operator`. Protect sensitive endpoints. | Functional login and role-based authorization. |
-| 04 Apr | Errors and API contract | Create global exception middleware. Normalize HTTP codes and error `payloads`. Document the most common error responses. | Homogeneous error handling and a more defensible API. |
-| 05 Apr | Structured logging | Integrate structured logging with per-request context. Add `request id` or `correlation id`. Log critical operations without excessive noise. | Useful logs for operation and per-request traceability. |
+## Phase 2 · Identity, Security, and Local Release Candidate
 
-## Week 3 · 06/04 to 12/04
+| Date | Focus | Requirements | Specific Work | Exit Criterion |
+| --- | --- | --- | --- | --- |
+| 13 Apr | First admin bootstrap | FR-02, NFR-05 | Implement and document the bootstrap path that creates the first admin user. | The project has a predictable first-admin path. |
+| 14 Apr | User administration slice I | FR-03, FR-13, FR-14 | Implement admin-only user list, detail, and create behavior without exposing password hashes. | Admin can inspect and create users. |
+| 15 Apr | User administration slice II | FR-03, FR-05, FR-13, FR-14 | Implement role change plus activate/deactivate behavior, including protection against removing the last active admin. | Admin can safely manage user state and role. |
+| 16 Apr | JWT primitives | FR-04, NFR-05 | Add JWT configuration and token generation building blocks. | Authentication primitives are in place. |
+| 17 Apr | Login endpoint | FR-04, FR-13 | Implement login and invalid-credential behavior. | Active users can obtain a valid token. |
+| 18 Apr | Authorization rules | FR-05, NFR-05 | Protect business endpoints and apply the minimum role access matrix. | Protected routes enforce role-based access correctly. |
+| 19 Apr | Validation and error polish | FR-13, NFR-05 | Close the most important validation and error contract gaps left by the CRUD and auth work. | The API contract is more consistent and defensible. |
+| 20 Apr | CRUD regression tests | NFR-08 | Add or extend tests for transport, vehicle, and driver CRUD behavior. | Core CRUD flows have regression coverage. |
+| 21 Apr | Assignment and lifecycle tests | NFR-08 | Add or extend tests for assignment and state transition behavior. | Critical business rules are covered by tests. |
+| 22 Apr | Auth and user-admin tests | NFR-08 | Add tests for login, role enforcement, and user-administration critical paths. | Identity and authorization have minimum automated coverage. |
+| 23 Apr | Docker local verification | NFR-03, NFR-04 | Verify the Dockerfile and current API behavior in local container form. | The current API runs correctly in a container. |
+| 24 Apr | Startup and migration strategy | NFR-02, NFR-03, NFR-06 | Freeze the local startup, schema bootstrap, and first-user strategy in documented form. | Local bootstrap is explicit and reproducible. |
+| 25 Apr | CI baseline | NFR-08, NFR-11 | Create the minimal restore-build-test workflow. | The repository has a working CI baseline. |
 
-### Phase 3 · Local Production
+## Phase 3 · Reach the First Cloud Deployment
 
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 06 Apr | Initial tests | Create unit tests for state rules and validations. Create integration tests for the main endpoints. Configure the test project and stable local execution. | Testing baseline ready and initial core coverage. |
-| 07 Apr | Dockerfile | Create a multi-stage `Dockerfile` for the API. Reduce size and simplify runtime. Verify local image build. | Docker image built and reusable `Dockerfile`. |
-| 08 Apr | Local `docker-compose` | Bring up API and PostgreSQL with `docker-compose`. Pass variables by environment. Ensure that any clone of the repository starts quickly. | Reproducible local environment and fast technical onboarding. |
-| 09 Apr | Migrations and clean startup | Decide on a migration strategy at startup or as a separate script. Verify full recreation from scratch. Document the local bootstrap flow. | Project restartable without ambiguous manual steps. |
-| 10 Apr | Health checks | Create `/health/live` and `/health/ready`. Check database connectivity in readiness. Prepare the app for deployment behind a load balancer. | Useful health checks for ECS and ALB. |
-| 11 Apr | Query performance | Detect critical queries and improve `includes` and `joins`. Create initial indexes on search columns. Measure times before and after. | Main queries optimized and notes for the technical report. |
-| 12 Apr | Input validations | Refine validations with FluentValidation or an equivalent solution. Ensure clear error messages. Avoid inconsistent states from input. | Robust validation and lower coupling in controllers. |
+| Date | Focus | Requirements | Specific Work | Exit Criterion |
+| --- | --- | --- | --- | --- |
+| 26 Apr | Terraform skeleton | NFR-04, NFR-11 | Create the Terraform layout, providers, variables, and outputs baseline. | Infrastructure as code has a usable starting structure. |
+| 27 Apr | VPC and subnets | NFR-04, NFR-11 | Define the minimal VPC and subnet layout for ECS and RDS. | The network baseline exists. |
+| 28 Apr | Security groups and routing | NFR-04, NFR-05, NFR-11 | Define minimum traffic rules and related routing pieces. | The AWS network security baseline exists. |
+| 29 Apr | RDS baseline | NFR-04, NFR-06, NFR-11 | Define PostgreSQL on AWS with pragmatic settings for the project scope. | The cloud database layer is defined. |
+| 30 Apr | ECR and image path | NFR-04, NFR-11 | Define image registry resources and the image publication path. | Container publication to AWS is structured. |
+| 01 May | ECS cluster and task definition | NFR-04, NFR-11 | Define the ECS runtime baseline for the API. | The cloud runtime baseline exists. |
+| 02 May | ALB and service wiring | NFR-04, NFR-11 | Add ALB and ECS service integration using the existing health endpoints. | Traffic can reach the service through AWS. |
+| 03 May | Runtime config and secrets | NFR-05, NFR-11 | Externalize runtime configuration and secrets for the cloud deployment path. | Cloud configuration is not hardcoded. |
+| 04 May | Deploy workflow | NFR-04, NFR-08, NFR-11 | Extend automation to build, publish, and deploy the image in a controlled way. | A repeatable deployment path exists. |
+| 05 May | Smoke checks and recovery note | NFR-06, NFR-11 | Verify health, login, and one business flow after deployment, and document the basic recovery path. | The first cloud deployment is validated. |
 
-## Week 4 · 13/04 to 19/04
+## Phase 4 · Operability, Documentation, and Closure
 
-### Phase 4 · AWS + Terraform
+| Date | Focus | Requirements | Specific Work | Exit Criterion |
+| --- | --- | --- | --- | --- |
+| 06 May | Request correlation and logs | NFR-09 | Add request correlation and make logs useful enough for debugging. | Logs are operationally usable. |
+| 07 May | Metrics and dashboard | NFR-09 | Freeze the minimum metrics set and build a small CloudWatch dashboard. | Runtime visibility is good enough for the project. |
+| 08 May | Alarms and IAM review | NFR-05, NFR-09 | Add a small alarm set and review IAM or secret handling for obvious gaps. | Basic operational and security guardrails exist. |
+| 09 May | Architecture diagrams | NFR-07, NFR-11 | Update the architecture and deployment diagrams to match the implemented system. | Visual documentation matches reality. |
+| 10 May | Requirements traceability | NFR-07 | Map the implemented system back to `docs/Requirements.md` and close scope-story inconsistencies. | Requirements traceability is documented. |
+| 11 May | Evidence and repo polish | NFR-07 | Capture evidence and clean repository-facing documentation, links, and setup notes. | The repository is presentable and evidence is organized. |
+| 12 May | Demo and final verification | NFR-03, NFR-08, NFR-11 | Prepare the demo path and rerun the checks that matter for final delivery, using any remaining time as closure buffer. | The project is ready for submission or defense. |
 
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 13 Apr | Refactor and cleanup | Remove duplication. Review names, responsibilities, and layer separation. Leave the backend ready before the jump to AWS. | Cleaner and more stable code. |
-| 14 Apr | AWS and Terraform preparation | Configure AWS credentials and the Terraform project structure. Define modules or base folders per resource. Prepare variables, outputs, and an initial local backend. | Terraform initialized and baseline ready for IaC. |
-| 15 Apr | Network: VPC and subnets | Create VPC, public subnets, and private subnets with Terraform. Design a minimal but correct scheme for the app and RDS. Tag resources consistently. | Network topology created. |
-| 16 Apr | Network security | Define security groups for ALB, ECS, and RDS. Allow only strictly necessary traffic. Review public exposure and segmentation. | Functional network security baseline. |
-| 17 Apr | Database on AWS | Create an RDS PostgreSQL instance. Configure storage, credentials, and private connectivity. Test the connection from a controlled environment. | RDS deployed and cloud persistence operational. |
-| 18 Apr | Image registry | Create an ECR repository. Tag the image and push the first version manually. Validate authentication from local or CI. | Image flow to AWS working. |
-| 19 Apr | ECS Cluster and Task Definition | Create the ECS cluster. Define the task definition with CPU, memory, variables, and logs. Prepare execution role and task role. | Application ready to run on Fargate. |
+## Weekly Review Checklist
 
-## Week 5 · 20/04 to 26/04
-
-### Phase 5 · CI/CD
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 20 Apr | ECS service and ALB | Create the Application Load Balancer and target group. Deploy ECS Service on Fargate. Verify external access to the API and health checks. | First accessible version on AWS. |
-| 21 Apr | Basic CI | Create a GitHub Actions workflow for `restore`, `build`, and `test`. Fail the pipeline on build or test errors. Optionally publish badges. | Minimal CI operational. |
-| 22 Apr | Docker build and push to ECR | Automate image build in GitHub Actions. Authenticate to AWS and push the image to ECR. Version image tags consistently. | Artifact pipeline completed. |
-| 23 Apr | Terraform plan in CI | Run `terraform fmt`, `validate`, and `plan` from the pipeline. Separate sensitive variables. Save the plan or summary for review. | Automated infrastructure change control. |
-| 24 Apr | Controlled Terraform apply | Define how changes are applied: manual approval or a specific branch. Avoid accidental deployments. Check idempotency. | Safer deployment process. |
-| 25 Apr | Automatic ECS deployment | Update the task definition with the new image. Force a new deployment after merge. Confirm that the new version becomes active. | Functional CD. |
-| 26 Apr | Post-deploy smoke tests | Add basic checks after deployment. Verify login, health, and a minimum business case. Fail the pipeline if the deployment is not usable. | More reliable end-to-end pipeline. |
-
-## Week 6 · 27/04 to 03/05
-
-### Phase 6 · Observability and Security
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 27 Apr | CI/CD consolidation | Review complete pipelines and timings. Clean redundant steps. Document the integration and delivery flow. | CI/CD ready to present. |
-| 28 Apr | Logs in CloudWatch | Send container logs to CloudWatch. Verify format, filters, and search. Ensure the logs are useful to diagnose real failures. | Basic observability in production. |
-| 29 Apr | Operational metrics | Review ECS, ALB, and RDS metrics. Choose the ones that will appear in the demo and technical report. Note relevant indicators: CPU, memory, errors, and latency. | Minimum set of metrics defined. |
-| 30 Apr | Dashboard | Create a dashboard in CloudWatch. Group infrastructure and application metrics. Prepare a clear visualization for the defense. | Operations dashboard available. |
-| 01 May | Alarms | Create alarms for high CPU, errors, or unavailability. Define reasonable thresholds for an academic environment. Test that they trigger in a controlled scenario if possible. | Alerting baseline implemented. |
-| 02 May | Secrets management | Move credentials and secrets to AWS Secrets Manager or SSM. Remove any secret from the code and the pipeline. Document the secure configuration strategy. | Secure configuration externalized. |
-| 03 May | Least-privilege IAM | Review ECS roles, GitHub Actions roles, and Terraform access. Reduce unnecessary permissions. Document the principle of least privilege. | More defensible IAM. |
-
-## Week 7 · 04/05 to 10/05
-
-### Phase 7 · Technical Improvement
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 04 May | General security review | Check exposed ports, sensitive logs, and public configuration. Review authentication and authorization. Close detected security debt. | Acceptable security baseline. |
-| 05 May | OpenTelemetry or basic traces | Instrument the application with traces or equivalent telemetry. Propagate identifiers between logs and requests. Prepare a clear observability story for the technical report. | Telemetry above the minimum. |
-| 06 May | Logging improvement | Add business context: `transport id`, state, and user. Avoid logging unnecessary data. Make a real failure easier to trace. | More useful logs for support. |
-| 07 May | Rate limiting or basic protection | Apply request limiting or equivalent protection. Restrict simple abuse. Document why it is included as an operational measure. | API more robust against basic abuse. |
-| 08 May | Resilience | Introduce controlled `retry` where it makes sense. Review timeouts and dependency handling. Avoid silent failures or unnecessary blocking. | More stable behavior under transient errors. |
-| 09 May | Migration strategy | Define how the schema will evolve in future deployments. Separate migration from application startup if necessary. Write the technical justification. | Clear story of database changes. |
-| 10 May | Backups and recovery | Review RDS snapshots or backups. Document approximate RPO and RTO at an academic level. Explain what is recovered and what is not. | Operational continuity section ready. |
-
-## Week 8 · 11/05 to 17/05
-
-### Phase 8 · Diagrams and Documentation
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 11 May | Simple load testing | Run a light load with `k6`, `hey`, or a similar tool. Measure times and errors in a basic scenario. Extract 2 or 3 useful conclusions, not just numbers. | Measurable results for the technical report. |
-| 12 May | Context diagram | Create C4 level 1 with actors and system. Represent the operating company, API, and relevant external services. Align the diagram with the real scope. | Context diagram ready. |
-| 13 May | Container diagram | Create C4 level 2. Reflect API, database, CI/CD, and key AWS components. Avoid including elements that were not implemented. | Consistent container diagram. |
-| 14 May | AWS deployment diagram | Represent VPC, subnets, ALB, ECS, RDS, and flows. Indicate what is in the public network and what is in the private network. Use the diagram to explain security and operation. | Clear deployment diagram. |
-| 15 May | Pipeline diagram | Draw CI/CD from commit to deployment. Include build, test, image, ECR, Terraform, and ECS. Make the automation clear. | Defensible visual pipeline. |
-| 16 May | Data model | Generate the final data model. Review names, keys, and indexes. Adjust the documentation to what was actually deployed. | Final relational model. |
-| 17 May | Architecture writing | Write the backend architecture section and the reasons for the modular monolith. Explain layers and responsibilities. Justify why microservices were not used. | Architecture section almost complete. |
-
-## Week 9 · 18/05 to 24/05
-
-### Phase 9 · Technical Report
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 18 May | Technical decisions | Write summarized ADRs or a decision table. Justify ECS over EKS, Terraform over console, and RDS over a local alternative. Note real trade-offs. | Decisions section ready. |
-| 19 May | Introduction and objectives | Write the motivation for the TFG. Describe the problem, general objective, and specific objectives. Align the text with the transition to cloud and DevOps. | Opening of the technical report prepared. |
-| 20 May | Functional requirements | Document the implemented use cases. Clearly separate what was done from what was discarded. Add summarized acceptance criteria. | Functional requirements closed. |
-| 21 May | Non-functional requirements | Write availability, security, maintainability, deployment, and observability requirements. Relate them to the implemented decisions. Avoid requirements that cannot be demonstrated. | Defensible non-functional requirements. |
-| 22 May | Backend section | Explain the structure of the API, layers, endpoints, and persistence. Add flow examples. Insert screenshots or small fragments if they add value. | Advanced backend chapter. |
-| 23 May | Cloud section | Explain AWS, network, deployment, and basic operation. Include Terraform as the axis of reproducibility. Relate architecture to security. | Advanced cloud chapter. |
-| 24 May | CI/CD and observability | Write the pipeline, deployment strategy, logging, metrics, and alarms. Include dashboard screenshots if appropriate. Highlight automation and operation. | DevOps chapter almost ready. |
-
-## Week 10 · 25/05 to 31/05
-
-### Phase 10 · Closure
-
-| Date | Focus | Specific Tasks | Expected Result |
-| --- | --- | --- | --- |
-| 25 May | Security and testing | Write authentication, IAM, secrets, unit, integration, and load testing. Summarize results concretely. Avoid excessive promises. | Quality and security chapter completed. |
-| 26 May | Results | Write exactly what was achieved. Compare the initial objective and the final scope. Add metrics or verifiable milestones. | Results section finished. |
-| 27 May | Costs | Estimate the approximate monthly deployment cost. Identify which services have the greatest impact. Explain that the environment is academic and limited. | Cost analysis included. |
-| 28 May | Limitations | Indicate what was not implemented: frontend, advanced scaling, multi-region, and similar items. Turn limitations into technical honesty. Avoid making them seem like conceptual failures. | Well-argued limitations. |
-| 29 May | Future work | Propose realistic improvements: queues, events, more observability, autoscaling, or frontend. Relate them to professional growth toward Cloud Engineer or DevOps. Keep the focus on system continuity. | Coherent future work. |
-| 30 May | Full review | Review the technical report, diagrams, spelling, links, and technical consistency. Check that the repository is clean and presentable. Run the full demo one last time. | Final candidate version. |
-| 31 May | Final delivery | Prepare ZIP or repository, technical report, presentation, and demo script. Verify screenshots, commands, credentials, and defense materials. Close the final delivery checklist. | Project ready to deliver and defend. |
-
-## Weekly Control Checklist
-
-| # | Control | What to Validate |
+| # | Review Point | What Must Be True |
 | --- | --- | --- |
-| 1 | Clean build | The solution builds without strange manual steps. |
-| 2 | Runnable tests | Existing tests run locally and in CI. |
-| 3 | Reproducible environment | Another team could start the project with clear instructions. |
-| 4 | Versioned infrastructure | AWS changes go through Terraform. |
-| 5 | Operational demo | The functionality implemented that week can be shown in 5 minutes. |
-| 6 | Up-to-date documentation | README, diagrams, and notes are not pushed to the end. |
+| 1 | Even daily load | Each day still fits roughly into one hour. |
+| 2 | Clean build | The solution builds without hidden local fixes. |
+| 3 | Runnable tests | Existing automated tests pass locally and in CI. |
+| 4 | Reproducible startup | Another machine can run the current phase with documented steps. |
+| 5 | Requirements traceability | Implemented work still maps back to `docs/Requirements.md`. |
+| 6 | Scope discipline | No extra feature work delays deployment-critical items. |
 
-## Expected Result by May 31
+## Target End State
 
-Functional backend, deployed on AWS, infrastructure defined with Terraform, operational CI/CD pipeline, visible logs and metrics, technical report written, and defense material prepared.
+By May 12, 2026, the project should have a small transport backend with a closed local MVP, basic user administration, a first AWS deployment path through Terraform, minimum useful automation and observability, and repository documentation aligned with the delivered system.

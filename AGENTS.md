@@ -11,7 +11,8 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - Treat this repository as a backend-first academic/professional project with strong emphasis on cloud architecture, DevOps, and defensible engineering decisions.
 - Prefer pragmatic, maintainable solutions over premature complexity.
 - Keep the project small in functional scope and deep in operational quality.
-- Preserve consistency with the documented MVP and roadmap unless the user explicitly changes scope.
+- Keep the functional scope intentionally small and orient decisions toward a credible AWS deployment, not feature breadth.
+- Preserve consistency with the documented requirements and roadmap unless the user explicitly changes scope.
 
 ## User Preferences
 
@@ -25,8 +26,10 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 
 - Update `CONTEXT.md` when relevant project context changes during the work.
 - Do not overload `AGENTS.md` with temporary or rapidly changing notes.
+- `docs/Requirements.md` is the canonical requirements baseline.
+- `docs/Roadmap.md` is the canonical daily execution plan and should preserve completed history while replanning pending work.
 - Keep `README.md` focused on repository-facing documentation, setup, and high-level project description.
-- Keep roadmap and backlog documents aligned with actual project decisions when they materially change.
+- Keep requirements and roadmap documents aligned with actual project decisions when they materially change.
 
 ## Engineering Rules
 
@@ -51,4 +54,3 @@ Before substantial work:
 1. Read `AGENTS.md`.
 2. Read `CONTEXT.md`.
 3. Check `README.md` and relevant files only if needed for the current task.
-
