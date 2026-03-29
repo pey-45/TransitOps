@@ -8,7 +8,14 @@ public sealed class ShipmentEventConfiguration : IEntityTypeConfiguration<Shipme
 {
     public void Configure(EntityTypeBuilder<ShipmentEvent> builder)
     {
-        builder.ToTable("shipment_event");
+        builder.ToTable(
+            "shipment_event",
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "ck_shipment_event_type_valid",
+                    "\"event_type\" IN (0, 1, 2, 3, 4, 5, 6)");
+            });
 
         builder.HasKey(shipmentEvent => shipmentEvent.Id);
 
@@ -26,7 +33,8 @@ public sealed class ShipmentEventConfiguration : IEntityTypeConfiguration<Shipme
 
         builder.Property(shipmentEvent => shipmentEvent.EventType)
             .HasColumnName("event_type")
-            .HasColumnType("shipment_event_type")
+            .HasConversion<short>()
+            .HasColumnType("smallint")
             .IsRequired();
 
         builder.Property(shipmentEvent => shipmentEvent.EventDate)

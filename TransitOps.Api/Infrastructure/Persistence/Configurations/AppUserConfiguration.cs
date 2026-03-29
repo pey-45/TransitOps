@@ -8,7 +8,14 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 {
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
-        builder.ToTable("app_user");
+        builder.ToTable(
+            "app_user",
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "ck_app_user_role_valid",
+                    "\"user_role\" IN (0, 1)");
+            });
 
         builder.HasKey(appUser => appUser.Id);
 
@@ -32,7 +39,8 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 
         builder.Property(appUser => appUser.UserRole)
             .HasColumnName("user_role")
-            .HasColumnType("user_role")
+            .HasConversion<short>()
+            .HasColumnType("smallint")
             .IsRequired();
 
         builder.Property(appUser => appUser.IsActive)

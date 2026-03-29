@@ -6,7 +6,7 @@ Translate the requirements into a daily plan with consistent workload. Each day 
 
 ## Planning Rules
 
-- Dates through March 27, 2026 are treated as completed historical baseline.
+- Dates through March 29, 2026 are treated as completed historical baseline.
 - The target daily load is about `45-75 minutes`.
 - A daily slice should normally include implementation or configuration, a quick verification pass, and a small documentation/context update if something material changed.
 - If a task cannot reasonably fit into about one hour, it should be split before execution.
@@ -14,7 +14,7 @@ Translate the requirements into a daily plan with consistent workload. Each day 
 
 ## Estimated Remaining Effort
 
-- Estimated remaining effort from March 28 onward: about `46 hours`.
+- Estimated remaining effort from March 30 onward: about `44 hours`.
 - Planned end date for the current roadmap: `May 12, 2026`.
 - This is still shorter than the earlier longer plans, but now includes explicit user-administration work that the stronger requirements specification demands.
 
@@ -26,13 +26,13 @@ Translate the requirements into a daily plan with consistent workload. Each day 
 | 25 Mar | Completed | Domain and PostgreSQL schema | Main entities, transport states, and initial schema script are already defined. |
 | 26 Mar | Completed | API bootstrap and common contract | The API starts, common response/error structure exists, and controllers are in place. |
 | 27 Mar | Completed | EF Core persistence baseline | `TransitOpsDbContext`, entity configurations, baseline migration, and DB-backed readiness are implemented. |
+| 28 Mar | Completed | Transport read slice | `GET /transports` and `GET /transports/{id}` now read active rows from PostgreSQL and return coherent `404` behavior. |
+| 29 Mar | Completed | Transport write slice | Transport create and update now persist through EF Core with validation and duplicate-reference checks. |
 
 ## Phase 1 · Close the Local MVP Core
 
 | Date | Focus | Requirements | Specific Work | Exit Criterion |
 | --- | --- | --- | --- | --- |
-| 28 Mar | Transport read slice | FR-06, FR-13, FR-14 | Implement the real transport list and detail reads, including active-row filtering and coherent `404` behavior. | `GET /transports` and `GET /transports/{id}` work from PostgreSQL. |
-| 29 Mar | Transport write slice | FR-06, FR-13, FR-14 | Implement create and update for transports with the minimum request validation and persistence checks. | Transport create and update are operational. |
 | 30 Mar | Transport close slice | FR-06, FR-13, FR-14 | Implement logical delete and polish transport validation or mapping gaps found while closing CRUD. | Transport CRUD behaves coherently end to end. |
 | 31 Mar | Vehicle read slice | FR-07, FR-13, FR-14 | Implement vehicle list and detail reads with active-row filtering. | Vehicle reads work from PostgreSQL. |
 | 01 Apr | Vehicle write slice | FR-07, FR-13, FR-14 | Implement vehicle create and update with basic constraints. | Vehicle create and update are operational. |

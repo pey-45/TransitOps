@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TransitOps.Api.Infrastructure.Persistence;
@@ -11,15 +12,20 @@ using TransitOps.Api.Infrastructure.Persistence;
 namespace TransitOps.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TransitOpsDbContext))]
-    partial class TransitOpsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329220315_QualifyEnumColumnTypes")]
+    partial class QualifyEnumColumnTypes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "public", "shipment_event_type", new[] { "created", "assigned", "departed", "checkpoint", "incident", "delivered", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "public", "transport_status", new[] { "planned", "in_transit", "delivered", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "public", "user_role", new[] { "admin", "operator" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pgcrypto");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -64,8 +70,8 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<short>("UserRole")
-                        .HasColumnType("smallint")
+                    b.Property<int>("UserRole")
+                        .HasColumnType("public.user_role")
                         .HasColumnName("user_role");
 
                     b.Property<string>("Username")
@@ -89,10 +95,7 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_app_user_username_active")
                         .HasFilter("\"deleted_at\" IS NULL");
 
-                    b.ToTable("app_user", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_app_user_role_valid", "\"user_role\" IN (0, 1)");
-                        });
+                    b.ToTable("app_user", (string)null);
                 });
 
             modelBuilder.Entity("TransitOps.Api.Domain.Entities.Driver", b =>
@@ -211,8 +214,8 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp")
                         .HasColumnName("event_date");
 
-                    b.Property<short>("EventType")
-                        .HasColumnType("smallint")
+                    b.Property<int>("EventType")
+                        .HasColumnType("public.shipment_event_type")
                         .HasColumnName("event_type");
 
                     b.Property<string>("Location")
@@ -242,10 +245,7 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                     b.HasIndex("TransportId")
                         .HasDatabaseName("ix_shipment_event_transport_id");
 
-                    b.ToTable("shipment_event", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_shipment_event_type_valid", "\"event_type\" IN (0, 1, 2, 3, 4, 5, 6)");
-                        });
+                    b.ToTable("shipment_event", (string)null);
                 });
 
             modelBuilder.Entity("TransitOps.Api.Domain.Entities.Transport", b =>
@@ -308,8 +308,8 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("reference");
 
-                    b.Property<short>("Status")
-                        .HasColumnType("smallint")
+                    b.Property<int>("Status")
+                        .HasColumnType("public.transport_status")
                         .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -346,8 +346,6 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_transport_actual_dates", "\"actual_pickup_at\" IS NULL OR \"actual_delivery_at\" IS NULL OR \"actual_delivery_at\" >= \"actual_pickup_at\"");
 
                             t.HasCheckConstraint("ck_transport_planned_dates", "\"planned_delivery_at\" IS NULL OR \"planned_delivery_at\" >= \"planned_pickup_at\"");
-
-                            t.HasCheckConstraint("ck_transport_status_valid", "\"status\" IN (0, 1, 2, 3)");
                         });
                 });
 

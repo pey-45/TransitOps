@@ -19,6 +19,10 @@ public sealed class TransportConfiguration : IEntityTypeConfiguration<Transport>
                 tableBuilder.HasCheckConstraint(
                     "ck_transport_actual_dates",
                     "\"actual_pickup_at\" IS NULL OR \"actual_delivery_at\" IS NULL OR \"actual_delivery_at\" >= \"actual_pickup_at\"");
+
+                tableBuilder.HasCheckConstraint(
+                    "ck_transport_status_valid",
+                    "\"status\" IN (0, 1, 2, 3)");
             });
 
         builder.HasKey(transport => transport.Id);
@@ -64,7 +68,8 @@ public sealed class TransportConfiguration : IEntityTypeConfiguration<Transport>
 
         builder.Property(transport => transport.Status)
             .HasColumnName("status")
-            .HasColumnType("transport_status")
+            .HasConversion<short>()
+            .HasColumnType("smallint")
             .IsRequired();
 
         builder.Property(transport => transport.VehicleId)

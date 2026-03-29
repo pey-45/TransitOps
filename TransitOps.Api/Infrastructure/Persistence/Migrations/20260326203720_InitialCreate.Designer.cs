@@ -24,12 +24,9 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
                 .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "shipment_event_type", new[] { "assigned", "cancelled", "checkpoint", "created", "delivered", "departed", "incident" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "shipment_event_type", "shipment_event_type", new[] { "created", "assigned", "departed", "checkpoint", "incident", "delivered", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "transport_status", new[] { "cancelled", "delivered", "in_transit", "planned" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "transport_status", "transport_status", new[] { "planned", "in_transit", "delivered", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "shipment_event_type", new[] { "created", "assigned", "departed", "checkpoint", "incident", "delivered", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "transport_status", new[] { "planned", "in_transit", "delivered", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "user_role", new[] { "admin", "operator" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "user_role", "user_role", new[] { "admin", "operator" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pgcrypto");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 

@@ -1,11 +1,112 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TransitOps.Api.Domain.Entities;
+using TransitOps.Api.Domain.Enums;
+using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Tests;
 
 public sealed class TransportEndpointsTests
 {
+    [Fact]
+    public async Task Create_ReturnsCreatedAndPersistsTransport_WhenRequestIsValid()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/transports",
+            CreateTransportRequest(reference: "TR-200"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Headers.Location);
+
+        var payload = await ReadJsonAsync(response);
+        var transportId = payload["data"]?["id"]?.GetValue<string>();
+
+        Assert.NotNull(transportId);
+        Assert.Equal("TR-200", payload["data"]?["reference"]?.GetValue<string>());
+        Assert.Equal("Madrid", payload["data"]?["origin"]?.GetValue<string>());
+        Assert.Equal("Barcelona", payload["data"]?["destination"]?.GetValue<string>());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var transport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal(Guid.Parse(transportId!), transport.Id);
+        Assert.Equal(TransportStatus.Planned, transport.Status);
+        Assert.Null(transport.VehicleId);
+        Assert.Null(transport.DriverId);
+        Assert.Equal("High-priority route", transport.Description);
+        Assert.Equal(DateTimeKind.Unspecified, transport.CreatedAt.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, transport.UpdatedAt.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, transport.PlannedPickupAt.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, transport.PlannedDeliveryAt!.Value.Kind);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsConflict_WhenReferenceAlreadyExistsOnActiveTransport()
+    {
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(CreateTransport(
+                reference: "TR-201",
+                plannedPickupAt: new DateTime(2026, 3, 29, 8, 0, 0, DateTimeKind.Utc)));
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/transports",
+            CreateTransportRequest(reference: "TR-201"));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_reference_conflict", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenPlannedDeliveryPrecedesPickup()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/transports",
+            CreateTransportRequest(
+                reference: "TR-202",
+                plannedPickupAt: new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+                plannedDeliveryAt: new DateTime(2026, 4, 1, 8, 0, 0, DateTimeKind.Utc)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("validation_error", payload["error"]?["code"]?.GetValue<string>());
+        Assert.NotNull(payload["error"]?["details"]?["PlannedDeliveryAt"]);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenPlannedPickupIsMissing()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/transports",
+            CreateTransportRequest(
+                reference: "TR-202A",
+                plannedPickupAt: DateTime.MinValue));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("validation_error", payload["error"]?["code"]?.GetValue<string>());
+        Assert.NotNull(payload["error"]?["details"]?["PlannedPickupAt"]);
+    }
+
     [Fact]
     public async Task GetAll_ReturnsOnlyActiveTransports_OrderedByPickupDateThenReference()
     {
@@ -37,6 +138,91 @@ public sealed class TransportEndpointsTests
         Assert.Equal(firstTransport.Reference, transports[0]?["reference"]?.GetValue<string>());
         Assert.Equal(secondTransport.Reference, transports[1]?["reference"]?.GetValue<string>());
         Assert.DoesNotContain(transports, node => node?["reference"]?.GetValue<string>() == deletedTransport.Reference);
+    }
+
+    [Fact]
+    public async Task Update_ReturnsUpdatedTransport_WhenTransportExists()
+    {
+        var transport = CreateTransport(
+            reference: "TR-300",
+            plannedPickupAt: new DateTime(2026, 4, 2, 8, 0, 0, DateTimeKind.Utc),
+            status: TransportStatus.InTransit);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}",
+            CreateTransportRequest(
+                reference: "TR-300-UPDATED",
+                origin: "Seville",
+                destination: "Valencia",
+                description: "Updated route",
+                plannedPickupAt: new DateTime(2026, 4, 2, 9, 0, 0, DateTimeKind.Utc),
+                plannedDeliveryAt: new DateTime(2026, 4, 2, 18, 0, 0, DateTimeKind.Utc)));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("TR-300-UPDATED", payload["data"]?["reference"]?.GetValue<string>());
+        Assert.Equal("Seville", payload["data"]?["origin"]?.GetValue<string>());
+        Assert.Equal("Valencia", payload["data"]?["destination"]?.GetValue<string>());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal("TR-300-UPDATED", storedTransport.Reference);
+        Assert.Equal("Updated route", storedTransport.Description);
+        Assert.Equal(TransportStatus.InTransit, storedTransport.Status);
+        Assert.Equal(DateTimeKind.Unspecified, storedTransport.PlannedPickupAt.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, storedTransport.PlannedDeliveryAt!.Value.Kind);
+        Assert.Equal(DateTimeKind.Unspecified, storedTransport.UpdatedAt.Kind);
+    }
+
+    [Fact]
+    public async Task Update_ReturnsNotFound_WhenTransportDoesNotExist()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{Guid.NewGuid()}",
+            CreateTransportRequest(reference: "TR-301"));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_not_found", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Update_ReturnsConflict_WhenReferenceAlreadyBelongsToAnotherActiveTransport()
+    {
+        var existingTransport = CreateTransport(
+            reference: "TR-302",
+            plannedPickupAt: new DateTime(2026, 4, 3, 8, 0, 0, DateTimeKind.Utc));
+        var targetTransport = CreateTransport(
+            reference: "TR-303",
+            plannedPickupAt: new DateTime(2026, 4, 3, 9, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.AddRange(existingTransport, targetTransport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{targetTransport.Id}",
+            CreateTransportRequest(reference: "TR-302"));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_reference_conflict", payload["error"]?["code"]?.GetValue<string>());
     }
 
     [Fact]
@@ -105,9 +291,10 @@ public sealed class TransportEndpointsTests
         string reference,
         DateTime plannedPickupAt,
         string? description = null,
-        DateTime? deletedAt = null)
+        DateTime? deletedAt = null,
+        TransportStatus status = TransportStatus.Planned)
     {
-        return new Transport
+        return new Transport(status)
         {
             Reference = reference,
             Description = description,
@@ -118,6 +305,28 @@ public sealed class TransportEndpointsTests
             CreatedAt = plannedPickupAt.AddDays(-1),
             UpdatedAt = plannedPickupAt.AddHours(-1),
             DeletedAt = deletedAt
+        };
+    }
+
+    private static object CreateTransportRequest(
+        string reference,
+        string origin = "Madrid",
+        string destination = "Barcelona",
+        string? description = "High-priority route",
+        DateTime? plannedPickupAt = null,
+        DateTime? plannedDeliveryAt = null)
+    {
+        var pickupAt = plannedPickupAt ?? new DateTime(2026, 4, 1, 8, 0, 0, DateTimeKind.Utc);
+        var deliveryAt = plannedDeliveryAt ?? pickupAt.AddHours(6);
+
+        return new
+        {
+            reference,
+            description,
+            origin,
+            destination,
+            plannedPickupAt = pickupAt,
+            plannedDeliveryAt = deliveryAt
         };
     }
 

@@ -13,12 +13,9 @@ namespace TransitOps.Api.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:Enum:shipment_event_type", "assigned,cancelled,checkpoint,created,delivered,departed,incident")
-                .Annotation("Npgsql:Enum:shipment_event_type.shipment_event_type", "created,assigned,departed,checkpoint,incident,delivered,cancelled")
-                .Annotation("Npgsql:Enum:transport_status", "cancelled,delivered,in_transit,planned")
-                .Annotation("Npgsql:Enum:transport_status.transport_status", "planned,in_transit,delivered,cancelled")
+                .Annotation("Npgsql:Enum:shipment_event_type", "created,assigned,departed,checkpoint,incident,delivered,cancelled")
+                .Annotation("Npgsql:Enum:transport_status", "planned,in_transit,delivered,cancelled")
                 .Annotation("Npgsql:Enum:user_role", "admin,operator")
-                .Annotation("Npgsql:Enum:user_role.user_role", "admin,operator")
                 .Annotation("Npgsql:PostgresExtension:pgcrypto", ",,");
 
             migrationBuilder.Sql(

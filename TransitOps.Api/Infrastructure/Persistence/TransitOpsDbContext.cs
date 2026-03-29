@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Domain.Entities;
-using TransitOps.Api.Domain.Enums;
 using TransitOps.Api.Infrastructure.Persistence.Configurations;
 
 namespace TransitOps.Api.Infrastructure.Persistence;
@@ -25,9 +24,6 @@ public sealed class TransitOpsDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pgcrypto");
-        modelBuilder.HasPostgresEnum<TransportStatus>("transport_status");
-        modelBuilder.HasPostgresEnum<ShipmentEventType>("shipment_event_type");
-        modelBuilder.HasPostgresEnum<UserRole>("user_role");
 
         modelBuilder.ApplyConfiguration(new AppUserConfiguration());
         modelBuilder.ApplyConfiguration(new DriverConfiguration());

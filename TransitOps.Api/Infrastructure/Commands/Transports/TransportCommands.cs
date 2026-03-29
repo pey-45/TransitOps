@@ -1,0 +1,126 @@
+using Microsoft.EntityFrameworkCore;
+using TransitOps.Api.Common;
+using TransitOps.Api.Application.Commands.Transports;
+using TransitOps.Api.Contracts.Requests.Transports;
+using TransitOps.Api.Contracts.Responses.Transports;
+using TransitOps.Api.Domain.Entities;
+using TransitOps.Api.Domain.Enums;
+using TransitOps.Api.Errors;
+using TransitOps.Api.Infrastructure.Persistence;
+
+namespace TransitOps.Api.Infrastructure.Commands.Transports;
+
+public sealed class TransportCommands : ITransportCommands
+{
+    private readonly TransitOpsDbContext _dbContext;
+
+    public TransportCommands(TransitOpsDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<TransportDetailResponse> CreateAsync(
+        UpsertTransportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var reference = request.Reference.Trim();
+        await EnsureReferenceIsUniqueAsync(reference, excludedTransportId: null, cancellationToken);
+
+        var transport = new Transport
+        {
+            Reference = reference,
+            Description = NormalizeOptionalText(request.Description),
+            Origin = request.Origin.Trim(),
+            Destination = request.Destination.Trim(),
+            PlannedPickupAt = DateTimePersistence.AsUnspecified(request.PlannedPickupAt),
+            PlannedDeliveryAt = DateTimePersistence.AsUnspecified(request.PlannedDeliveryAt)
+        };
+
+        _dbContext.Transports.Add(transport);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDetailResponse(transport);
+    }
+
+    public async Task<TransportDetailResponse> UpdateAsync(
+        Guid id,
+        UpsertTransportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var transport = await _dbContext.Transports
+            .SingleOrDefaultAsync(
+                existingTransport => existingTransport.Id == id && existingTransport.DeletedAt == null,
+                cancellationToken);
+
+        if (transport is null)
+        {
+            throw new ResourceNotFoundException("transport_not_found", $"Transport '{id}' was not found.");
+        }
+
+        var reference = request.Reference.Trim();
+        await EnsureReferenceIsUniqueAsync(reference, transport.Id, cancellationToken);
+
+        transport.Reference = reference;
+        transport.Description = NormalizeOptionalText(request.Description);
+        transport.Origin = request.Origin.Trim();
+        transport.Destination = request.Destination.Trim();
+        transport.PlannedPickupAt = DateTimePersistence.AsUnspecified(request.PlannedPickupAt);
+        transport.PlannedDeliveryAt = DateTimePersistence.AsUnspecified(request.PlannedDeliveryAt);
+        transport.UpdatedAt = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDetailResponse(transport);
+    }
+
+    private async Task EnsureReferenceIsUniqueAsync(
+        string reference,
+        Guid? excludedTransportId,
+        CancellationToken cancellationToken)
+    {
+        var existingTransportQuery = _dbContext.Transports
+            .Where(transport => transport.DeletedAt == null && transport.Reference == reference);
+
+        if (excludedTransportId.HasValue)
+        {
+            existingTransportQuery = existingTransportQuery
+                .Where(transport => transport.Id != excludedTransportId.Value);
+        }
+
+        var referenceAlreadyExists = await existingTransportQuery.AnyAsync(cancellationToken);
+
+        if (referenceAlreadyExists)
+        {
+            throw new ConflictException(
+                "transport_reference_conflict",
+                $"Transport reference '{reference}' already exists.");
+        }
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+    }
+
+    private static TransportDetailResponse MapToDetailResponse(Transport transport)
+    {
+        return new TransportDetailResponse(
+            transport.Id,
+            transport.Reference,
+            transport.Description,
+            transport.Origin,
+            transport.Destination,
+            transport.PlannedPickupAt,
+            transport.PlannedDeliveryAt,
+            transport.ActualPickupAt,
+            transport.ActualDeliveryAt,
+            transport.Status,
+            transport.VehicleId,
+            transport.DriverId,
+            transport.CreatedAt,
+            transport.UpdatedAt,
+            transport.DeletedAt);
+    }
+}

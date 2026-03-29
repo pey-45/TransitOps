@@ -23,6 +23,36 @@ Accept: application/json
 
 ###
 
+POST {{TransitOps.Api_HostAddress}}/api/v1/transports
+Accept: application/json
+Content-Type: application/json
+
+{
+  "reference": "TR-200",
+  "description": "High-priority route",
+  "origin": "Madrid",
+  "destination": "Barcelona",
+  "plannedPickupAt": "2026-04-01T08:00:00Z",
+  "plannedDeliveryAt": "2026-04-01T14:00:00Z"
+}
+
+###
+
+PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "reference": "TR-200-UPDATED",
+  "description": "Updated route",
+  "origin": "Seville",
+  "destination": "Valencia",
+  "plannedPickupAt": "2026-04-02T09:00:00Z",
+  "plannedDeliveryAt": "2026-04-02T18:00:00Z"
+}
+
+###
+
 GET {{TransitOps.Api_HostAddress}}/api/v1/vehicles
 Accept: application/json
 

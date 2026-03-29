@@ -1,4 +1,5 @@
 using TransitOps.Api.Domain.Common;
+using TransitOps.Api.Common;
 
 namespace TransitOps.Api.Domain.Entities;
 
@@ -18,9 +19,9 @@ public sealed class Vehicle : Entity
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
 
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
 
     public DateTime? DeletedAt { get; set; }
 }

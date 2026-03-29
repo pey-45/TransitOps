@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using TransitOps.Api.Domain.Enums;
 
 namespace TransitOps.Api.Infrastructure.Persistence;
 
@@ -20,15 +19,7 @@ public sealed class TransitOpsDbContextFactory : IDesignTimeDbContextFactory<Tra
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
 
         var optionsBuilder = new DbContextOptionsBuilder<TransitOpsDbContext>();
-
-        optionsBuilder.UseNpgsql(
-            connectionString,
-            npgsqlOptions =>
-            {
-                npgsqlOptions.MapEnum<TransportStatus>("transport_status");
-                npgsqlOptions.MapEnum<ShipmentEventType>("shipment_event_type");
-                npgsqlOptions.MapEnum<UserRole>("user_role");
-            });
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new TransitOpsDbContext(optionsBuilder.Options);
     }
