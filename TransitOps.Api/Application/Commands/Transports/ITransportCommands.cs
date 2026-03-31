@@ -13,4 +13,8 @@ public interface ITransportCommands
         Guid id,
         UpsertTransportRequest request,
         CancellationToken cancellationToken);
+
+    Task DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken);
 }

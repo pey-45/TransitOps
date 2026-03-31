@@ -226,6 +226,78 @@ public sealed class TransportEndpointsTests
     }
 
     [Fact]
+    public async Task Delete_ReturnsNoContent_AndSoftDeletesTransport_WhenTransportExists()
+    {
+        var plannedPickupAt = new DateTime(2026, 4, 4, 8, 0, 0, DateTimeKind.Utc);
+        var transport = CreateTransport(
+            reference: "TR-304",
+            plannedPickupAt: plannedPickupAt);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/transports/{transport.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.NotNull(storedTransport.DeletedAt);
+        Assert.Equal(DateTimeKind.Unspecified, storedTransport.DeletedAt!.Value.Kind);
+        Assert.Equal(storedTransport.DeletedAt.Value, storedTransport.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNotFound_WhenTransportDoesNotExist()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/transports/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_not_found", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Create_AllowsReusingReference_WhenPreviousTransportWasSoftDeleted()
+    {
+        var deletedTransport = CreateTransport(
+            reference: "TR-305",
+            plannedPickupAt: new DateTime(2026, 4, 5, 8, 0, 0, DateTimeKind.Utc),
+            deletedAt: new DateTime(2026, 4, 5, 12, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(deletedTransport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/transports",
+            CreateTransportRequest(reference: "TR-305"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var transports = await dbContext.Transports
+            .OrderBy(transport => transport.CreatedAt)
+            .ToListAsync();
+
+        Assert.Equal(2, transports.Count);
+        Assert.Equal(1, transports.Count(transport => transport.Reference == "TR-305" && transport.DeletedAt is null));
+        Assert.Equal(1, transports.Count(transport => transport.Reference == "TR-305" && transport.DeletedAt is not null));
+    }
+
+    [Fact]
     public async Task GetById_ReturnsTransportDetail_WhenTransportExists()
     {
         var transport = CreateTransport(

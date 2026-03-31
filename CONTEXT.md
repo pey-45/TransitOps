@@ -9,8 +9,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Repository Snapshot
 
 - Project: `TransitOps`
-- Reference date: 2026-03-30
-- Repository status: local backend baseline established, transport read/write slice operational on PostgreSQL with numeric enum persistence, broader CRUD/auth/cloud rollout still pending
+- Reference date: 2026-03-31
+- Repository status: local backend baseline established, transport CRUD slice operational on PostgreSQL with numeric enum persistence, broader CRUD/auth/cloud rollout still pending
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -24,7 +24,7 @@ It should contain the current state of the project, recent decisions, relevant a
 - Enum-like fields (`transport.status`, `shipment_event.event_type`, `app_user.user_role`) now use `smallint` columns with explicit check constraints instead of native PostgreSQL enums, preserving the .NET enums in code while avoiding provider-specific runtime friction.
 - The API readiness endpoint now validates real PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()`.
 - The functional MVP is not implemented yet, but the API surface, persistence layer, and simplified internal folder structure now support the next CRUD and command/query steps without reworking the baseline.
-- Transport create and update are now implemented on top of `TransitOpsDbContext`, using explicit validation and active-reference conflict checks, so the transport slice has list/detail/create/update already working against PostgreSQL.
+- Transport create, update, and logical delete are now implemented on top of `TransitOpsDbContext`, using explicit validation and active-reference conflict checks, so the transport slice has coherent list/detail/create/update/delete behavior against PostgreSQL.
 - Planning is now anchored in `docs/Requirements.md` for scope and acceptance, and `docs/Roadmap.md` for daily execution from the real repository state as of March 29, 2026.
 - The project still follows a local-MVP-first sequence, but the planning emphasis now makes the cloud rollout start immediately after the minimum usable business flows are closed.
 - The requirements specification now explicitly defines user management, role permissions for `admin` and `operator`, main operational flows, and stronger acceptance detail.
@@ -103,12 +103,13 @@ These are planned later and should not distort near-term implementation prioriti
 - 2026-03-30: Removed the two empty enum-alignment migrations (`SyncEnumMappings` and `AlignPublicEnumModel`) plus their designers, leaving only the baseline migration and the real enum column-type qualification migration in the repository.
 - 2026-03-30: Confirmed that with the current `Npgsql.EntityFrameworkCore.PostgreSQL` `10.0.1` provider, EF Core still sends `Transport.Status` as an integer on PostgreSQL inserts despite the enum registrations; transport creation therefore intentionally keeps the targeted SQL insert workaround for `status` until the provider/runtime mapping issue is resolved with a validated alternative.
 - 2026-03-30: Replaced native PostgreSQL enums with `smallint` columns plus explicit check constraints for `transport.status`, `shipment_event.event_type`, and `app_user.user_role`; the new migration preserves existing rows with `USING CASE`, drops the old enum types after conversion, removes the transport SQL insert workaround, and leaves EF Core using its normal enum-to-number mapping.
+- 2026-03-31: Implemented the March 30 transport close slice: `DELETE /api/v1/transports/{id}` now performs logical deletion through `TransitOpsDbContext`, returns `404` for missing or already deleted rows, and transport references can be reused after soft delete as intended by the active-row uniqueness rule.
 
 ## Open Notes
 
-- Persistence is now wired at infrastructure level. Transport list/detail/create/update are database-backed, but transport logical delete plus the remaining CRUD/query flows for vehicles, drivers, shipment events, and users are still pending.
+- Persistence is now wired at infrastructure level. Transport list/detail/create/update/logical delete are database-backed, but the remaining CRUD/query flows for vehicles, drivers, shipment events, and users are still pending.
 - Legacy local PostgreSQL volumes created from the retired SQL-bootstrap flow should be reset before using the new migrations-managed Docker startup.
 - `GET /api/v1/health/ready` already confirms whether the API can connect to PostgreSQL in the current environment.
 - Manual sample-data scripts under `scripts/postgres/manual/` are now aligned with the `smallint` enum mapping strategy used by the live schema.
-- Roadmap entries through 2026-03-29 should be treated as completed history, while remaining dates in `docs/Roadmap.md` are the actionable one-hour-per-day plan.
+- Roadmap entries through 2026-03-30 should be treated as completed history, while remaining dates in `docs/Roadmap.md` are the actionable one-hour-per-day plan.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.

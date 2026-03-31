@@ -4,7 +4,7 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: March 30, 2026.
+Reference date: March 31, 2026.
 
 The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
@@ -13,7 +13,7 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed transport reads plus transport create/update and health endpoints already work, while transport logical delete, the remaining CRUD/query behavior, authentication, and the cloud rollout are still pending. Vehicle, driver, and shipment-event controllers still exist only as minimal placeholder HTTP surfaces and are not yet backed by real persistence flows. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed transport CRUD plus health endpoints already work, while the remaining CRUD/query behavior, authentication, and the cloud rollout are still pending. Vehicle, driver, and shipment-event controllers still exist only as minimal placeholder HTTP surfaces and are not yet backed by real persistence flows. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
 
 Planning has now been restructured around an explicit requirements specification and a daily roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
@@ -123,7 +123,7 @@ The repository already includes:
 - `docker-compose.yml` for local API + PostgreSQL startup;
 - EF Core PostgreSQL persistence under `TransitOps.Api/Infrastructure/Persistence`;
 - a migrations-managed schema under `TransitOps.Api/Infrastructure/Persistence/Migrations`, including the baseline setup plus follow-up alignment and enum-simplification migrations;
-- implemented `GET /api/v1/health/live`, `GET /api/v1/health/ready`, `GET /api/v1/transports`, `GET /api/v1/transports/{id}`, `POST /api/v1/transports`, and `PUT /api/v1/transports/{id}`;
+- implemented `GET /api/v1/health/live`, `GET /api/v1/health/ready`, `GET /api/v1/transports`, `GET /api/v1/transports/{id}`, `POST /api/v1/transports`, `PUT /api/v1/transports/{id}`, and `DELETE /api/v1/transports/{id}`;
 - placeholder `GET /api/v1/vehicles`, `GET /api/v1/vehicles/{id}`, `GET /api/v1/drivers`, `GET /api/v1/drivers/{id}`, and `GET /api/v1/transports/{transportId}/shipment-events` endpoints that still need real database-backed behavior;
 - integration tests for the implemented health and transport read/write endpoints;
 - manual request artifacts in `TransitOps.Api/TransitOps.Api.http` and `TransitOps.Api/TransitOps.Api.postman_collection.json`;
@@ -204,7 +204,7 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Next Milestones
 
-1. Close transport logical delete and replace the remaining placeholder controller behavior for vehicles, drivers, and shipment events with real CRUD/query flows on top of `TransitOpsDbContext`.
+1. Replace the remaining placeholder controller behavior for vehicles, drivers, and shipment events with real CRUD/query flows on top of `TransitOpsDbContext`.
 2. Introduce user bootstrap, basic admin user management, JWT authentication, and role-based authorization.
 3. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
 4. Move immediately into Terraform, AWS runtime, and delivery automation once the local MVP core is closed.
@@ -219,4 +219,4 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Verification Note
 
-As of March 30, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport list/detail/create/update are backed by PostgreSQL, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover both domain rules and the implemented transport read/write endpoints. Vehicle, driver, and shipment-event endpoints still require real persistence-backed implementation. Remaining transport delete behavior, the rest of the CRUD surface, authentication, and AWS deployment are still pending.
+As of March 31, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport list/detail/create/update/delete are backed by PostgreSQL, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover both domain rules and the implemented transport CRUD endpoints. Vehicle, driver, and shipment-event endpoints still require real persistence-backed implementation. The rest of the CRUD surface, authentication, and AWS deployment are still pending.

@@ -176,6 +176,31 @@
             },
             "description": "Updates the generic transport fields without changing assignment or lifecycle state."
           }
+        },
+        {
+          "name": "Delete Transport",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{transportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{transportId}}"
+              ]
+            },
+            "description": "Soft-deletes the target transport so it disappears from active reads while preserving historical rows."
+          }
         }
       ]
     },

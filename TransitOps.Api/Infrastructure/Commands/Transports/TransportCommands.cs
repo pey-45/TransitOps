@@ -47,15 +47,7 @@ public sealed class TransportCommands : ITransportCommands
         UpsertTransportRequest request,
         CancellationToken cancellationToken)
     {
-        var transport = await _dbContext.Transports
-            .SingleOrDefaultAsync(
-                existingTransport => existingTransport.Id == id && existingTransport.DeletedAt == null,
-                cancellationToken);
-
-        if (transport is null)
-        {
-            throw new ResourceNotFoundException("transport_not_found", $"Transport '{id}' was not found.");
-        }
+        var transport = await GetActiveTransportAsync(id, cancellationToken);
 
         var reference = request.Reference.Trim();
         await EnsureReferenceIsUniqueAsync(reference, transport.Id, cancellationToken);
@@ -71,6 +63,19 @@ public sealed class TransportCommands : ITransportCommands
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return MapToDetailResponse(transport);
+    }
+
+    public async Task DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var transport = await GetActiveTransportAsync(id, cancellationToken);
+        var deletedAt = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
+
+        transport.DeletedAt = deletedAt;
+        transport.UpdatedAt = deletedAt;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureReferenceIsUniqueAsync(
@@ -95,6 +100,23 @@ public sealed class TransportCommands : ITransportCommands
                 "transport_reference_conflict",
                 $"Transport reference '{reference}' already exists.");
         }
+    }
+
+    private async Task<Transport> GetActiveTransportAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var transport = await _dbContext.Transports
+            .SingleOrDefaultAsync(
+                existingTransport => existingTransport.Id == id && existingTransport.DeletedAt == null,
+                cancellationToken);
+
+        if (transport is null)
+        {
+            throw new ResourceNotFoundException("transport_not_found", $"Transport '{id}' was not found.");
+        }
+
+        return transport;
     }
 
     private static string? NormalizeOptionalText(string? value)

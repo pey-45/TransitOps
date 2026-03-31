@@ -79,4 +79,16 @@ public sealed class TransportsController : ApiControllerBase
 
         return OkResponse(transport);
     }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        await _transportCommands.DeleteAsync(id, cancellationToken);
+
+        return NoContent();
+    }
 }
