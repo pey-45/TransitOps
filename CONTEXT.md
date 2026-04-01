@@ -9,8 +9,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Repository Snapshot
 
 - Project: `TransitOps`
-- Reference date: 2026-03-31
-- Repository status: local backend baseline established, transport CRUD slice operational on PostgreSQL with numeric enum persistence, broader CRUD/auth/cloud rollout still pending
+- Reference date: 2026-04-02
+- Repository status: local backend baseline established, transport read/write slice operational on PostgreSQL with numeric enum persistence, and the delivery roadmap now organized into one-week sprints with the local MVP compressed into Sprint 1
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -25,11 +25,11 @@ It should contain the current state of the project, recent decisions, relevant a
 - The API readiness endpoint now validates real PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()`.
 - The functional MVP is not implemented yet, but the API surface, persistence layer, and simplified internal folder structure now support the next CRUD and command/query steps without reworking the baseline.
 - Transport create, update, and logical delete are now implemented on top of `TransitOpsDbContext`, using explicit validation and active-reference conflict checks, so the transport slice has coherent list/detail/create/update/delete behavior against PostgreSQL.
-- Planning is now anchored in `docs/Requirements.md` for scope and acceptance, and `docs/Roadmap.md` for daily execution from the real repository state as of March 29, 2026.
-- The project still follows a local-MVP-first sequence, but the planning emphasis now makes the cloud rollout start immediately after the minimum usable business flows are closed.
+- Planning is now anchored in `docs/Requirements.md` for scope and acceptance, and `docs/Roadmap.md` for sprint execution from the real repository state as of March 29, 2026.
+- The roadmap now uses one-week sprints instead of day-by-day planning, with each sprint defining a dominant phase, mandatory scope, explicit artifacts, and a strict definition of done.
 - The requirements specification now explicitly defines user management, role permissions for `admin` and `operator`, main operational flows, and stronger acceptance detail.
-- The roadmap is now structured around coherent slices of roughly one hour of work per day, avoiding endpoint-sized tasks that are too small to represent a real day of work.
-- The current planning target end date is 2026-05-12, which is still shorter than the earlier longer plans while now covering explicit user-administration work.
+- The roadmap is now structured from March 30, 2026 through May 31, 2026 as weekly sprints, with Sprint 1 intentionally compressing the full local-MVP closure plus cloud design baseline so the rest of the calendar can focus on AWS platform, delivery, observability, reliability, security, and final defense quality.
+- The current planning target end date is 2026-05-31, with cloud credibility now treated as the main differentiator of the project.
 
 ## MVP Direction
 
@@ -47,7 +47,7 @@ According to the repository documentation, the MVP is intended to include:
 
 ## Excluded From MVP
 
-These are planned later and should not distort near-term implementation priorities:
+These are outside the local functional MVP, but they are central to the overall project delivery and now receive dedicated planning time as soon as the minimum backend surface is stable enough to deploy:
 
 - AWS infrastructure
 - Terraform deployment
@@ -60,7 +60,7 @@ These are planned later and should not distort near-term implementation prioriti
 ## Architecture Direction
 
 - Backend-first, modular and maintainable
-- Local MVP first, cloud phase second
+- Minimum local MVP first, then immediate cloud-first implementation and hardening
 - Strong emphasis on reproducibility, testing, and operational clarity
 - Documentation quality matters because the project is also intended to be defensible in an academic context
 
@@ -103,7 +103,11 @@ These are planned later and should not distort near-term implementation prioriti
 - 2026-03-30: Removed the two empty enum-alignment migrations (`SyncEnumMappings` and `AlignPublicEnumModel`) plus their designers, leaving only the baseline migration and the real enum column-type qualification migration in the repository.
 - 2026-03-30: Confirmed that with the current `Npgsql.EntityFrameworkCore.PostgreSQL` `10.0.1` provider, EF Core still sends `Transport.Status` as an integer on PostgreSQL inserts despite the enum registrations; transport creation therefore intentionally keeps the targeted SQL insert workaround for `status` until the provider/runtime mapping issue is resolved with a validated alternative.
 - 2026-03-30: Replaced native PostgreSQL enums with `smallint` columns plus explicit check constraints for `transport.status`, `shipment_event.event_type`, and `app_user.user_role`; the new migration preserves existing rows with `USING CASE`, drops the old enum types after conversion, removes the transport SQL insert workaround, and leaves EF Core using its normal enum-to-number mapping.
-- 2026-03-31: Implemented the March 30 transport close slice: `DELETE /api/v1/transports/{id}` now performs logical deletion through `TransitOpsDbContext`, returns `404` for missing or already deleted rows, and transport references can be reused after soft delete as intended by the active-row uniqueness rule.
+- 2026-04-01: Replanned `docs/Roadmap.md` through 2026-05-31 so the backend functional surface is closed quickly and the majority of remaining time is explicitly allocated to Terraform, AWS deployment, CI/CD, observability, security, runbooks, evidence capture, and final technical defense material.
+- 2026-04-02: Refined `docs/Roadmap.md` again so each day has a more even time budget, a deterministic primary artifact, a mandatory verification step, and explicit coverage of cloud-engineering concerns such as remote Terraform state, tagging, Route53/ACM, ECR scanning, GitHub OIDC, rollback, and backup/restore.
+- 2026-04-02: Reworked `docs/Roadmap.md` from daily planning into weekly sprints starting on 2026-03-30, each with a dominant phase, bounded scope, deliverables, and exit criteria, because sprint-level planning better fits the project than day-level task slicing.
+- 2026-04-02: Reworked `docs/Roadmap.md` again into three equal-duration sprints of three weeks each, compressing the local-MVP work into Sprint 1 and making Sprint 2 and Sprint 3 explicitly cloud-heavy with stronger done criteria for platform, delivery, observability, rollback, restore, security, and evidence.
+- 2026-04-02: Reworked `docs/Roadmap.md` again into one-week sprints, explicitly compressing the whole March 30 to April 12 local-MVP block into Sprint 1 because that scope is considered feasible in one week, leaving nearly all remaining sprints cloud-heavy.
 
 ## Open Notes
 
@@ -111,5 +115,5 @@ These are planned later and should not distort near-term implementation prioriti
 - Legacy local PostgreSQL volumes created from the retired SQL-bootstrap flow should be reset before using the new migrations-managed Docker startup.
 - `GET /api/v1/health/ready` already confirms whether the API can connect to PostgreSQL in the current environment.
 - Manual sample-data scripts under `scripts/postgres/manual/` are now aligned with the `smallint` enum mapping strategy used by the live schema.
-- Roadmap entries through 2026-03-30 should be treated as completed history, while remaining dates in `docs/Roadmap.md` are the actionable one-hour-per-day plan.
+- Roadmap entries through 2026-03-29 should be treated as completed history. From 2026-03-30 onward, the actionable plan now runs as one-week sprints through 2026-05-31 with explicit cloud-first prioritization.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.
