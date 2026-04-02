@@ -1,10 +1,14 @@
 using TransitOps.Api.Contracts.Requests.Transports;
 using TransitOps.Api.Contracts.Responses.Transports;
 
-namespace TransitOps.Api.Application.Commands.Transports;
+namespace TransitOps.Api.Application.Transports;
 
-public interface ITransportCommands
+public interface ITransportService
 {
+    Task<IReadOnlyList<TransportSummaryResponse>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task<TransportDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+
     Task<TransportDetailResponse> CreateAsync(
         UpsertTransportRequest request,
         CancellationToken cancellationToken);

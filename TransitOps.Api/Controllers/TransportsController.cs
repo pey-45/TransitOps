@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using TransitOps.Api.Application.Commands.Transports;
-using TransitOps.Api.Application.Queries.Transports;
+using TransitOps.Api.Application.Transports;
 using TransitOps.Api.Common;
 using TransitOps.Api.Contracts.Requests.Transports;
 using TransitOps.Api.Contracts.Responses.Transports;
@@ -11,15 +10,11 @@ namespace TransitOps.Api.Controllers;
 [Route("api/v1/[controller]")]
 public sealed class TransportsController : ApiControllerBase
 {
-    private readonly ITransportCommands _transportCommands;
-    private readonly ITransportQueries _transportQueries;
+    private readonly ITransportService _transportService;
 
-    public TransportsController(
-        ITransportCommands transportCommands,
-        ITransportQueries transportQueries)
+    public TransportsController(ITransportService transportService)
     {
-        _transportCommands = transportCommands;
-        _transportQueries = transportQueries;
+        _transportService = transportService;
     }
 
     [HttpGet]
@@ -27,7 +22,7 @@ public sealed class TransportsController : ApiControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<TransportSummaryResponse>>>> GetAll(
         CancellationToken cancellationToken)
     {
-        var transports = await _transportQueries.GetAllAsync(cancellationToken);
+        var transports = await _transportService.GetAllAsync(cancellationToken);
 
         return OkResponse<IReadOnlyList<TransportSummaryResponse>>(transports);
     }
@@ -39,7 +34,7 @@ public sealed class TransportsController : ApiControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var transport = await _transportQueries.GetByIdAsync(id, cancellationToken);
+        var transport = await _transportService.GetByIdAsync(id, cancellationToken);
 
         if (transport is null)
         {
@@ -57,7 +52,7 @@ public sealed class TransportsController : ApiControllerBase
         [FromBody] UpsertTransportRequest request,
         CancellationToken cancellationToken)
     {
-        var transport = await _transportCommands.CreateAsync(request, cancellationToken);
+        var transport = await _transportService.CreateAsync(request, cancellationToken);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -75,7 +70,7 @@ public sealed class TransportsController : ApiControllerBase
         [FromBody] UpsertTransportRequest request,
         CancellationToken cancellationToken)
     {
-        var transport = await _transportCommands.UpdateAsync(id, request, cancellationToken);
+        var transport = await _transportService.UpdateAsync(id, request, cancellationToken);
 
         return OkResponse(transport);
     }
@@ -87,7 +82,7 @@ public sealed class TransportsController : ApiControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        await _transportCommands.DeleteAsync(id, cancellationToken);
+        await _transportService.DeleteAsync(id, cancellationToken);
 
         return NoContent();
     }
