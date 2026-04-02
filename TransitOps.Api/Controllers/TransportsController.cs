@@ -79,6 +79,21 @@ public sealed class TransportsController : ApiControllerBase
         return OkResponse(transport);
     }
 
+    [HttpPut("{id:guid}/assignment")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<TransportDetailResponse>>> Assign(
+        Guid id,
+        [FromBody] AssignTransportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var transport = await _transportService.AssignAsync(id, request, cancellationToken);
+
+        return OkResponse(transport);
+    }
+
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

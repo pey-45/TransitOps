@@ -53,6 +53,17 @@ Content-Type: application/json
 
 ###
 
+PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/assignment
+Accept: application/json
+Content-Type: application/json
+
+{
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "{{driverId}}"
+}
+
+###
+
 GET {{TransitOps.Api_HostAddress}}/api/v1/vehicles
 Accept: application/json
 

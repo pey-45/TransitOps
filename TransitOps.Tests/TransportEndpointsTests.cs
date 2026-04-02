@@ -213,6 +213,206 @@ public sealed class TransportEndpointsTests
     }
 
     [Fact]
+    public async Task Assign_ReturnsUpdatedTransport_WhenTransportIsPlanned_AndResourcesAreActive()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var driver = CreateDriver("LIC-300");
+        var transport = CreateTransport(
+            reference: "TR-320",
+            plannedPickupAt: new DateTime(2026, 4, 7, 8, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = vehicle.Id,
+                driverId = driver.Id
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal(vehicle.Id.ToString(), payload["data"]?["vehicleId"]?.GetValue<string>());
+        Assert.Equal(driver.Id.ToString(), payload["data"]?["driverId"]?.GetValue<string>());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal(vehicle.Id, storedTransport.VehicleId);
+        Assert.Equal(driver.Id, storedTransport.DriverId);
+        Assert.Equal(DateTimeKind.Unspecified, storedTransport.UpdatedAt.Kind);
+    }
+
+    [Fact]
+    public async Task Assign_AllowsReassignment_WhileTransportRemainsPlanned()
+    {
+        var initialVehicle = CreateVehicle("1234ABC");
+        var nextVehicle = CreateVehicle("5678DEF");
+        var initialDriver = CreateDriver("LIC-301");
+        var nextDriver = CreateDriver("LIC-302");
+        var transport = CreateTransport(
+            reference: "TR-321",
+            plannedPickupAt: new DateTime(2026, 4, 7, 9, 0, 0, DateTimeKind.Utc),
+            vehicleId: initialVehicle.Id,
+            driverId: initialDriver.Id);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.AddRange(initialVehicle, nextVehicle);
+            dbContext.Drivers.AddRange(initialDriver, nextDriver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = nextVehicle.Id,
+                driverId = nextDriver.Id
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal(nextVehicle.Id, storedTransport.VehicleId);
+        Assert.Equal(nextDriver.Id, storedTransport.DriverId);
+    }
+
+    [Fact]
+    public async Task Assign_ReturnsBadRequest_WhenVehicleOrDriverIdIsMissing()
+    {
+        var transport = CreateTransport(
+            reference: "TR-322",
+            plannedPickupAt: new DateTime(2026, 4, 7, 10, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = Guid.Empty,
+                driverId = Guid.Empty
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("validation_error", payload["error"]?["code"]?.GetValue<string>());
+        Assert.NotNull(payload["error"]?["details"]?["VehicleId"]);
+        Assert.NotNull(payload["error"]?["details"]?["DriverId"]);
+    }
+
+    [Fact]
+    public async Task Assign_ReturnsConflict_WhenTransportIsNotPlanned()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var driver = CreateDriver("LIC-303");
+        var transport = CreateTransport(
+            reference: "TR-323",
+            plannedPickupAt: new DateTime(2026, 4, 7, 11, 0, 0, DateTimeKind.Utc),
+            status: TransportStatus.InTransit);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = vehicle.Id,
+                driverId = driver.Id
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_assignment_not_allowed", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Assign_ReturnsConflict_WhenVehicleIsInactive()
+    {
+        var vehicle = CreateVehicle("1234ABC", isActive: false);
+        var driver = CreateDriver("LIC-304");
+        var transport = CreateTransport(
+            reference: "TR-324",
+            plannedPickupAt: new DateTime(2026, 4, 7, 12, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = vehicle.Id,
+                driverId = driver.Id
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("vehicle_inactive", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Assign_ReturnsNotFound_WhenDriverDoesNotExist()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var transport = CreateTransport(
+            reference: "TR-325",
+            plannedPickupAt: new DateTime(2026, 4, 7, 13, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/assignment",
+            new
+            {
+                vehicleId = vehicle.Id,
+                driverId = Guid.NewGuid()
+            });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("driver_not_found", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task Update_ReturnsUpdatedTransport_WhenTransportExists()
     {
         var transport = CreateTransport(
@@ -453,6 +653,43 @@ public sealed class TransportEndpointsTests
             CreatedAt = plannedPickupAt.AddDays(-1),
             UpdatedAt = plannedPickupAt.AddHours(-1),
             DeletedAt = deletedAt
+        };
+    }
+
+    private static Vehicle CreateVehicle(
+        string plateNumber,
+        bool isActive = true)
+    {
+        return new Vehicle
+        {
+            PlateNumber = plateNumber,
+            InternalCode = $"IC-{plateNumber}",
+            Brand = "Volvo",
+            Model = "FH",
+            CapacityKg = 10000,
+            CapacityM3 = 50,
+            IsActive = isActive,
+            CreatedAt = new DateTime(2026, 4, 1, 8, 0, 0, DateTimeKind.Utc),
+            UpdatedAt = new DateTime(2026, 4, 1, 9, 0, 0, DateTimeKind.Utc)
+        };
+    }
+
+    private static Driver CreateDriver(
+        string licenseNumber,
+        bool isActive = true)
+    {
+        return new Driver
+        {
+            EmployeeCode = $"DRV-{licenseNumber}",
+            FirstName = "Laura",
+            LastName = "Santos",
+            LicenseNumber = licenseNumber,
+            LicenseExpiryDate = new DateOnly(2027, 12, 31),
+            Phone = "+34911111222",
+            Email = $"{licenseNumber.ToLowerInvariant()}@transitops.dev",
+            IsActive = isActive,
+            CreatedAt = new DateTime(2026, 4, 1, 8, 0, 0, DateTimeKind.Utc),
+            UpdatedAt = new DateTime(2026, 4, 1, 9, 0, 0, DateTimeKind.Utc)
         };
     }
 

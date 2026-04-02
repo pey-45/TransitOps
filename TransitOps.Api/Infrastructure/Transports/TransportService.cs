@@ -155,6 +155,67 @@ public sealed class TransportService : ITransportService
         return MapToDetailResponse(transport);
     }
 
+    public async Task<TransportDetailResponse> AssignAsync(
+        Guid id,
+        AssignTransportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var transport = await GetActiveTransportAsync(id, cancellationToken);
+
+        if (transport.Status != Domain.Enums.TransportStatus.Planned)
+        {
+            throw new ConflictException(
+                "transport_assignment_not_allowed",
+                $"Transport '{id}' cannot be assigned unless it is in 'planned' status.");
+        }
+
+        var vehicle = await _dbContext.Vehicles
+            .SingleOrDefaultAsync(
+                existingVehicle => existingVehicle.Id == request.VehicleId && existingVehicle.DeletedAt == null,
+                cancellationToken);
+
+        if (vehicle is null)
+        {
+            throw new ResourceNotFoundException(
+                "vehicle_not_found",
+                $"Vehicle '{request.VehicleId}' was not found.");
+        }
+
+        if (!vehicle.IsActive)
+        {
+            throw new ConflictException(
+                "vehicle_inactive",
+                $"Vehicle '{request.VehicleId}' is inactive and cannot be assigned.");
+        }
+
+        var driver = await _dbContext.Drivers
+            .SingleOrDefaultAsync(
+                existingDriver => existingDriver.Id == request.DriverId && existingDriver.DeletedAt == null,
+                cancellationToken);
+
+        if (driver is null)
+        {
+            throw new ResourceNotFoundException(
+                "driver_not_found",
+                $"Driver '{request.DriverId}' was not found.");
+        }
+
+        if (!driver.IsActive)
+        {
+            throw new ConflictException(
+                "driver_inactive",
+                $"Driver '{request.DriverId}' is inactive and cannot be assigned.");
+        }
+
+        transport.VehicleId = vehicle.Id;
+        transport.DriverId = driver.Id;
+        transport.UpdatedAt = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDetailResponse(transport);
+    }
+
     public async Task DeleteAsync(
         Guid id,
         CancellationToken cancellationToken)

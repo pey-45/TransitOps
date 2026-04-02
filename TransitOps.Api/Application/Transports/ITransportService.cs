@@ -21,6 +21,11 @@ public interface ITransportService
         UpsertTransportRequest request,
         CancellationToken cancellationToken);
 
+    Task<TransportDetailResponse> AssignAsync(
+        Guid id,
+        AssignTransportRequest request,
+        CancellationToken cancellationToken);
+
     Task DeleteAsync(
         Guid id,
         CancellationToken cancellationToken);
