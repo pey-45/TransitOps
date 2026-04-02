@@ -11,6 +11,7 @@ public interface IShipmentEventService
 
     Task<ShipmentEventResponse> CreateAsync(
         Guid transportId,
+        Guid actorId,
         CreateShipmentEventRequest request,
         CancellationToken cancellationToken);
 }

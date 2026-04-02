@@ -5,9 +5,6 @@ namespace TransitOps.Api.Contracts.Requests.ShipmentEvents;
 
 public sealed record CreateShipmentEventRequest : IValidatableObject
 {
-    [Required]
-    public Guid CreatedByUserId { get; init; }
-
     public string EventType { get; init; } = string.Empty;
 
     public DateTime EventDate { get; init; }
@@ -19,13 +16,6 @@ public sealed record CreateShipmentEventRequest : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (CreatedByUserId == Guid.Empty)
-        {
-            yield return new ValidationResult(
-                "Created by user id is required.",
-                new[] { nameof(CreatedByUserId) });
-        }
-
         if (string.IsNullOrWhiteSpace(EventType))
         {
             yield return new ValidationResult(

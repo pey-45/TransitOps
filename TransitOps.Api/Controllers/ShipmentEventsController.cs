@@ -38,7 +38,11 @@ public sealed class ShipmentEventsController : ApiControllerBase
         [FromBody] CreateShipmentEventRequest request,
         CancellationToken cancellationToken)
     {
-        var shipmentEvent = await _shipmentEventService.CreateAsync(transportId, request, cancellationToken);
+        var shipmentEvent = await _shipmentEventService.CreateAsync(
+            transportId,
+            GetRequiredUserId(),
+            request,
+            cancellationToken);
 
         return Created(
             $"/api/v1/transports/{transportId}/shipment-events/{shipmentEvent.Id}",

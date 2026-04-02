@@ -19,6 +19,7 @@
           "  pm.collectionVariables.unset(\"runtimeDriverId\");",
           "  pm.collectionVariables.unset(\"runtimeTransportId\");",
           "  pm.collectionVariables.unset(\"runtimeShipmentEventId\");",
+          "  pm.collectionVariables.unset(\"accessToken\");",
           "  pm.collectionVariables.set(\"runtimeVehiclePlate\", `SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeVehicleInternalCode\", `VEH-SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeVehicleUpdatedPlate\", `SMKU${suffix}`);",
@@ -126,6 +127,73 @@
               ]
             },
             "description": "Readiness probe against the real local API and PostgreSQL connection."
+          }
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "Auth",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Login With Seeded Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"accessToken\", payload.data.accessToken);",
+                  "pm.test(\"Login returns a bearer token for the seeded admin\", function () {",
+                  "  pm.expect(payload.data.tokenType).to.eql(\"Bearer\");",
+                  "  pm.expect(payload.data.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(payload.data.user.username).to.eql(pm.environment.get(\"seededAdminUsername\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{seededAdminUsername}}\",\n  \"password\": \"{{seededAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticates with the deterministic seeded admin and stores the bearer token for the protected smoke flow."
           }
         }
       ]
@@ -1167,7 +1235,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"createdByUserId\": \"{{seededAdminUserId}}\",\n  \"eventType\": \"assigned\",\n  \"eventDate\": \"2026-04-10T08:15:00Z\",\n  \"location\": \"Madrid Hub\",\n  \"notes\": \"Smoke shipment event for assignment traceability.\"\n}"
+              "raw": "{\n  \"eventType\": \"assigned\",\n  \"eventDate\": \"2026-04-10T08:15:00Z\",\n  \"location\": \"Madrid Hub\",\n  \"notes\": \"Smoke shipment event for assignment traceability.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/shipment-events",
@@ -1182,7 +1250,7 @@
                 "shipment-events"
               ]
             },
-            "description": "Creates a runtime shipment event on the runtime transport using the seeded admin user as actor."
+            "description": "Creates a runtime shipment event on the runtime transport using the currently authenticated seeded admin as actor."
           }
         },
         {
@@ -1690,5 +1758,15 @@
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }

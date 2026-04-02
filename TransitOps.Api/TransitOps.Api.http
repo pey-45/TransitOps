@@ -1,8 +1,11 @@
-@TransitOps.Api_HostAddress = http://localhost:5098
+@TransitOps.Api_HostAddress = http://localhost:8080
 @transportId = 40000000-0000-0000-0000-000000000001
 @vehicleId = 30000000-0000-0000-0000-000000000001
 @driverId = 20000000-0000-0000-0000-000000000001
-@createdByUserId = 10000000-0000-0000-0000-000000000001
+@seededAdminUsername = seed.admin
+@seededAdminPassword = SeedAdmin!123
+@bootstrapAdminToken =
+@accessToken = paste-access-token-here
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/health/live
 Accept: application/json
@@ -14,19 +17,46 @@ Accept: application/json
 
 ###
 
+POST {{TransitOps.Api_HostAddress}}/api/v1/auth/bootstrap-admin
+Accept: application/json
+Content-Type: application/json
+X-Bootstrap-Token: {{bootstrapAdminToken}}
+
+{
+  "username": "admin",
+  "email": "admin@transitops.local",
+  "password": "Admin!12345"
+}
+
+###
+
+POST {{TransitOps.Api_HostAddress}}/api/v1/auth/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "{{seededAdminUsername}}",
+  "password": "{{seededAdminPassword}}"
+}
+
+###
+
 GET {{TransitOps.Api_HostAddress}}/api/v1/transports
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 POST {{TransitOps.Api_HostAddress}}/api/v1/transports
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "reference": "TR-200",
@@ -42,6 +72,7 @@ Content-Type: application/json
 PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "reference": "TR-200-UPDATED",
@@ -57,6 +88,7 @@ Content-Type: application/json
 PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/assignment
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "vehicleId": "{{vehicleId}}",
@@ -68,6 +100,7 @@ Content-Type: application/json
 PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/status
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "targetStatus": "in_transit",
@@ -78,35 +111,40 @@ Content-Type: application/json
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/vehicles
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/vehicles/{{vehicleId}}
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/drivers
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/drivers/{{driverId}}
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/shipment-events
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 POST {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/shipment-events
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "createdByUserId": "{{createdByUserId}}",
   "eventType": "checkpoint",
   "eventDate": "2026-04-09T12:30:00Z",
   "location": "A-4 Km 35",

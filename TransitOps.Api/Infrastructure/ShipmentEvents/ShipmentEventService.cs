@@ -54,11 +54,12 @@ public sealed class ShipmentEventService : IShipmentEventService
 
     public async Task<ShipmentEventResponse> CreateAsync(
         Guid transportId,
+        Guid actorId,
         CreateShipmentEventRequest request,
         CancellationToken cancellationToken)
     {
         await EnsureActiveTransportExistsAsync(transportId, cancellationToken);
-        var actor = await GetActiveActorAsync(request.CreatedByUserId, cancellationToken);
+        var actor = await GetActiveActorAsync(actorId, cancellationToken);
 
         var shipmentEvent = new ShipmentEvent
         {

@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransitOps.Api.Common;
 using TransitOps.Api.Infrastructure.Persistence;
 
 namespace TransitOps.Api.Controllers;
 
+[AllowAnonymous]
 [Route("api/v1/health")]
 public sealed class HealthController : ApiControllerBase
 {

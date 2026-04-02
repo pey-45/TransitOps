@@ -46,6 +46,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not defined TRANSITOPS_JWT_SIGNING_KEY (
+    for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "[Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')"') do set "TRANSITOPS_JWT_SIGNING_KEY=smoke-%%i"
+)
+if not defined TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN (
+    set "TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN="
+)
+
 echo Starting local Docker services...
 docker compose up -d --build db api
 if errorlevel 1 goto :fail

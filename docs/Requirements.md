@@ -80,10 +80,10 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 | ID | Requirement | Priority | Current Status |
 | --- | --- | --- | --- |
 | FR-01 | Health and platform endpoints | Must | Completed baseline |
-| FR-02 | First admin bootstrap | Must | Pending |
+| FR-02 | First admin bootstrap | Must | Partial |
 | FR-03 | User administration | Must | Pending |
-| FR-04 | Authentication | Must | Pending |
-| FR-05 | Authorization | Must | Pending |
+| FR-04 | Authentication | Must | Completed |
+| FR-05 | Authorization | Must | Completed |
 | FR-06 | Transport management | Must | Completed |
 | FR-07 | Vehicle management | Must | Completed |
 | FR-08 | Driver management | Must | Completed |
@@ -116,6 +116,7 @@ The system shall provide a documented mechanism to create the first active `admi
 Behavior:
 
 - The bootstrap path is outside normal user administration and may be implemented through seed data, a script, or a controlled setup procedure.
+- The implemented API bootstrap path is `POST /api/v1/auth/bootstrap-admin` and requires an externally configured bootstrap token.
 - The bootstrap path must only succeed when no active, non-deleted admin user already exists.
 - The bootstrap process must not require committed secrets or hardcoded credentials in repository code.
 
@@ -271,6 +272,7 @@ Behavior:
 
 - Event creation is available to authenticated admins and operators.
 - Each event stores `transport_id`, `created_by_user_id`, `event_type`, `event_date`, and optional `location` and `notes`.
+- `created_by_user_id` is taken from the authenticated caller context, not from a client-supplied body field.
 - Supported event types in the MVP are `created`, `assigned`, `departed`, `checkpoint`, `incident`, `delivered`, and `cancelled`.
 - Event history is retrieved by transport and returned chronologically.
 
@@ -384,7 +386,7 @@ Acceptance criteria:
 | NFR-02 | PostgreSQL as system of record | Must | Partial | PostgreSQL remains the single persistent store, and persistence behavior is consistent between schema, EF Core, and runtime configuration. |
 | NFR-03 | Reproducible local execution | Must | Partial | Another developer can start the API and PostgreSQL locally with documented commands and without hidden manual steps. |
 | NFR-04 | Cloud deployability | Must | Partial | The API is stateless, containerized, externally configurable, and compatible with ECS, ALB, and RDS. |
-| NFR-05 | Security baseline | Must | Pending | Passwords are stored hashed, JWT secrets are externalized, roles are enforced, and no secrets are committed to the repository. |
+| NFR-05 | Security baseline | Must | Partial | Passwords are stored hashed, JWT secrets are externalized, roles are enforced, and no secrets are committed to the repository. |
 | NFR-06 | Reliability and controlled failure | Must | Partial | The service fails clearly when dependencies are unavailable, and the database migration/bootstrap strategy is explicit before cloud rollout. |
 | NFR-07 | Maintainability and documentation | Must | Partial | Folder responsibilities stay clear, docs remain aligned with reality, and planning artifacts stay up to date. |
 | NFR-08 | Testability and CI | Must | Partial | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI. |

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TransitOps.Api.Domain.Entities;
@@ -79,7 +80,7 @@ public sealed class ShipmentEventEndpointsTests
     public async Task Create_ReturnsCreatedAndPersistsShipmentEvent_WhenRequestIsValid()
     {
         var transport = CreateTransport("TR-EVT-002");
-        var actor = CreateAppUser("seed.admin", "seed.admin@transitops.dev");
+        var actor = CreateAuthenticatedAppUser();
 
         using var factory = new TransitOpsApiFactory(dbContext =>
         {
@@ -90,7 +91,7 @@ public sealed class ShipmentEventEndpointsTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/transports/{transport.Id}/shipment-events",
-            CreateShipmentEventRequest(actor.Id, "checkpoint", new DateTime(2026, 4, 3, 13, 30, 0, DateTimeKind.Utc)));
+            CreateShipmentEventRequest("checkpoint", new DateTime(2026, 4, 3, 13, 30, 0, DateTimeKind.Utc)));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
@@ -101,7 +102,7 @@ public sealed class ShipmentEventEndpointsTests
         Assert.NotNull(shipmentEventId);
         Assert.Equal(transport.Id.ToString(), payload["data"]?["transportId"]?.GetValue<string>());
         Assert.Equal(actor.Id.ToString(), payload["data"]?["createdByUserId"]?.GetValue<string>());
-        Assert.Equal("seed.admin", payload["data"]?["createdBy"]?["username"]?.GetValue<string>());
+        Assert.Equal(TransitOpsApiFactory.DefaultAuthenticatedUsername, payload["data"]?["createdBy"]?["username"]?.GetValue<string>());
         Assert.Equal(3, payload["data"]?["eventType"]?.GetValue<int>());
         Assert.Equal("2026-04-03T13:30:00", payload["data"]?["eventDate"]?.GetValue<string>());
 
@@ -119,14 +120,14 @@ public sealed class ShipmentEventEndpointsTests
     [Fact]
     public async Task Create_ReturnsNotFound_WhenTransportIsMissing()
     {
-        var actor = CreateAppUser("seed.admin", "seed.admin@transitops.dev");
+        var actor = CreateAuthenticatedAppUser();
 
         using var factory = new TransitOpsApiFactory(dbContext => dbContext.AppUsers.Add(actor));
         using var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/transports/{Guid.NewGuid()}/shipment-events",
-            CreateShipmentEventRequest(actor.Id, "created", new DateTime(2026, 4, 3, 9, 0, 0, DateTimeKind.Utc)));
+            CreateShipmentEventRequest("created", new DateTime(2026, 4, 3, 9, 0, 0, DateTimeKind.Utc)));
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
@@ -144,7 +145,7 @@ public sealed class ShipmentEventEndpointsTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/transports/{transport.Id}/shipment-events",
-            CreateShipmentEventRequest(Guid.NewGuid(), "created", new DateTime(2026, 4, 3, 9, 0, 0, DateTimeKind.Utc)));
+            CreateShipmentEventRequest("created", new DateTime(2026, 4, 3, 9, 0, 0, DateTimeKind.Utc)));
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
@@ -156,7 +157,7 @@ public sealed class ShipmentEventEndpointsTests
     public async Task Create_ReturnsConflict_WhenActorIsInactive()
     {
         var transport = CreateTransport("TR-EVT-004");
-        var actor = CreateAppUser("seed.operator", "seed.operator@transitops.dev", role: UserRole.Operator, isActive: false);
+        var actor = CreateAuthenticatedAppUser(role: UserRole.Operator, isActive: false);
 
         using var factory = new TransitOpsApiFactory(dbContext =>
         {
@@ -167,7 +168,7 @@ public sealed class ShipmentEventEndpointsTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/transports/{transport.Id}/shipment-events",
-            CreateShipmentEventRequest(actor.Id, "incident", new DateTime(2026, 4, 3, 15, 0, 0, DateTimeKind.Utc)));
+            CreateShipmentEventRequest("incident", new DateTime(2026, 4, 3, 15, 0, 0, DateTimeKind.Utc)));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
@@ -179,7 +180,7 @@ public sealed class ShipmentEventEndpointsTests
     public async Task Create_ReturnsBadRequest_WhenEventTypeIsInvalid()
     {
         var transport = CreateTransport("TR-EVT-005");
-        var actor = CreateAppUser("seed.admin", "seed.admin@transitops.dev");
+        var actor = CreateAuthenticatedAppUser();
 
         using var factory = new TransitOpsApiFactory(dbContext =>
         {
@@ -190,7 +191,7 @@ public sealed class ShipmentEventEndpointsTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/transports/{transport.Id}/shipment-events",
-            CreateShipmentEventRequest(actor.Id, "teleported", new DateTime(2026, 4, 3, 16, 0, 0, DateTimeKind.Utc)));
+            CreateShipmentEventRequest("teleported", new DateTime(2026, 4, 3, 16, 0, 0, DateTimeKind.Utc)));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -220,11 +221,12 @@ public sealed class ShipmentEventEndpointsTests
     private static AppUser CreateAppUser(
         string username,
         string email,
+        Guid? id = null,
         UserRole role = UserRole.Admin,
         bool isActive = true,
         DateTime? deletedAt = null)
     {
-        return new AppUser
+        var appUser = new AppUser
         {
             Username = username,
             Email = email,
@@ -235,6 +237,26 @@ public sealed class ShipmentEventEndpointsTests
             UpdatedAt = new DateTime(2026, 4, 1, 9, 0, 0, DateTimeKind.Utc),
             DeletedAt = deletedAt
         };
+
+        typeof(AppUser)
+            .GetProperty(nameof(AppUser.Id), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(appUser, id ?? Guid.NewGuid());
+
+        return appUser;
+    }
+
+    private static AppUser CreateAuthenticatedAppUser(
+        UserRole role = UserRole.Admin,
+        bool isActive = true,
+        DateTime? deletedAt = null)
+    {
+        return CreateAppUser(
+            TransitOpsApiFactory.DefaultAuthenticatedUsername,
+            TransitOpsApiFactory.DefaultAuthenticatedEmail,
+            TransitOpsApiFactory.DefaultAuthenticatedUserId,
+            role,
+            isActive,
+            deletedAt);
     }
 
     private static ShipmentEvent CreateShipmentEvent(
@@ -258,11 +280,10 @@ public sealed class ShipmentEventEndpointsTests
         };
     }
 
-    private static object CreateShipmentEventRequest(Guid createdByUserId, string eventType, DateTime eventDate)
+    private static object CreateShipmentEventRequest(string eventType, DateTime eventDate)
     {
         return new
         {
-            createdByUserId,
             eventType,
             eventDate,
             location = "Checkpoint A-4",

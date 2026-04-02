@@ -58,6 +58,107 @@
             "description": "Readiness probe with PostgreSQL connectivity check."
           }
         }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "Auth",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Bootstrap First Admin",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Bootstrap-Token",
+                "value": "{{bootstrapAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"email\": \"admin@transitops.local\",\n  \"password\": \"Admin!12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/bootstrap-admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "bootstrap-admin"
+              ]
+            },
+            "description": "One-time controlled setup endpoint. It only succeeds when no active admin exists and requires X-Bootstrap-Token from external configuration."
+          }
+        },
+        {
+          "name": "Login With Seeded Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const payload = pm.response.json();",
+                  "  pm.collectionVariables.set(\"accessToken\", payload.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{seededAdminUsername}}\",\n  \"password\": \"{{seededAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in with the seeded admin credentials and stores accessToken as a collection variable for protected requests."
+          }
+        }
       ]
     },
     {
@@ -296,7 +397,7 @@
                 "vehicles"
               ]
             },
-            "description": "Current placeholder endpoint. The seed script scripts/database/postgres/seed/002_seed_sample_data.sql inserts vehicles SEED-PLATE-001 and SEED-PLATE-002 so the request variables already reference real seeded IDs for future implementation."
+            "description": "Returns the current active vehicle list from PostgreSQL. The default seeded dataset includes SEED-PLATE-001 and SEED-PLATE-002."
           }
         },
         {
@@ -321,7 +422,7 @@
                 "{{vehicleId}}"
               ]
             },
-            "description": "Current placeholder endpoint that returns 404 today. The default {{vehicleId}} matches seeded vehicle SEED-PLATE-001 from scripts/database/postgres/seed/002_seed_sample_data.sql."
+            "description": "Returns one seeded vehicle by id. The default {{vehicleId}} points to SEED-PLATE-001 / SEED-VEH-001."
           }
         }
       ]
@@ -350,7 +451,7 @@
                 "drivers"
               ]
             },
-            "description": "Current placeholder endpoint. The seed script scripts/database/postgres/seed/002_seed_sample_data.sql inserts drivers SEED-DRV-001 and SEED-DRV-002 so the request variables already reference real seeded IDs for future implementation."
+            "description": "Returns the current active driver list from PostgreSQL. The default seeded dataset includes SEED-DRV-001 and SEED-DRV-002."
           }
         },
         {
@@ -375,7 +476,7 @@
                 "{{driverId}}"
               ]
             },
-            "description": "Current placeholder endpoint that returns 404 today. The default {{driverId}} matches seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql."
+            "description": "Returns one seeded driver by id. The default {{driverId}} points to SEED-DRV-001."
           }
         }
       ]
@@ -425,7 +526,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"createdByUserId\": \"{{createdByUserId}}\",\n  \"eventType\": \"checkpoint\",\n  \"eventDate\": \"2026-04-09T12:30:00Z\",\n  \"location\": \"A-4 Km 35\",\n  \"notes\": \"Manual shipment event creation example.\"\n}"
+              "raw": "{\n  \"eventType\": \"checkpoint\",\n  \"eventDate\": \"2026-04-09T12:30:00Z\",\n  \"location\": \"A-4 Km 35\",\n  \"notes\": \"Manual shipment event creation example.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transports/{{transportId}}/shipment-events",
@@ -440,7 +541,7 @@
                 "shipment-events"
               ]
             },
-            "description": "Creates a shipment event for the selected transport using the seeded admin user as the explicit actor while authentication is still pending."
+            "description": "Creates a shipment event for the selected transport using the authenticated caller as the persisted actor."
           }
         }
       ]
@@ -467,9 +568,34 @@
       "description": "Seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
     },
     {
-      "key": "createdByUserId",
-      "value": "10000000-0000-0000-0000-000000000001",
-      "description": "Seeded admin user seed.admin from scripts/database/postgres/seed/002_seed_sample_data.sql"
+      "key": "seededAdminUsername",
+      "value": "seed.admin",
+      "description": "Seeded admin username from scripts/database/postgres/seed/002_seed_sample_data.sql"
+    },
+    {
+      "key": "seededAdminPassword",
+      "value": "SeedAdmin!123",
+      "description": "Seeded admin password for manual local testing only"
+    },
+    {
+      "key": "bootstrapAdminToken",
+      "value": "",
+      "description": "External bootstrap token required only for the first-admin bootstrap endpoint"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "Bearer token captured from the login request"
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }

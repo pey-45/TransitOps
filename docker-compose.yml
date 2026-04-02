@@ -24,6 +24,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=transitops;Username=transitops;Password=transitops_dev
+      Jwt__Issuer: TransitOps.Api
+      Jwt__Audience: TransitOps.Client
+      Jwt__SigningKey: ${TRANSITOPS_JWT_SIGNING_KEY}
+      Bootstrap__FirstAdminToken: ${TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN}
       Database__ApplyMigrationsOnStartup: "true"
     ports:
       - "8080:8080"

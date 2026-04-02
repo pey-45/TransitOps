@@ -97,7 +97,6 @@ Close the full local MVP and freeze the cloud design baseline.
 **What Must Not Remain Open At Sprint End**
 
 - Missing vehicle or driver CRUD behavior.
-- Missing auth bootstrap/login path.
 - Missing assignment or lifecycle flow.
 - Missing admin user-management baseline.
 - Missing transport filters/pagination needed for demo use.
