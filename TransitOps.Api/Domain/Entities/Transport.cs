@@ -45,11 +45,6 @@ public sealed class Transport : Entity
 
     public bool CanTransitionTo(TransportStatus targetStatus)
     {
-        if (Status == targetStatus)
-        {
-            return true;
-        }
-
         return (Status, targetStatus) switch
         {
             (TransportStatus.Planned, TransportStatus.InTransit) => true,

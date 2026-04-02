@@ -26,6 +26,11 @@ public interface ITransportService
         AssignTransportRequest request,
         CancellationToken cancellationToken);
 
+    Task<TransportDetailResponse> TransitionStatusAsync(
+        Guid id,
+        TransitionTransportStatusRequest request,
+        CancellationToken cancellationToken);
+
     Task DeleteAsync(
         Guid id,
         CancellationToken cancellationToken);

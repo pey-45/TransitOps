@@ -1,0 +1,1589 @@
+{
+  "info": {
+    "name": "TransitOps API Local Smoke",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Runner-safe smoke collection for the local Docker stack. It resets the deterministic seed outside the collection and then validates the current API surface with a mix of seeded read checks and runtime-generated write flows."
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get(\"smokeInitialized\")) {",
+          "  const epoch = Date.now().toString();",
+          "  const suffix = epoch.slice(-8);",
+          "  pm.collectionVariables.set(\"smokeInitialized\", \"true\");",
+          "  pm.collectionVariables.set(\"runId\", suffix);",
+          "  pm.collectionVariables.unset(\"runtimeVehicleId\");",
+          "  pm.collectionVariables.unset(\"runtimeDriverId\");",
+          "  pm.collectionVariables.unset(\"runtimeTransportId\");",
+          "  pm.collectionVariables.set(\"runtimeVehiclePlate\", `SMK-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeVehicleInternalCode\", `VEH-SMK-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeVehicleUpdatedPlate\", `SMKU${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeVehicleUpdatedInternalCode\", `VEH-SMK-${suffix}-UPD`);",
+          "  pm.collectionVariables.set(\"runtimeDriverEmployeeCode\", `DRV-SMK-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeDriverLicense\", `LIC-SMK-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeDriverUpdatedEmployeeCode\", `DRV-SMK-${suffix}-UPD`);",
+          "  pm.collectionVariables.set(\"runtimeDriverUpdatedLicense\", `LIC-SMK-${suffix}-UPD`);",
+          "  pm.collectionVariables.set(\"runtimeDriverEmail\", `smoke.${suffix}@transitops.local`);",
+          "  pm.collectionVariables.set(\"runtimeDriverUpdatedEmail\", `smoke.${suffix}.updated@transitops.local`);",
+          "  pm.collectionVariables.set(\"runtimeTransportReference\", `TR-SMK-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeTransportUpdatedReference\", `TR-SMK-${suffix}-UPD`);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Live",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Live payload matches expected contract\", function () {",
+                  "  pm.expect(payload.data.status).to.eql(\"live\");",
+                  "  pm.expect(payload.data.service).to.eql(\"TransitOps.Api\");",
+                  "  pm.expect(payload.meta.requestId).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "live"
+              ]
+            },
+            "description": "Basic liveness probe against the real local API."
+          }
+        },
+        {
+          "name": "Ready",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Ready returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Ready payload confirms PostgreSQL connectivity\", function () {",
+                  "  pm.expect(payload.data.status).to.eql(\"ready\");",
+                  "  pm.expect(payload.data.databaseConnectionAvailable).to.eql(true);",
+                  "  pm.expect(payload.meta.requestId).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "ready"
+              ]
+            },
+            "description": "Readiness probe against the real local API and PostgreSQL connection."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seeded Reads",
+      "item": [
+        {
+          "name": "Get All Transports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transport list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const references = payload.data.map(transport => transport.reference);",
+                  "pm.test(\"Transport list exposes the deterministic seeded rows\", function () {",
+                  "  pm.expect(references).to.include(\"SEED-TR-001\");",
+                  "  pm.expect(references).to.include(\"SEED-TR-002\");",
+                  "  pm.expect(references).to.include(\"SEED-TR-003\");",
+                  "  pm.expect(references).to.not.include(\"SEED-TR-004\");",
+                  "  pm.expect(payload.meta.pagination.page).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports"
+              ]
+            },
+            "description": "Verifies the base seeded transport list against PostgreSQL."
+          }
+        },
+        {
+          "name": "Get Filtered Seeded Transports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Filtered transport list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Filter returns the planned seeded transport for the seeded assignment\", function () {",
+                  "  pm.expect(payload.data.length).to.eql(1);",
+                  "  pm.expect(payload.data[0].reference).to.eql(pm.environment.get(\"seededTransportReference\"));",
+                  "  pm.expect(payload.meta.pagination.totalCount).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports?status=planned&vehicleId={{seededVehicleId}}&driverId={{seededDriverId}}&plannedPickupFrom=2026-03-29T00:00:00Z&plannedPickupTo=2026-03-29T23:59:59Z&page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "planned"
+                },
+                {
+                  "key": "vehicleId",
+                  "value": "{{seededVehicleId}}"
+                },
+                {
+                  "key": "driverId",
+                  "value": "{{seededDriverId}}"
+                },
+                {
+                  "key": "plannedPickupFrom",
+                  "value": "2026-03-29T00:00:00Z"
+                },
+                {
+                  "key": "plannedPickupTo",
+                  "value": "2026-03-29T23:59:59Z"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Verifies the demo filters/pagination on deterministic seeded rows."
+          }
+        },
+        {
+          "name": "Get Seeded Transport By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seeded transport detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Seeded transport detail matches expected fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.environment.get(\"seededTransportId\"));",
+                  "  pm.expect(payload.data.reference).to.eql(pm.environment.get(\"seededTransportReference\"));",
+                  "  pm.expect(payload.data.status).to.eql(0);",
+                  "  pm.expect(payload.data.vehicleId).to.eql(pm.environment.get(\"seededVehicleId\"));",
+                  "  pm.expect(payload.data.driverId).to.eql(pm.environment.get(\"seededDriverId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{seededTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{seededTransportId}}"
+              ]
+            },
+            "description": "Verifies seeded transport detail against the deterministic dataset."
+          }
+        },
+        {
+          "name": "Get All Vehicles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Vehicle list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const plates = payload.data.map(vehicle => vehicle.plateNumber);",
+                  "pm.test(\"Vehicle list includes the seeded active vehicles\", function () {",
+                  "  pm.expect(plates).to.include(\"SEED-PLATE-001\");",
+                  "  pm.expect(plates).to.include(\"SEED-PLATE-002\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles"
+              ]
+            },
+            "description": "Verifies the seeded vehicle list against PostgreSQL."
+          }
+        },
+        {
+          "name": "Get Seeded Vehicle By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seeded vehicle detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Seeded vehicle detail matches expected fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.environment.get(\"seededVehicleId\"));",
+                  "  pm.expect(payload.data.plateNumber).to.eql(pm.environment.get(\"seededVehiclePlate\"));",
+                  "  pm.expect(payload.data.internalCode).to.eql(pm.environment.get(\"seededVehicleInternalCode\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{seededVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                "{{seededVehicleId}}"
+              ]
+            },
+            "description": "Verifies seeded vehicle detail against the deterministic dataset."
+          }
+        },
+        {
+          "name": "Get All Drivers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Driver list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const licenses = payload.data.map(driver => driver.licenseNumber);",
+                  "pm.test(\"Driver list includes the seeded active drivers\", function () {",
+                  "  pm.expect(licenses).to.include(\"LIC-SEED-001\");",
+                  "  pm.expect(licenses).to.include(\"LIC-SEED-002\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers"
+              ]
+            },
+            "description": "Verifies the seeded driver list against PostgreSQL."
+          }
+        },
+        {
+          "name": "Get Seeded Driver By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seeded driver detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Seeded driver detail matches expected fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.environment.get(\"seededDriverId\"));",
+                  "  pm.expect(payload.data.employeeCode).to.eql(pm.environment.get(\"seededDriverEmployeeCode\"));",
+                  "  pm.expect(payload.data.licenseNumber).to.eql(pm.environment.get(\"seededDriverLicense\"));",
+                  "  pm.expect(payload.data.email).to.eql(pm.environment.get(\"seededDriverEmail\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers/{{seededDriverId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers",
+                "{{seededDriverId}}"
+              ]
+            },
+            "description": "Verifies seeded driver detail against the deterministic dataset."
+          }
+        },
+        {
+          "name": "Get Shipment Events By Seeded Transport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Shipment event endpoint returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Shipment event endpoint currently returns the expected array contract\", function () {",
+                  "  pm.expect(Array.isArray(payload.data)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{seededTransportId}}/shipment-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{seededTransportId}}",
+                "shipment-events"
+              ]
+            },
+            "description": "Covers the current shipment-event placeholder endpoint. Until the endpoint becomes database-backed, this smoke test asserts only the live array contract."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicle Flow",
+      "item": [
+        {
+          "name": "Create Vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Vehicle create returns 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"runtimeVehicleId\", payload.data.id);",
+                  "pm.test(\"Vehicle create persists the runtime identifiers\", function () {",
+                  "  pm.expect(payload.data.id).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(payload.data.plateNumber).to.eql(pm.collectionVariables.get(\"runtimeVehiclePlate\"));",
+                  "  pm.expect(payload.data.internalCode).to.eql(pm.collectionVariables.get(\"runtimeVehicleInternalCode\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateNumber\": \"{{runtimeVehiclePlate}}\",\n  \"internalCode\": \"{{runtimeVehicleInternalCode}}\",\n  \"brand\": \"Iveco\",\n  \"model\": \"Daily\",\n  \"capacityKg\": 3500,\n  \"capacityM3\": 18.5,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles"
+              ]
+            },
+            "description": "Creates a runtime vehicle with a unique reference for the current smoke run."
+          }
+        },
+        {
+          "name": "Update Vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Vehicle update returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Vehicle update returns the updated fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeVehicleId\"));",
+                  "  pm.expect(payload.data.plateNumber).to.eql(pm.collectionVariables.get(\"runtimeVehicleUpdatedPlate\"));",
+                  "  pm.expect(payload.data.internalCode).to.eql(pm.collectionVariables.get(\"runtimeVehicleUpdatedInternalCode\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateNumber\": \"{{runtimeVehicleUpdatedPlate}}\",\n  \"internalCode\": \"{{runtimeVehicleUpdatedInternalCode}}\",\n  \"brand\": \"Mercedes\",\n  \"model\": \"Actros\",\n  \"capacityKg\": 12000,\n  \"capacityM3\": 55,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{runtimeVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                "{{runtimeVehicleId}}"
+              ]
+            },
+            "description": "Updates the runtime vehicle while keeping it active for the later assignment flow."
+          }
+        },
+        {
+          "name": "Get Runtime Vehicle By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime vehicle detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime vehicle detail reflects the updated values\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeVehicleId\"));",
+                  "  pm.expect(payload.data.plateNumber).to.eql(pm.collectionVariables.get(\"runtimeVehicleUpdatedPlate\"));",
+                  "  pm.expect(payload.data.internalCode).to.eql(pm.collectionVariables.get(\"runtimeVehicleUpdatedInternalCode\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{runtimeVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                "{{runtimeVehicleId}}"
+              ]
+            },
+            "description": "Reads back the runtime vehicle after the update."
+          }
+        },
+        {
+          "name": "Get All Vehicles Contains Runtime Vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Vehicle list with runtime row returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const plates = payload.data.map(vehicle => vehicle.plateNumber);",
+                  "pm.test(\"Vehicle list contains the runtime vehicle\", function () {",
+                  "  pm.expect(plates).to.include(pm.collectionVariables.get(\"runtimeVehicleUpdatedPlate\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles"
+              ]
+            },
+            "description": "Confirms that the runtime vehicle appears in the active list."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Driver Flow",
+      "item": [
+        {
+          "name": "Create Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Driver create returns 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"runtimeDriverId\", payload.data.id);",
+                  "pm.test(\"Driver create persists the runtime identifiers\", function () {",
+                  "  pm.expect(payload.data.id).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(payload.data.employeeCode).to.eql(pm.collectionVariables.get(\"runtimeDriverEmployeeCode\"));",
+                  "  pm.expect(payload.data.licenseNumber).to.eql(pm.collectionVariables.get(\"runtimeDriverLicense\"));",
+                  "  pm.expect(payload.data.email).to.eql(pm.collectionVariables.get(\"runtimeDriverEmail\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeCode\": \"{{runtimeDriverEmployeeCode}}\",\n  \"firstName\": \"Smoke\",\n  \"lastName\": \"Driver\",\n  \"licenseNumber\": \"{{runtimeDriverLicense}}\",\n  \"licenseExpiryDate\": \"2028-12-31\",\n  \"phone\": \"+34-600-555-010\",\n  \"email\": \"{{runtimeDriverEmail}}\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers"
+              ]
+            },
+            "description": "Creates a runtime driver with unique business identifiers for the current smoke run."
+          }
+        },
+        {
+          "name": "Update Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Driver update returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Driver update returns the updated fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeDriverId\"));",
+                  "  pm.expect(payload.data.employeeCode).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedEmployeeCode\"));",
+                  "  pm.expect(payload.data.licenseNumber).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedLicense\"));",
+                  "  pm.expect(payload.data.email).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedEmail\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeCode\": \"{{runtimeDriverUpdatedEmployeeCode}}\",\n  \"firstName\": \"Smoke\",\n  \"lastName\": \"Driver Updated\",\n  \"licenseNumber\": \"{{runtimeDriverUpdatedLicense}}\",\n  \"licenseExpiryDate\": \"2029-12-31\",\n  \"phone\": \"+34-600-555-011\",\n  \"email\": \"{{runtimeDriverUpdatedEmail}}\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers/{{runtimeDriverId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers",
+                "{{runtimeDriverId}}"
+              ]
+            },
+            "description": "Updates the runtime driver while keeping it active for the later assignment flow."
+          }
+        },
+        {
+          "name": "Get Runtime Driver By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime driver detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime driver detail reflects the updated values\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeDriverId\"));",
+                  "  pm.expect(payload.data.employeeCode).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedEmployeeCode\"));",
+                  "  pm.expect(payload.data.licenseNumber).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedLicense\"));",
+                  "  pm.expect(payload.data.email).to.eql(pm.collectionVariables.get(\"runtimeDriverUpdatedEmail\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers/{{runtimeDriverId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers",
+                "{{runtimeDriverId}}"
+              ]
+            },
+            "description": "Reads back the runtime driver after the update."
+          }
+        },
+        {
+          "name": "Get All Drivers Contains Runtime Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Driver list with runtime row returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const licenses = payload.data.map(driver => driver.licenseNumber);",
+                  "pm.test(\"Driver list contains the runtime driver\", function () {",
+                  "  pm.expect(licenses).to.include(pm.collectionVariables.get(\"runtimeDriverUpdatedLicense\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers"
+              ]
+            },
+            "description": "Confirms that the runtime driver appears in the active list."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transport Flow",
+      "item": [
+        {
+          "name": "Create Transport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transport create returns 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"runtimeTransportId\", payload.data.id);",
+                  "pm.test(\"Transport create returns the planned transport contract\", function () {",
+                  "  pm.expect(payload.data.id).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(payload.data.reference).to.eql(pm.collectionVariables.get(\"runtimeTransportReference\"));",
+                  "  pm.expect(payload.data.status).to.eql(0);",
+                  "  pm.expect(payload.data.vehicleId).to.eql(null);",
+                  "  pm.expect(payload.data.driverId).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{runtimeTransportReference}}\",\n  \"description\": \"Smoke transport\",\n  \"origin\": \"Madrid\",\n  \"destination\": \"Barcelona\",\n  \"plannedPickupAt\": \"2026-04-10T08:00:00Z\",\n  \"plannedDeliveryAt\": \"2026-04-10T14:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports"
+              ]
+            },
+            "description": "Creates a runtime transport that the rest of the smoke flow will mutate."
+          }
+        },
+        {
+          "name": "Get Runtime Transport By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime transport detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime transport detail reflects the create step\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeTransportId\"));",
+                  "  pm.expect(payload.data.reference).to.eql(pm.collectionVariables.get(\"runtimeTransportReference\"));",
+                  "  pm.expect(payload.data.status).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}"
+              ]
+            },
+            "description": "Reads back the runtime transport immediately after creation."
+          }
+        },
+        {
+          "name": "Update Transport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transport update returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Transport update returns the updated fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeTransportId\"));",
+                  "  pm.expect(payload.data.reference).to.eql(pm.collectionVariables.get(\"runtimeTransportUpdatedReference\"));",
+                  "  pm.expect(payload.data.origin).to.eql(\"Seville\");",
+                  "  pm.expect(payload.data.destination).to.eql(\"Valencia\");",
+                  "  pm.expect(payload.data.status).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{runtimeTransportUpdatedReference}}\",\n  \"description\": \"Smoke transport updated\",\n  \"origin\": \"Seville\",\n  \"destination\": \"Valencia\",\n  \"plannedPickupAt\": \"2026-04-10T09:00:00Z\",\n  \"plannedDeliveryAt\": \"2026-04-10T18:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}"
+              ]
+            },
+            "description": "Updates the runtime transport before assignment."
+          }
+        },
+        {
+          "name": "Assign Transport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transport assignment returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Transport assignment links the runtime vehicle and driver\", function () {",
+                  "  pm.expect(payload.data.vehicleId).to.eql(pm.collectionVariables.get(\"runtimeVehicleId\"));",
+                  "  pm.expect(payload.data.driverId).to.eql(pm.collectionVariables.get(\"runtimeDriverId\"));",
+                  "  pm.expect(payload.data.status).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{runtimeVehicleId}}\",\n  \"driverId\": \"{{runtimeDriverId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/assignment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}",
+                "assignment"
+              ]
+            },
+            "description": "Assigns the runtime vehicle and driver together to the runtime transport."
+          }
+        },
+        {
+          "name": "Get Filtered Runtime Transports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Filtered runtime transport list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const references = payload.data.map(transport => transport.reference);",
+                  "pm.test(\"Filtered runtime transport list includes the assigned runtime transport\", function () {",
+                  "  pm.expect(references).to.include(pm.collectionVariables.get(\"runtimeTransportUpdatedReference\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports?status=planned&vehicleId={{runtimeVehicleId}}&driverId={{runtimeDriverId}}&page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "planned"
+                },
+                {
+                  "key": "vehicleId",
+                  "value": "{{runtimeVehicleId}}"
+                },
+                {
+                  "key": "driverId",
+                  "value": "{{runtimeDriverId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Verifies that the assigned runtime transport can be retrieved through the transport demo filters."
+          }
+        },
+        {
+          "name": "Transition Runtime Transport To In Transit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transition to in_transit returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Transition to in_transit captures the actual pickup timestamp\", function () {",
+                  "  pm.expect(payload.data.status).to.eql(1);",
+                  "  pm.expect(payload.data.actualPickupAt).to.eql(\"2026-04-10T08:30:00\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"in_transit\",\n  \"occurredAt\": \"2026-04-10T08:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}",
+                "status"
+              ]
+            },
+            "description": "Starts the runtime transport trip and verifies the lifecycle timestamp capture."
+          }
+        },
+        {
+          "name": "Transition Runtime Transport To Delivered",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transition to delivered returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Transition to delivered captures the actual delivery timestamp\", function () {",
+                  "  pm.expect(payload.data.status).to.eql(2);",
+                  "  pm.expect(payload.data.actualDeliveryAt).to.eql(\"2026-04-10T13:45:00\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"delivered\",\n  \"occurredAt\": \"2026-04-10T13:45:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}",
+                "status"
+              ]
+            },
+            "description": "Completes the runtime transport lifecycle and verifies the delivery timestamp capture."
+          }
+        },
+        {
+          "name": "Get Delivered Runtime Transport By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Delivered runtime transport detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Delivered runtime transport detail reflects the terminal state\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeTransportId\"));",
+                  "  pm.expect(payload.data.reference).to.eql(pm.collectionVariables.get(\"runtimeTransportUpdatedReference\"));",
+                  "  pm.expect(payload.data.status).to.eql(2);",
+                  "  pm.expect(payload.data.vehicleId).to.eql(pm.collectionVariables.get(\"runtimeVehicleId\"));",
+                  "  pm.expect(payload.data.driverId).to.eql(pm.collectionVariables.get(\"runtimeDriverId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}"
+              ]
+            },
+            "description": "Reads back the runtime transport after the lifecycle transitions."
+          }
+        },
+        {
+          "name": "Delete Runtime Transport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transport delete returns 204\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}"
+              ]
+            },
+            "description": "Soft-deletes the runtime transport so the smoke run also covers the delete endpoint."
+          }
+        },
+        {
+          "name": "Get Deleted Runtime Transport By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Deleted runtime transport detail returns 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Deleted runtime transport returns the not found error code\", function () {",
+                  "  pm.expect(payload.error.code).to.eql(\"transport_not_found\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}"
+              ]
+            },
+            "description": "Confirms that the deleted runtime transport no longer appears in active reads."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Runtime Vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Vehicle delete returns 204\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{runtimeVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                "{{runtimeVehicleId}}"
+              ]
+            },
+            "description": "Soft-deletes the runtime vehicle after the transport flow has been closed."
+          }
+        },
+        {
+          "name": "Get Deleted Runtime Vehicle By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Deleted runtime vehicle detail returns 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Deleted runtime vehicle returns the not found error code\", function () {",
+                  "  pm.expect(payload.error.code).to.eql(\"vehicle_not_found\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{runtimeVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehicles",
+                "{{runtimeVehicleId}}"
+              ]
+            },
+            "description": "Confirms that the deleted runtime vehicle no longer appears in active reads."
+          }
+        },
+        {
+          "name": "Delete Runtime Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Driver delete returns 204\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers/{{runtimeDriverId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers",
+                "{{runtimeDriverId}}"
+              ]
+            },
+            "description": "Soft-deletes the runtime driver after the transport flow has been closed."
+          }
+        },
+        {
+          "name": "Get Deleted Runtime Driver By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Deleted runtime driver detail returns 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Deleted runtime driver returns the not found error code\", function () {",
+                  "  pm.expect(payload.error.code).to.eql(\"driver_not_found\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/drivers/{{runtimeDriverId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drivers",
+                "{{runtimeDriverId}}"
+              ]
+            },
+            "description": "Confirms that the deleted runtime driver no longer appears in active reads."
+          }
+        }
+      ]
+    }
+  ]
+}

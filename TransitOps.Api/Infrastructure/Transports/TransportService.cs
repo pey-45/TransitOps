@@ -4,6 +4,7 @@ using TransitOps.Api.Common;
 using TransitOps.Api.Contracts.Requests.Transports;
 using TransitOps.Api.Contracts.Responses.Transports;
 using TransitOps.Api.Domain.Entities;
+using TransitOps.Api.Domain.Enums;
 using TransitOps.Api.Errors;
 using TransitOps.Api.Infrastructure.Persistence;
 
@@ -210,6 +211,64 @@ public sealed class TransportService : ITransportService
         transport.VehicleId = vehicle.Id;
         transport.DriverId = driver.Id;
         transport.UpdatedAt = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDetailResponse(transport);
+    }
+
+    public async Task<TransportDetailResponse> TransitionStatusAsync(
+        Guid id,
+        TransitionTransportStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var transport = await GetActiveTransportAsync(id, cancellationToken);
+        var targetStatus = request.ParseTargetStatus();
+
+        if (!transport.CanTransitionTo(targetStatus))
+        {
+            throw new ConflictException(
+                "transport_status_transition_not_allowed",
+                $"Transport '{id}' cannot transition from '{transport.Status}' to '{targetStatus}'.");
+        }
+
+        var occurredAt = request.OccurredAt.HasValue
+            ? DateTimePersistence.AsUnspecified(request.OccurredAt.Value)
+            : DateTimePersistence.AsUnspecified(DateTime.UtcNow);
+
+        if (targetStatus == TransportStatus.InTransit)
+        {
+            if (transport.VehicleId is null || transport.DriverId is null)
+            {
+                throw new ConflictException(
+                    "transport_assignment_required",
+                    $"Transport '{id}' requires an assigned vehicle and driver before moving to 'in_transit'.");
+            }
+
+            transport.ActualPickupAt = occurredAt;
+        }
+
+        if (targetStatus == TransportStatus.Delivered)
+        {
+            if (transport.ActualPickupAt is null)
+            {
+                throw new ConflictException(
+                    "transport_actual_pickup_missing",
+                    $"Transport '{id}' cannot be delivered before capturing an actual pickup timestamp.");
+            }
+
+            if (occurredAt < transport.ActualPickupAt.Value)
+            {
+                throw new ConflictException(
+                    "transport_actual_delivery_before_pickup",
+                    $"Transport '{id}' cannot be delivered before its actual pickup timestamp.");
+            }
+
+            transport.ActualDeliveryAt = occurredAt;
+        }
+
+        transport.TransitionTo(targetStatus);
+        transport.UpdatedAt = occurredAt;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

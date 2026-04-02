@@ -84,7 +84,7 @@
                 "transports"
               ]
             },
-            "description": "Returns the current transport list from PostgreSQL. If you first run scripts/postgres/manual/002_seed_sample_data.sql, the active rows should include SEED-TR-001, SEED-TR-002, and SEED-TR-003, while soft-deleted SEED-TR-004 should be filtered out."
+            "description": "Returns the current transport list from PostgreSQL. If you first run scripts/database/postgres/seed/002_seed_sample_data.sql, the active rows should include SEED-TR-001, SEED-TR-002, and SEED-TR-003, while soft-deleted SEED-TR-004 should be filtered out."
           }
         },
         {
@@ -109,7 +109,7 @@
                 "{{transportId}}"
               ]
             },
-            "description": "Returns one seeded transport by id when scripts/postgres/manual/002_seed_sample_data.sql has been applied. The default {{transportId}} points to SEED-TR-001."
+            "description": "Returns one seeded transport by id when scripts/database/postgres/seed/002_seed_sample_data.sql has been applied. The default {{transportId}} points to SEED-TR-001."
           }
         },
         {
@@ -178,6 +178,74 @@
           }
         },
         {
+          "name": "Assign Transport",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"driverId\": \"{{driverId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{transportId}}/assignment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{transportId}}",
+                "assignment"
+              ]
+            },
+            "description": "Assigns a vehicle and a driver together to a planned transport. Both resources must exist, be active, and not be soft-deleted."
+          }
+        },
+        {
+          "name": "Transition Transport Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetStatus\": \"in_transit\",\n  \"occurredAt\": \"2026-04-08T08:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{transportId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{transportId}}",
+                "status"
+              ]
+            },
+            "description": "Transitions a transport through the explicit lifecycle rules. Starting the trip requires an assignment; delivered and cancelled remain terminal."
+          }
+        },
+        {
           "name": "Delete Transport",
           "request": {
             "method": "DELETE",
@@ -228,7 +296,7 @@
                 "vehicles"
               ]
             },
-            "description": "Current placeholder endpoint. The seed script scripts/postgres/manual/002_seed_sample_data.sql inserts vehicles SEED-PLATE-001 and SEED-PLATE-002 so the request variables already reference real seeded IDs for future implementation."
+            "description": "Current placeholder endpoint. The seed script scripts/database/postgres/seed/002_seed_sample_data.sql inserts vehicles SEED-PLATE-001 and SEED-PLATE-002 so the request variables already reference real seeded IDs for future implementation."
           }
         },
         {
@@ -253,7 +321,7 @@
                 "{{vehicleId}}"
               ]
             },
-            "description": "Current placeholder endpoint that returns 404 today. The default {{vehicleId}} matches seeded vehicle SEED-PLATE-001 from scripts/postgres/manual/002_seed_sample_data.sql."
+            "description": "Current placeholder endpoint that returns 404 today. The default {{vehicleId}} matches seeded vehicle SEED-PLATE-001 from scripts/database/postgres/seed/002_seed_sample_data.sql."
           }
         }
       ]
@@ -282,7 +350,7 @@
                 "drivers"
               ]
             },
-            "description": "Current placeholder endpoint. The seed script scripts/postgres/manual/002_seed_sample_data.sql inserts drivers SEED-DRV-001 and SEED-DRV-002 so the request variables already reference real seeded IDs for future implementation."
+            "description": "Current placeholder endpoint. The seed script scripts/database/postgres/seed/002_seed_sample_data.sql inserts drivers SEED-DRV-001 and SEED-DRV-002 so the request variables already reference real seeded IDs for future implementation."
           }
         },
         {
@@ -307,7 +375,7 @@
                 "{{driverId}}"
               ]
             },
-            "description": "Current placeholder endpoint that returns 404 today. The default {{driverId}} matches seeded driver SEED-DRV-001 from scripts/postgres/manual/002_seed_sample_data.sql."
+            "description": "Current placeholder endpoint that returns 404 today. The default {{driverId}} matches seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql."
           }
         }
       ]
@@ -338,7 +406,7 @@
                 "shipment-events"
               ]
             },
-            "description": "Current placeholder endpoint. The default {{transportId}} matches seeded transport SEED-TR-001, which has seeded shipment events in scripts/postgres/manual/002_seed_sample_data.sql."
+            "description": "Current placeholder endpoint. The default {{transportId}} matches seeded transport SEED-TR-001, which has seeded shipment events in scripts/database/postgres/seed/002_seed_sample_data.sql."
           }
         }
       ]
@@ -352,17 +420,17 @@
     {
       "key": "transportId",
       "value": "40000000-0000-0000-0000-000000000001",
-      "description": "Seeded transport SEED-TR-001 from scripts/postgres/manual/002_seed_sample_data.sql"
+      "description": "Seeded transport SEED-TR-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
     },
     {
       "key": "vehicleId",
       "value": "30000000-0000-0000-0000-000000000001",
-      "description": "Seeded vehicle SEED-PLATE-001 / SEED-VEH-001 from scripts/postgres/manual/002_seed_sample_data.sql"
+      "description": "Seeded vehicle SEED-PLATE-001 / SEED-VEH-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
     },
     {
       "key": "driverId",
       "value": "20000000-0000-0000-0000-000000000001",
-      "description": "Seeded driver SEED-DRV-001 from scripts/postgres/manual/002_seed_sample_data.sql"
+      "description": "Seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
     }
   ]
 }

@@ -64,6 +64,17 @@ Content-Type: application/json
 
 ###
 
+PUT {{TransitOps.Api_HostAddress}}/api/v1/transports/{{transportId}}/status
+Accept: application/json
+Content-Type: application/json
+
+{
+  "targetStatus": "in_transit",
+  "occurredAt": "2026-04-08T08:30:00Z"
+}
+
+###
+
 GET {{TransitOps.Api_HostAddress}}/api/v1/vehicles
 Accept: application/json
 

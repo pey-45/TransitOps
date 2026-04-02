@@ -94,6 +94,21 @@ public sealed class TransportsController : ApiControllerBase
         return OkResponse(transport);
     }
 
+    [HttpPut("{id:guid}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<TransportDetailResponse>>> TransitionStatus(
+        Guid id,
+        [FromBody] TransitionTransportStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var transport = await _transportService.TransitionStatusAsync(id, request, cancellationToken);
+
+        return OkResponse(transport);
+    }
+
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

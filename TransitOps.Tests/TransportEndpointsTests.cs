@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TransitOps.Api.Common;
 using TransitOps.Api.Domain.Entities;
 using TransitOps.Api.Domain.Enums;
 using TransitOps.Api.Infrastructure.Persistence;
@@ -413,6 +414,211 @@ public sealed class TransportEndpointsTests
     }
 
     [Fact]
+    public async Task TransitionStatus_ReturnsUpdatedTransport_WhenTransportStartsTrip()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var driver = CreateDriver("LIC-305");
+        var transport = CreateTransport(
+            reference: "TR-326",
+            plannedPickupAt: new DateTime(2026, 4, 8, 8, 0, 0, DateTimeKind.Utc),
+            vehicleId: vehicle.Id,
+            driverId: driver.Id);
+        var occurredAt = new DateTime(2026, 4, 8, 8, 30, 0, DateTimeKind.Utc);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "in_transit",
+                occurredAt
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal(1, payload["data"]?["status"]?.GetValue<int>());
+        Assert.Equal("2026-04-08T08:30:00", payload["data"]?["actualPickupAt"]?.GetValue<string>());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal(TransportStatus.InTransit, storedTransport.Status);
+        Assert.Equal(DateTimePersistence.AsUnspecified(occurredAt), storedTransport.ActualPickupAt);
+        Assert.Equal(DateTimePersistence.AsUnspecified(occurredAt), storedTransport.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task TransitionStatus_ReturnsConflict_WhenTransportLacksAssignment_ForInTransit()
+    {
+        var transport = CreateTransport(
+            reference: "TR-327",
+            plannedPickupAt: new DateTime(2026, 4, 8, 9, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "in_transit"
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_assignment_required", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task TransitionStatus_ReturnsUpdatedTransport_WhenTransportIsDelivered()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var driver = CreateDriver("LIC-306");
+        var actualPickupAt = new DateTime(2026, 4, 8, 8, 30, 0, DateTimeKind.Utc);
+        var actualDeliveryAt = new DateTime(2026, 4, 8, 15, 0, 0, DateTimeKind.Utc);
+        var transport = CreateTransport(
+            reference: "TR-328",
+            plannedPickupAt: new DateTime(2026, 4, 8, 8, 0, 0, DateTimeKind.Utc),
+            status: TransportStatus.InTransit,
+            vehicleId: vehicle.Id,
+            driverId: driver.Id,
+            actualPickupAt: actualPickupAt);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "delivered",
+                occurredAt = actualDeliveryAt
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal(2, payload["data"]?["status"]?.GetValue<int>());
+        Assert.Equal("2026-04-08T15:00:00", payload["data"]?["actualDeliveryAt"]?.GetValue<string>());
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
+        var storedTransport = await dbContext.Transports.SingleAsync();
+
+        Assert.Equal(TransportStatus.Delivered, storedTransport.Status);
+        Assert.Equal(DateTimePersistence.AsUnspecified(actualDeliveryAt), storedTransport.ActualDeliveryAt);
+    }
+
+    [Fact]
+    public async Task TransitionStatus_ReturnsConflict_WhenTransitionIsInvalidFromTerminalState()
+    {
+        var transport = CreateTransport(
+            reference: "TR-329",
+            plannedPickupAt: new DateTime(2026, 4, 8, 10, 0, 0, DateTimeKind.Utc),
+            status: TransportStatus.Delivered,
+            actualPickupAt: new DateTime(2026, 4, 8, 8, 30, 0, DateTimeKind.Utc),
+            actualDeliveryAt: new DateTime(2026, 4, 8, 15, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "cancelled"
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_status_transition_not_allowed", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task TransitionStatus_ReturnsConflict_WhenDeliveryPrecedesActualPickup()
+    {
+        var vehicle = CreateVehicle("1234ABC");
+        var driver = CreateDriver("LIC-307");
+        var transport = CreateTransport(
+            reference: "TR-330",
+            plannedPickupAt: new DateTime(2026, 4, 8, 11, 0, 0, DateTimeKind.Utc),
+            status: TransportStatus.InTransit,
+            vehicleId: vehicle.Id,
+            driverId: driver.Id,
+            actualPickupAt: new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Vehicles.Add(vehicle);
+            dbContext.Drivers.Add(driver);
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "delivered",
+                occurredAt = new DateTime(2026, 4, 8, 11, 30, 0, DateTimeKind.Utc)
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("transport_actual_delivery_before_pickup", payload["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task TransitionStatus_ReturnsBadRequest_WhenTargetStatusIsInvalid()
+    {
+        var transport = CreateTransport(
+            reference: "TR-331",
+            plannedPickupAt: new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc));
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.Add(transport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/transports/{transport.Id}/status",
+            new
+            {
+                targetStatus = "on_hold"
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("validation_error", payload["error"]?["code"]?.GetValue<string>());
+        Assert.NotNull(payload["error"]?["details"]?["TargetStatus"]);
+    }
+
+    [Fact]
     public async Task Update_ReturnsUpdatedTransport_WhenTransportExists()
     {
         var transport = CreateTransport(
@@ -638,7 +844,9 @@ public sealed class TransportEndpointsTests
         DateTime? deletedAt = null,
         TransportStatus status = TransportStatus.Planned,
         Guid? vehicleId = null,
-        Guid? driverId = null)
+        Guid? driverId = null,
+        DateTime? actualPickupAt = null,
+        DateTime? actualDeliveryAt = null)
     {
         return new Transport(status)
         {
@@ -648,6 +856,8 @@ public sealed class TransportEndpointsTests
             Destination = "Barcelona",
             PlannedPickupAt = plannedPickupAt,
             PlannedDeliveryAt = plannedPickupAt.AddHours(6),
+            ActualPickupAt = actualPickupAt,
+            ActualDeliveryAt = actualDeliveryAt,
             VehicleId = vehicleId,
             DriverId = driverId,
             CreatedAt = plannedPickupAt.AddDays(-1),
