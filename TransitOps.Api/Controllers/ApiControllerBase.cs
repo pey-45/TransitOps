@@ -7,8 +7,10 @@ namespace TransitOps.Api.Controllers;
 [Produces("application/json")]
 public abstract class ApiControllerBase : ControllerBase
 {
-    protected ActionResult<ApiResponse<T>> OkResponse<T>(T data)
+    protected ActionResult<ApiResponse<T>> OkResponse<T>(
+        T data,
+        ApiPaginationMetadata? pagination = null)
     {
-        return Ok(ApiResponse<T>.Success(data, HttpContext.TraceIdentifier));
+        return Ok(ApiResponse<T>.Success(data, HttpContext.TraceIdentifier, pagination));
     }
 }

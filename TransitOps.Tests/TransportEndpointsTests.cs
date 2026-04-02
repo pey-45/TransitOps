@@ -138,6 +138,78 @@ public sealed class TransportEndpointsTests
         Assert.Equal(firstTransport.Reference, transports[0]?["reference"]?.GetValue<string>());
         Assert.Equal(secondTransport.Reference, transports[1]?["reference"]?.GetValue<string>());
         Assert.DoesNotContain(transports, node => node?["reference"]?.GetValue<string>() == deletedTransport.Reference);
+        Assert.Equal(1, payload["meta"]?["pagination"]?["page"]?.GetValue<int>());
+        Assert.Equal(20, payload["meta"]?["pagination"]?["pageSize"]?.GetValue<int>());
+        Assert.Equal(2, payload["meta"]?["pagination"]?["totalCount"]?.GetValue<int>());
+        Assert.Equal(1, payload["meta"]?["pagination"]?["totalPages"]?.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task GetAll_AppliesFiltersAndPagination_ForDemoUse()
+    {
+        var assignedVehicleId = Guid.NewGuid();
+        var assignedDriverId = Guid.NewGuid();
+        var matchingFirstTransport = CreateTransport(
+            reference: "TR-010",
+            plannedPickupAt: new DateTime(2026, 4, 6, 8, 0, 0, DateTimeKind.Utc),
+            vehicleId: assignedVehicleId,
+            driverId: assignedDriverId);
+        var matchingSecondTransport = CreateTransport(
+            reference: "TR-011",
+            plannedPickupAt: new DateTime(2026, 4, 6, 10, 0, 0, DateTimeKind.Utc),
+            vehicleId: assignedVehicleId,
+            driverId: assignedDriverId);
+        var differentStatusTransport = CreateTransport(
+            reference: "TR-012",
+            plannedPickupAt: new DateTime(2026, 4, 6, 9, 0, 0, DateTimeKind.Utc),
+            vehicleId: assignedVehicleId,
+            driverId: assignedDriverId,
+            status: TransportStatus.InTransit);
+        var differentAssignmentTransport = CreateTransport(
+            reference: "TR-013",
+            plannedPickupAt: new DateTime(2026, 4, 6, 11, 0, 0, DateTimeKind.Utc),
+            vehicleId: Guid.NewGuid(),
+            driverId: assignedDriverId);
+
+        using var factory = new TransitOpsApiFactory(dbContext =>
+        {
+            dbContext.Transports.AddRange(
+                matchingFirstTransport,
+                matchingSecondTransport,
+                differentStatusTransport,
+                differentAssignmentTransport);
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(
+            $"/api/v1/transports?status=planned&vehicleId={assignedVehicleId}&driverId={assignedDriverId}&plannedPickupFrom=2026-04-06T00:00:00Z&plannedPickupTo=2026-04-06T23:59:59Z&page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        var transports = payload["data"]!.AsArray();
+
+        Assert.Single(transports);
+        Assert.Equal(matchingFirstTransport.Reference, transports[0]?["reference"]?.GetValue<string>());
+        Assert.Equal(1, payload["meta"]?["pagination"]?["page"]?.GetValue<int>());
+        Assert.Equal(1, payload["meta"]?["pagination"]?["pageSize"]?.GetValue<int>());
+        Assert.Equal(2, payload["meta"]?["pagination"]?["totalCount"]?.GetValue<int>());
+        Assert.Equal(2, payload["meta"]?["pagination"]?["totalPages"]?.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsBadRequest_WhenPaginationParametersAreInvalid()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/transports?page=0&pageSize=101");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("validation_error", payload["error"]?["code"]?.GetValue<string>());
+        Assert.NotNull(payload["error"]?["details"]);
     }
 
     [Fact]
@@ -364,7 +436,9 @@ public sealed class TransportEndpointsTests
         DateTime plannedPickupAt,
         string? description = null,
         DateTime? deletedAt = null,
-        TransportStatus status = TransportStatus.Planned)
+        TransportStatus status = TransportStatus.Planned,
+        Guid? vehicleId = null,
+        Guid? driverId = null)
     {
         return new Transport(status)
         {
@@ -374,6 +448,8 @@ public sealed class TransportEndpointsTests
             Destination = "Barcelona",
             PlannedPickupAt = plannedPickupAt,
             PlannedDeliveryAt = plannedPickupAt.AddHours(6),
+            VehicleId = vehicleId,
+            DriverId = driverId,
             CreatedAt = plannedPickupAt.AddDays(-1),
             UpdatedAt = plannedPickupAt.AddHours(-1),
             DeletedAt = deletedAt

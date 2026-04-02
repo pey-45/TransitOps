@@ -4,7 +4,7 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: March 31, 2026.
+Reference date: April 2, 2026.
 
 The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
@@ -13,9 +13,9 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed transport CRUD plus health endpoints already work, while the remaining CRUD/query behavior, authentication, and the cloud rollout are still pending. Vehicle, driver, and shipment-event controllers still exist only as minimal placeholder HTTP surfaces and are not yet backed by real persistence flows. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use. Shipment-event flows, authentication/authorization, assignment, lifecycle actions, and the cloud rollout are still pending. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
 
-Planning has now been restructured around an explicit requirements specification and a daily roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
+Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
 ## Project Objective
 
@@ -45,7 +45,7 @@ The MVP covers a functional backend that can run locally with:
 
 Advanced cloud work is outside the MVP: Terraform, ECS, ECR, RDS on AWS, CloudWatch, alarms, and full automated deployment.
 
-The detailed requirements baseline is in [docs/Requirements.md](docs/Requirements.md), and the current day-by-day execution plan is in [docs/Roadmap.md](docs/Roadmap.md).
+The detailed requirements baseline is in [docs/Requirements.md](docs/Requirements.md), and the current sprint plan is in [docs/Roadmap.md](docs/Roadmap.md).
 
 ## Target Stack
 
@@ -93,10 +93,12 @@ TransitOps/
 |   |-- Program.cs
 |   `-- TransitOps.Api.csproj
 `-- TransitOps.Tests/
+    |-- DriverEndpointsTests.cs
     |-- HealthEndpointsTests.cs
     |-- TransportEndpointsTests.cs
     |-- TransportStateMachineTests.cs
     |-- TransitOpsApiFactory.cs
+    |-- VehicleEndpointsTests.cs
     `-- TransitOps.Tests.csproj
 ```
 
@@ -105,7 +107,7 @@ The exact folder distribution may evolve. What matters at this stage is that the
 ## Available Documentation
 
 - Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
-- Daily delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
+- Sprint delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
 - Architecture/model source: [docs/ClassDiagramV1.drawio](docs/ClassDiagramV1.drawio)
 
 ## Local Requirements
@@ -123,9 +125,12 @@ The repository already includes:
 - `docker-compose.yml` for local API + PostgreSQL startup;
 - EF Core PostgreSQL persistence under `TransitOps.Api/Infrastructure/Persistence`;
 - a migrations-managed schema under `TransitOps.Api/Infrastructure/Persistence/Migrations`, including the baseline setup plus follow-up alignment and enum-simplification migrations;
-- implemented `GET /api/v1/health/live`, `GET /api/v1/health/ready`, `GET /api/v1/transports`, `GET /api/v1/transports/{id}`, `POST /api/v1/transports`, `PUT /api/v1/transports/{id}`, and `DELETE /api/v1/transports/{id}`;
-- placeholder `GET /api/v1/vehicles`, `GET /api/v1/vehicles/{id}`, `GET /api/v1/drivers`, `GET /api/v1/drivers/{id}`, and `GET /api/v1/transports/{transportId}/shipment-events` endpoints that still need real database-backed behavior;
-- integration tests for the implemented health and transport read/write endpoints;
+- implemented `GET /api/v1/health/live` and `GET /api/v1/health/ready`;
+- implemented database-backed transport CRUD, including filtered/paginated `GET /api/v1/transports` plus `GET /api/v1/transports/{id}`, `POST /api/v1/transports`, `PUT /api/v1/transports/{id}`, and `DELETE /api/v1/transports/{id}`;
+- implemented database-backed vehicle CRUD on `GET /api/v1/vehicles`, `GET /api/v1/vehicles/{id}`, `POST /api/v1/vehicles`, `PUT /api/v1/vehicles/{id}`, and `DELETE /api/v1/vehicles/{id}`;
+- implemented database-backed driver CRUD on `GET /api/v1/drivers`, `GET /api/v1/drivers/{id}`, `POST /api/v1/drivers`, `PUT /api/v1/drivers/{id}`, and `DELETE /api/v1/drivers/{id}`;
+- placeholder shipment-event endpoints that still need real database-backed behavior;
+- integration tests for the implemented health, transport, vehicle, and driver endpoints;
 - manual request artifacts in `TransitOps.Api/TransitOps.Api.http` and `TransitOps.Api/TransitOps.Api.postman_collection.json`;
 - optional manual sample-data scripts under `scripts/postgres/manual/`, aligned with the current numeric enum mapping;
 - `smallint`-backed enum storage with check constraints for transport status, shipment event type, and user role;
@@ -204,7 +209,7 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Next Milestones
 
-1. Replace the remaining placeholder controller behavior for vehicles, drivers, and shipment events with real CRUD/query flows on top of `TransitOpsDbContext`.
+1. Implement the missing assignment, transport lifecycle, and shipment-event flows on top of the current CRUD baseline.
 2. Introduce user bootstrap, basic admin user management, JWT authentication, and role-based authorization.
 3. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
 4. Move immediately into Terraform, AWS runtime, and delivery automation once the local MVP core is closed.
@@ -219,4 +224,4 @@ GET http://localhost:8080/api/v1/health/ready
 
 ## Verification Note
 
-As of March 31, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport list/detail/create/update/delete are backed by PostgreSQL, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover both domain rules and the implemented transport CRUD endpoints. Vehicle, driver, and shipment-event endpoints still require real persistence-backed implementation. The rest of the CRUD surface, authentication, and AWS deployment are still pending.
+As of April 2, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover the implemented health, transport, vehicle, and driver flows. Shipment events, authentication, assignment/lifecycle actions, and AWS deployment are still pending.

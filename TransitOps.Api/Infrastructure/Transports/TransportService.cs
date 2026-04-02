@@ -18,13 +18,53 @@ public sealed class TransportService : ITransportService
         _dbContext = dbContext;
     }
 
-    public async Task<IReadOnlyList<TransportSummaryResponse>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<PagedResult<TransportSummaryResponse>> GetAllAsync(
+        GetTransportsRequest request,
+        CancellationToken cancellationToken)
     {
-        return await _dbContext.Transports
+        var plannedPickupFrom = DateTimePersistence.AsUnspecified(request.PlannedPickupFrom);
+        var plannedPickupTo = DateTimePersistence.AsUnspecified(request.PlannedPickupTo);
+
+        var transportsQuery = _dbContext.Transports
             .AsNoTracking()
-            .Where(transport => transport.DeletedAt == null)
+            .Where(transport => transport.DeletedAt == null);
+
+        if (request.Status.HasValue)
+        {
+            var status = request.Status.Value;
+            transportsQuery = transportsQuery.Where(transport => transport.Status == status);
+        }
+
+        if (plannedPickupFrom.HasValue)
+        {
+            transportsQuery = transportsQuery
+                .Where(transport => transport.PlannedPickupAt >= plannedPickupFrom.Value);
+        }
+
+        if (plannedPickupTo.HasValue)
+        {
+            transportsQuery = transportsQuery
+                .Where(transport => transport.PlannedPickupAt <= plannedPickupTo.Value);
+        }
+
+        if (request.VehicleId.HasValue)
+        {
+            var vehicleId = request.VehicleId.Value;
+            transportsQuery = transportsQuery.Where(transport => transport.VehicleId == vehicleId);
+        }
+
+        if (request.DriverId.HasValue)
+        {
+            var driverId = request.DriverId.Value;
+            transportsQuery = transportsQuery.Where(transport => transport.DriverId == driverId);
+        }
+
+        var totalCount = await transportsQuery.CountAsync(cancellationToken);
+        var items = await transportsQuery
             .OrderBy(transport => transport.PlannedPickupAt)
             .ThenBy(transport => transport.Reference)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
             .Select(transport => new TransportSummaryResponse(
                 transport.Id,
                 transport.Reference,
@@ -37,6 +77,12 @@ public sealed class TransportService : ITransportService
                 transport.PlannedDeliveryAt,
                 transport.UpdatedAt))
             .ToArrayAsync(cancellationToken);
+
+        return new PagedResult<TransportSummaryResponse>(
+            items,
+            request.Page,
+            request.PageSize,
+            totalCount);
     }
 
     public async Task<TransportDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

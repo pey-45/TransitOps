@@ -10,7 +10,7 @@ It should contain the current state of the project, recent decisions, relevant a
 
 - Project: `TransitOps`
 - Reference date: 2026-04-02
-- Repository status: local backend baseline established, transport read/write slice operational on PostgreSQL with numeric enum persistence, and the delivery roadmap now organized into one-week sprints with the local MVP compressed into Sprint 1
+- Repository status: local backend baseline established, transport/vehicle/driver CRUD now operational on PostgreSQL with numeric enum persistence, transport list filters/pagination available for demo use, and the delivery roadmap organized into one-week sprints with the local MVP compressed into Sprint 1
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -24,7 +24,8 @@ It should contain the current state of the project, recent decisions, relevant a
 - Enum-like fields (`transport.status`, `shipment_event.event_type`, `app_user.user_role`) now use `smallint` columns with explicit check constraints instead of native PostgreSQL enums, preserving the .NET enums in code while avoiding provider-specific runtime friction.
 - The API readiness endpoint now validates real PostgreSQL connectivity through `TransitOpsDbContext.Database.CanConnectAsync()`.
 - The functional MVP is not implemented yet, but the API surface, persistence layer, and simplified internal folder structure now support the next CRUD and command/query steps without reworking the baseline.
-- Transport create, update, and logical delete are now implemented on top of `TransitOpsDbContext`, using explicit validation and active-reference conflict checks, so the transport slice has coherent list/detail/create/update/delete behavior against PostgreSQL.
+- Transport create, update, logical delete, filtered listing, and basic pagination are now implemented on top of `TransitOpsDbContext`, using explicit validation and active-reference conflict checks, so the transport slice has coherent list/detail/create/update/delete behavior against PostgreSQL.
+- Vehicle and driver CRUD are now implemented on top of `TransitOpsDbContext`, including explicit validation, active-row conflict checks on business identifiers, and logical delete behavior consistent with transport soft deletion.
 - Planning is now anchored in `docs/Requirements.md` for scope and acceptance, and `docs/Roadmap.md` for sprint execution from the real repository state as of March 29, 2026.
 - The roadmap now uses one-week sprints instead of day-by-day planning, with each sprint defining a dominant phase, mandatory scope, explicit artifacts, and a strict definition of done.
 - The requirements specification now explicitly defines user management, role permissions for `admin` and `operator`, main operational flows, and stronger acceptance detail.
@@ -104,6 +105,7 @@ These are outside the local functional MVP, but they are central to the overall 
 - 2026-03-30: Confirmed that with the current `Npgsql.EntityFrameworkCore.PostgreSQL` `10.0.1` provider, EF Core still sends `Transport.Status` as an integer on PostgreSQL inserts despite the enum registrations; transport creation therefore intentionally keeps the targeted SQL insert workaround for `status` until the provider/runtime mapping issue is resolved with a validated alternative.
 - 2026-03-30: Replaced native PostgreSQL enums with `smallint` columns plus explicit check constraints for `transport.status`, `shipment_event.event_type`, and `app_user.user_role`; the new migration preserves existing rows with `USING CASE`, drops the old enum types after conversion, removes the transport SQL insert workaround, and leaves EF Core using its normal enum-to-number mapping.
 - 2026-04-02: Removed the artificial `Application/Commands` vs `Application/Queries` split for the implemented transport slice, consolidating it into a single `ITransportService` and `TransportService` so the current CRUD-oriented codebase is easier to navigate and maintain.
+- 2026-04-02: Implemented full vehicle and driver CRUD on top of `TransitOpsDbContext`, plus transport list filters by status/date/vehicle/driver and basic pagination metadata, and added integration tests covering those new slices.
 - 2026-04-01: Replanned `docs/Roadmap.md` through 2026-05-31 so the backend functional surface is closed quickly and the majority of remaining time is explicitly allocated to Terraform, AWS deployment, CI/CD, observability, security, runbooks, evidence capture, and final technical defense material.
 - 2026-04-02: Refined `docs/Roadmap.md` again so each day has a more even time budget, a deterministic primary artifact, a mandatory verification step, and explicit coverage of cloud-engineering concerns such as remote Terraform state, tagging, Route53/ACM, ECR scanning, GitHub OIDC, rollback, and backup/restore.
 - 2026-04-02: Reworked `docs/Roadmap.md` from daily planning into weekly sprints starting on 2026-03-30, each with a dominant phase, bounded scope, deliverables, and exit criteria, because sprint-level planning better fits the project than day-level task slicing.
@@ -112,7 +114,7 @@ These are outside the local functional MVP, but they are central to the overall 
 
 ## Open Notes
 
-- Persistence is now wired at infrastructure level. Transport list/detail/create/update/logical delete are database-backed, but the remaining CRUD/query flows for vehicles, drivers, shipment events, and users are still pending.
+- Persistence is now wired at infrastructure level. Transport, vehicle, and driver list/detail/create/update/logical delete are database-backed, and transport listing now supports the demo filters/pagination requested in `docs/Requirements.md`. Shipment events, users, auth, assignment, and lifecycle flows are still pending.
 - Legacy local PostgreSQL volumes created from the retired SQL-bootstrap flow should be reset before using the new migrations-managed Docker startup.
 - `GET /api/v1/health/ready` already confirms whether the API can connect to PostgreSQL in the current environment.
 - Manual sample-data scripts under `scripts/postgres/manual/` are now aligned with the `smallint` enum mapping strategy used by the live schema.

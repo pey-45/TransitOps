@@ -19,12 +19,16 @@ public sealed class TransportsController : ApiControllerBase
 
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<IReadOnlyList<TransportSummaryResponse>>>> GetAll(
+        [FromQuery] GetTransportsRequest request,
         CancellationToken cancellationToken)
     {
-        var transports = await _transportService.GetAllAsync(cancellationToken);
+        var result = await _transportService.GetAllAsync(request, cancellationToken);
 
-        return OkResponse<IReadOnlyList<TransportSummaryResponse>>(transports);
+        return OkResponse<IReadOnlyList<TransportSummaryResponse>>(
+            result.Items,
+            result.ToPaginationMetadata());
     }
 
     [HttpGet("{id:guid}")]

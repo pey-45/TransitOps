@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TransitOps.Api.Application.Drivers;
 using TransitOps.Api.Application.Transports;
+using TransitOps.Api.Application.Vehicles;
 using TransitOps.Api.Middleware;
+using TransitOps.Api.Infrastructure.Drivers;
 using TransitOps.Api.Infrastructure.Persistence;
 using TransitOps.Api.Infrastructure.Transports;
+using TransitOps.Api.Infrastructure.Vehicles;
 
 namespace TransitOps.Api;
 
@@ -51,7 +55,9 @@ public class Program
         builder.Services.AddDbContext<TransitOpsDbContext>(
             options => options.UseNpgsql(connectionString));
 
+        builder.Services.AddScoped<IDriverService, DriverService>();
         builder.Services.AddScoped<ITransportService, TransportService>();
+        builder.Services.AddScoped<IVehicleService, VehicleService>();
 
         builder.Services.AddOpenApi();
 
