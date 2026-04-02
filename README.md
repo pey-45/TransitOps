@@ -13,7 +13,7 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, and admin-only user-management flows now cover list, detail, create, role change, and activate/deactivate with last-active-admin protection. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, admin-only user-management flows now cover list, detail, create, role change, and activate/deactivate with last-active-admin protection, the local Docker path is now documented through `.env.example` and a dedicated verification guide, and a first GitHub Actions build/test workflow now exists. Enum-like state fields are persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
 
 Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
@@ -68,10 +68,15 @@ TransitOps/
 |-- TransitOps.slnx
 |-- AGENTS.md
 |-- CONTEXT.md
+|-- .env.example
 |-- README.md
 |-- docker-compose.yml
 |-- dotnet-tools.json
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
 |-- docs/
+|   |-- LocalVerification.md
 |   |-- Requirements.md
 |   `-- Roadmap.md
 |-- scripts/
@@ -115,6 +120,7 @@ The exact folder distribution may evolve. What matters at this stage is that the
 
 - Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
 - Sprint delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
+- Local verification guide: [docs/LocalVerification.md](docs/LocalVerification.md)
 - Architecture/model source: [docs/ClassDiagramV1.drawio](docs/ClassDiagramV1.drawio)
 
 ## Local Requirements
@@ -188,10 +194,15 @@ If you want to exercise the first-admin bootstrap endpoint locally, also configu
 dotnet user-secrets set --project .\TransitOps.Api\TransitOps.Api.csproj "Bootstrap:FirstAdminToken" "<local-bootstrap-token>"
 ```
 
+Prepare local Docker configuration:
+
+```powershell
+Copy-Item .env.example .env
+```
+
 Run API + PostgreSQL with Docker Compose:
 
 ```powershell
-set TRANSITOPS_JWT_SIGNING_KEY=<long-local-dev-signing-key>
 docker compose up --build
 ```
 
@@ -224,7 +235,13 @@ dotnet tool run dotnet-ef database update --project .\TransitOps.Api\TransitOps.
 
 `docker compose up --build` starts PostgreSQL on a fresh named volume and the API applies pending EF Core migrations automatically on startup. If you still have an old local volume from the retired SQL-bootstrap flow, reset it with `docker compose down -v`.
 
-The Docker path requires `TRANSITOPS_JWT_SIGNING_KEY` because JWT signing keys are externalized on purpose. `TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN` is optional and only needed when you want to call `POST /api/v1/auth/bootstrap-admin`.
+The Docker path reads `.env` automatically. `TRANSITOPS_JWT_SIGNING_KEY` is required and must be at least 32 characters long. `TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN` is optional and only needed when you want to call `POST /api/v1/auth/bootstrap-admin`.
+
+Validate the compose file before starting the stack:
+
+```powershell
+docker compose config
+```
 
 Check API readiness against PostgreSQL:
 
@@ -250,6 +267,8 @@ This smoke flow:
 
 `run_local_api_smoke.bat` prefers a globally installed `newman`, but it can also fall back to `npx newman@6` when Node.js is available.
 
+For the full step-by-step local path, including manual `.http` and Postman verification, see [docs/LocalVerification.md](docs/LocalVerification.md).
+
 Deterministic local seed credentials:
 
 - `seed.admin` / `SeedAdmin!123`
@@ -259,9 +278,9 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Next Milestones
 
-1. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
-2. Freeze the AWS target architecture, naming, tagging, and configuration conventions for the cloud phase.
-3. Move immediately into Terraform, AWS runtime, and delivery automation now that the local MVP core is functionally covered.
+1. Freeze the AWS target architecture, naming, tagging, and configuration conventions for the cloud phase.
+2. Move into Terraform, AWS runtime, and delivery automation now that the local MVP core has a documented local verification path and CI baseline.
+3. Extend the CI baseline later with cloud-specific validation once Terraform and deployment workflows exist.
 
 ## Roadmap Quality Criteria
 
@@ -273,4 +292,4 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Verification Note
 
-As of April 3, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover the implemented health, transport, vehicle, driver, shipment-event, auth, and user-management flows. AWS deployment work is still pending.
+As of April 3, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, a documented local Docker verification path exists, a runner-safe smoke path exists, a manual Postman environment exists, and a GitHub Actions restore/build/test baseline is present. AWS deployment work is still pending.

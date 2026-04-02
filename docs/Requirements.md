@@ -384,12 +384,12 @@ Acceptance criteria:
 | --- | --- | --- | --- | --- |
 | NFR-01 | Scope discipline and simplicity | Must | Completed baseline | The solution remains a small modular monolith with only justified projects, folders, and abstractions. |
 | NFR-02 | PostgreSQL as system of record | Must | Partial | PostgreSQL remains the single persistent store, and persistence behavior is consistent between schema, EF Core, and runtime configuration. |
-| NFR-03 | Reproducible local execution | Must | Partial | Another developer can start the API and PostgreSQL locally with documented commands and without hidden manual steps. |
+| NFR-03 | Reproducible local execution | Must | Completed | Another developer can start the API and PostgreSQL locally with documented commands and without hidden manual steps. |
 | NFR-04 | Cloud deployability | Must | Partial | The API is stateless, containerized, externally configurable, and compatible with ECS, ALB, and RDS. |
 | NFR-05 | Security baseline | Must | Partial | Passwords are stored hashed, JWT secrets are externalized, roles are enforced, and no secrets are committed to the repository. |
-| NFR-06 | Reliability and controlled failure | Must | Partial | The service fails clearly when dependencies are unavailable, and the database migration/bootstrap strategy is explicit before cloud rollout. |
+| NFR-06 | Reliability and controlled failure | Must | Completed | The service fails clearly when dependencies are unavailable, and the database migration/bootstrap strategy is explicit before cloud rollout. |
 | NFR-07 | Maintainability and documentation | Must | Partial | Folder responsibilities stay clear, docs remain aligned with reality, and planning artifacts stay up to date. |
-| NFR-08 | Testability and CI | Must | Partial | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI. |
+| NFR-08 | Testability and CI | Must | Completed | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI. |
 | NFR-09 | Observability | Should | Pending | Logs are structured, request correlation is available, and runtime output is usable from CloudWatch. |
 | NFR-10 | Small-scale performance | Should | Partial | Core list/detail flows are supported by appropriate indexes, pagination, and reasonable query patterns for an academic workload. |
 | NFR-11 | Infrastructure as code and controlled delivery | Must | Pending | AWS infrastructure is versioned in Terraform, and the delivery path is repeatable and reviewable through CI/CD. |
