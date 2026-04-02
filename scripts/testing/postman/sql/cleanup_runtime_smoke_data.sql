@@ -1,5 +1,12 @@
 BEGIN;
 
+DELETE FROM shipment_event
+WHERE transport_id IN (
+    SELECT id
+    FROM transport
+    WHERE reference LIKE 'TR-SMK-%'
+);
+
 DELETE FROM transport
 WHERE reference LIKE 'TR-SMK-%';
 

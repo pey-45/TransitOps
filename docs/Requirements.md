@@ -89,7 +89,7 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 | FR-08 | Driver management | Must | Completed |
 | FR-09 | Assignment workflow | Must | Completed |
 | FR-10 | Transport lifecycle | Must | Completed |
-| FR-11 | Shipment events | Must | Partial |
+| FR-11 | Shipment events | Must | Completed |
 | FR-12 | Listings and filters | Should | Completed |
 | FR-13 | Validation, response contract, and conflicts | Must | Partial |
 | FR-14 | Audit trail and logical deletion | Must | Partial |

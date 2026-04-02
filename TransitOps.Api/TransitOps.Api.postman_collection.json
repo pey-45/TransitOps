@@ -406,7 +406,41 @@
                 "shipment-events"
               ]
             },
-            "description": "Current placeholder endpoint. The default {{transportId}} matches seeded transport SEED-TR-001, which has seeded shipment events in scripts/database/postgres/seed/002_seed_sample_data.sql."
+            "description": "Returns the seeded event history for the selected transport ordered by event date. The default {{transportId}} points to SEED-TR-001, which has seeded created and assigned events."
+          }
+        },
+        {
+          "name": "Create Shipment Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"createdByUserId\": \"{{createdByUserId}}\",\n  \"eventType\": \"checkpoint\",\n  \"eventDate\": \"2026-04-09T12:30:00Z\",\n  \"location\": \"A-4 Km 35\",\n  \"notes\": \"Manual shipment event creation example.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{transportId}}/shipment-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{transportId}}",
+                "shipment-events"
+              ]
+            },
+            "description": "Creates a shipment event for the selected transport using the seeded admin user as the explicit actor while authentication is still pending."
           }
         }
       ]
@@ -431,6 +465,11 @@
       "key": "driverId",
       "value": "20000000-0000-0000-0000-000000000001",
       "description": "Seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
+    },
+    {
+      "key": "createdByUserId",
+      "value": "10000000-0000-0000-0000-000000000001",
+      "description": "Seeded admin user seed.admin from scripts/database/postgres/seed/002_seed_sample_data.sql"
     }
   ]
 }

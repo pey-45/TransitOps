@@ -47,7 +47,7 @@ if errorlevel 1 (
 )
 
 echo Starting local Docker services...
-docker compose up -d db api
+docker compose up -d --build db api
 if errorlevel 1 goto :fail
 
 echo Waiting for API readiness...

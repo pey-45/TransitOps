@@ -6,6 +6,7 @@ public sealed record ShipmentEventResponse(
     Guid Id,
     Guid TransportId,
     Guid CreatedByUserId,
+    ShipmentEventActorResponse CreatedBy,
     ShipmentEventType EventType,
     DateTime EventDate,
     string? Location,

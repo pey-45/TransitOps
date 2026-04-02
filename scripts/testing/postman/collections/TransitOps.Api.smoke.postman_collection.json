@@ -18,6 +18,7 @@
           "  pm.collectionVariables.unset(\"runtimeVehicleId\");",
           "  pm.collectionVariables.unset(\"runtimeDriverId\");",
           "  pm.collectionVariables.unset(\"runtimeTransportId\");",
+          "  pm.collectionVariables.unset(\"runtimeShipmentEventId\");",
           "  pm.collectionVariables.set(\"runtimeVehiclePlate\", `SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeVehicleInternalCode\", `VEH-SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeVehicleUpdatedPlate\", `SMKU${suffix}`);",
@@ -486,8 +487,13 @@
                   "  pm.response.to.have.status(200);",
                   "});",
                   "const payload = pm.response.json();",
-                  "pm.test(\"Shipment event endpoint currently returns the expected array contract\", function () {",
+                  "pm.test(\"Shipment event history is chronological and traceable\", function () {",
                   "  pm.expect(Array.isArray(payload.data)).to.eql(true);",
+                  "  pm.expect(payload.data.length).to.eql(2);",
+                  "  pm.expect(payload.data[0].eventType).to.eql(0);",
+                  "  pm.expect(payload.data[0].createdBy.username).to.eql(pm.environment.get(\"seededAdminUsername\"));",
+                  "  pm.expect(payload.data[1].eventType).to.eql(1);",
+                  "  pm.expect(payload.data[0].eventDate <= payload.data[1].eventDate).to.eql(true);",
                   "});"
                 ]
               }
@@ -514,7 +520,7 @@
                 "shipment-events"
               ]
             },
-            "description": "Covers the current shipment-event placeholder endpoint. Until the endpoint becomes database-backed, this smoke test asserts only the live array contract."
+            "description": "Verifies the seeded shipment-event history and actor traceability against the real API."
           }
         }
       ]
@@ -1122,6 +1128,105 @@
               ]
             },
             "description": "Assigns the runtime vehicle and driver together to the runtime transport."
+          }
+        },
+        {
+          "name": "Create Runtime Shipment Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Shipment event create returns 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"runtimeShipmentEventId\", payload.data.id);",
+                  "pm.test(\"Shipment event create persists actor traceability\", function () {",
+                  "  pm.expect(payload.data.transportId).to.eql(pm.collectionVariables.get(\"runtimeTransportId\"));",
+                  "  pm.expect(payload.data.createdByUserId).to.eql(pm.environment.get(\"seededAdminUserId\"));",
+                  "  pm.expect(payload.data.createdBy.username).to.eql(pm.environment.get(\"seededAdminUsername\"));",
+                  "  pm.expect(payload.data.eventType).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"createdByUserId\": \"{{seededAdminUserId}}\",\n  \"eventType\": \"assigned\",\n  \"eventDate\": \"2026-04-10T08:15:00Z\",\n  \"location\": \"Madrid Hub\",\n  \"notes\": \"Smoke shipment event for assignment traceability.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/shipment-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}",
+                "shipment-events"
+              ]
+            },
+            "description": "Creates a runtime shipment event on the runtime transport using the seeded admin user as actor."
+          }
+        },
+        {
+          "name": "Get Runtime Shipment Event History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime shipment event history returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime shipment event history includes the created event\", function () {",
+                  "  pm.expect(payload.data.length).to.be.greaterThan(0);",
+                  "  pm.expect(payload.data.some(eventItem => eventItem.id === pm.collectionVariables.get(\"runtimeShipmentEventId\"))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transports/{{runtimeTransportId}}/shipment-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transports",
+                "{{runtimeTransportId}}",
+                "shipment-events"
+              ]
+            },
+            "description": "Reads back the runtime shipment-event history after creating the event."
           }
         },
         {
