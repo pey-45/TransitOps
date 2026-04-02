@@ -13,7 +13,7 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, and the API now exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints. Basic admin user-management flows and the cloud rollout are still pending. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, and admin-only user-management flows now cover list, detail, create, role change, and activate/deactivate with last-active-admin protection. Enum-like state fields are now persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
 
 Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
@@ -138,7 +138,8 @@ The repository already includes:
 - implemented database-backed driver CRUD on `GET /api/v1/drivers`, `GET /api/v1/drivers/{id}`, `POST /api/v1/drivers`, `PUT /api/v1/drivers/{id}`, and `DELETE /api/v1/drivers/{id}`;
 - implemented shipment-event creation/history on `POST /api/v1/transports/{transportId}/shipment-events` and `GET /api/v1/transports/{transportId}/shipment-events`, with actor traceability now resolved from the authenticated user context;
 - implemented auth endpoints on `POST /api/v1/auth/bootstrap-admin` and `POST /api/v1/auth/login`, with password hashing, JWT issuance, and protected business endpoints;
-- integration tests for the implemented health, transport, vehicle, driver, shipment-event, and auth endpoints;
+- implemented admin-only user-management on `GET /api/v1/users`, `GET /api/v1/users/{id}`, `POST /api/v1/users`, `PUT /api/v1/users/{id}/role`, and `PUT /api/v1/users/{id}/activation`, including last-active-admin protection;
+- integration tests for the implemented health, transport, vehicle, driver, shipment-event, auth, and user-management endpoints;
 - manual request artifacts in `TransitOps.Api/TransitOps.Api.http` and `TransitOps.Api/TransitOps.Api.postman_collection.json`;
 - a runner-safe Postman/Newman smoke flow under `scripts/testing/postman/` that starts from deterministic seed data and exercises the live local API against real PostgreSQL;
 - optional manual sample-data scripts under `scripts/database/postgres/seed/`, aligned with the current numeric enum mapping, plus `.bat` wrappers that execute them against the local Docker PostgreSQL service;
@@ -258,10 +259,9 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Next Milestones
 
-1. Implement the missing admin-only user-management flows on top of the current auth baseline.
-2. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
-3. Freeze the AWS target architecture, naming, and configuration conventions for the cloud phase.
-4. Move immediately into Terraform, AWS runtime, and delivery automation once the local MVP core is closed.
+1. Harden Docker-based local startup, tests, and CI so the backend becomes a credible local release candidate.
+2. Freeze the AWS target architecture, naming, tagging, and configuration conventions for the cloud phase.
+3. Move immediately into Terraform, AWS runtime, and delivery automation now that the local MVP core is functionally covered.
 
 ## Roadmap Quality Criteria
 
@@ -273,4 +273,4 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Verification Note
 
-As of April 3, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover the implemented health, transport, vehicle, driver, shipment-event, and auth flows. Admin user-management and AWS deployment are still pending.
+As of April 3, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, and automated tests cover the implemented health, transport, vehicle, driver, shipment-event, auth, and user-management flows. AWS deployment work is still pending.

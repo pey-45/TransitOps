@@ -162,6 +162,160 @@
       ]
     },
     {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Returns the current non-deleted users available to admins. The deterministic seed includes seed.admin and seed.operator by default."
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{managedUserId}}"
+              ]
+            },
+            "description": "Returns one managed user by id. The default {{managedUserId}} points to the seeded operator user."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"managed.operator\",\n  \"email\": \"managed.operator@transitops.local\",\n  \"password\": \"Managed!12345\",\n  \"userRole\": \"operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Creates a managed user with a hashed password. Only admins can call this endpoint."
+          }
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userRole\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{managedUserId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{managedUserId}}",
+                "role"
+              ]
+            },
+            "description": "Changes the user role. Demoting the last active admin is rejected with 409."
+          }
+        },
+        {
+          "name": "Set User Activation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{managedUserId}}/activation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{managedUserId}}",
+                "activation"
+              ]
+            },
+            "description": "Activates or deactivates a user. Deactivating the last active admin is rejected with 409."
+          }
+        }
+      ]
+    },
+    {
       "name": "Transports",
       "item": [
         {
@@ -586,6 +740,14 @@
       "key": "accessToken",
       "value": "",
       "description": "Bearer token captured from the login request"
+    },
+    {
+      "key": "seededAdminUserId",
+      "value": "10000000-0000-0000-0000-000000000001"
+    },
+    {
+      "key": "managedUserId",
+      "value": "10000000-0000-0000-0000-000000000002"
     }
   ],
   "auth": {

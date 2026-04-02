@@ -19,6 +19,8 @@
           "  pm.collectionVariables.unset(\"runtimeDriverId\");",
           "  pm.collectionVariables.unset(\"runtimeTransportId\");",
           "  pm.collectionVariables.unset(\"runtimeShipmentEventId\");",
+          "  pm.collectionVariables.unset(\"runtimeManagedUserId\");",
+          "  pm.collectionVariables.unset(\"operatorAccessToken\");",
           "  pm.collectionVariables.unset(\"accessToken\");",
           "  pm.collectionVariables.set(\"runtimeVehiclePlate\", `SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeVehicleInternalCode\", `VEH-SMK-${suffix}`);",
@@ -32,6 +34,8 @@
           "  pm.collectionVariables.set(\"runtimeDriverUpdatedEmail\", `smoke.${suffix}.updated@transitops.local`);",
           "  pm.collectionVariables.set(\"runtimeTransportReference\", `TR-SMK-${suffix}`);",
           "  pm.collectionVariables.set(\"runtimeTransportUpdatedReference\", `TR-SMK-${suffix}-UPD`);",
+          "  pm.collectionVariables.set(\"runtimeManagedUsername\", `user-smk-${suffix}`);",
+          "  pm.collectionVariables.set(\"runtimeManagedEmail\", `smoke.user.${suffix}@transitops.local`);",
           "}"
         ]
       }
@@ -194,6 +198,462 @@
               ]
             },
             "description": "Authenticates with the deterministic seeded admin and stores the bearer token for the protected smoke flow."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User list returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "const usernames = payload.data.map(user => user.username);",
+                  "pm.test(\"User list includes the deterministic seeded users\", function () {",
+                  "  pm.expect(usernames).to.include(pm.environment.get(\"seededAdminUsername\"));",
+                  "  pm.expect(usernames).to.include(pm.environment.get(\"seededOperatorUsername\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Verifies the seeded admin-only user list against the deterministic dataset."
+          }
+        },
+        {
+          "name": "Get Seeded Operator By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seeded operator detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Seeded operator detail matches expected fields\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.environment.get(\"seededOperatorUserId\"));",
+                  "  pm.expect(payload.data.username).to.eql(pm.environment.get(\"seededOperatorUsername\"));",
+                  "  pm.expect(payload.data.userRole).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{seededOperatorUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{seededOperatorUserId}}"
+              ]
+            },
+            "description": "Verifies seeded user detail for the deterministic operator account."
+          }
+        },
+        {
+          "name": "Login With Seeded Operator",
+          "auth": {
+            "type": "noauth"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Operator login returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"operatorAccessToken\", payload.data.accessToken);",
+                  "pm.test(\"Operator login returns an operator token\", function () {",
+                  "  pm.expect(payload.data.user.username).to.eql(pm.environment.get(\"seededOperatorUsername\"));",
+                  "  pm.expect(payload.data.user.userRole).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{seededOperatorUsername}}\",\n  \"password\": \"{{seededOperatorPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticates with the deterministic seeded operator to verify admin-only protection on user management."
+          }
+        },
+        {
+          "name": "Get Users As Operator Returns Forbidden",
+          "auth": {
+            "type": "noauth"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User list as operator returns 403\", function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Operator receives the coherent authorization error code\", function () {",
+                  "  pm.expect(payload.error.code).to.eql(\"authorization_forbidden\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Confirms that operator tokens cannot access the admin-only user-management endpoints.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Create Runtime User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime user create returns 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.collectionVariables.set(\"runtimeManagedUserId\", payload.data.id);",
+                  "pm.test(\"Runtime user is created as an active operator\", function () {",
+                  "  pm.expect(payload.data.username).to.eql(pm.collectionVariables.get(\"runtimeManagedUsername\"));",
+                  "  pm.expect(payload.data.email).to.eql(pm.collectionVariables.get(\"runtimeManagedEmail\"));",
+                  "  pm.expect(payload.data.userRole).to.eql(1);",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{runtimeManagedUsername}}\",\n  \"email\": \"{{runtimeManagedEmail}}\",\n  \"password\": \"Managed!12345\",\n  \"userRole\": \"operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Creates a runtime-managed user that can be mutated safely inside the smoke flow."
+          }
+        },
+        {
+          "name": "Promote Runtime User To Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime user role change returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime user role change promotes the user to admin\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeManagedUserId\"));",
+                  "  pm.expect(payload.data.userRole).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userRole\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{runtimeManagedUserId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{runtimeManagedUserId}}",
+                "role"
+              ]
+            },
+            "description": "Promotes the runtime user to admin to verify the role-change path."
+          }
+        },
+        {
+          "name": "Deactivate Runtime User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime user deactivation returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime user is deactivated\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeManagedUserId\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{runtimeManagedUserId}}/activation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{runtimeManagedUserId}}",
+                "activation"
+              ]
+            },
+            "description": "Deactivates the runtime user while another admin still exists, covering the deactivate path without violating the last-active-admin rule."
+          }
+        },
+        {
+          "name": "Reactivate Runtime User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime user activation returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime user is reactivated as admin\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeManagedUserId\"));",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "  pm.expect(payload.data.userRole).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{runtimeManagedUserId}}/activation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{runtimeManagedUserId}}",
+                "activation"
+              ]
+            },
+            "description": "Reactivates the runtime user so the smoke flow covers both activation directions."
+          }
+        },
+        {
+          "name": "Get Runtime User By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime user detail returns 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const payload = pm.response.json();",
+                  "pm.test(\"Runtime user detail reflects the latest role and activation state\", function () {",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"runtimeManagedUserId\"));",
+                  "  pm.expect(payload.data.username).to.eql(pm.collectionVariables.get(\"runtimeManagedUsername\"));",
+                  "  pm.expect(payload.data.userRole).to.eql(0);",
+                  "  pm.expect(payload.data.isActive).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{runtimeManagedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{runtimeManagedUserId}}"
+              ]
+            },
+            "description": "Reads back the runtime managed user after the role and activation changes."
           }
         }
       ]

@@ -9,6 +9,7 @@ using TransitOps.Api.Application.Auth;
 using TransitOps.Api.Application.Drivers;
 using TransitOps.Api.Application.ShipmentEvents;
 using TransitOps.Api.Application.Transports;
+using TransitOps.Api.Application.Users;
 using TransitOps.Api.Application.Vehicles;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain.Entities;
@@ -18,6 +19,7 @@ using TransitOps.Api.Infrastructure.Drivers;
 using TransitOps.Api.Infrastructure.Persistence;
 using TransitOps.Api.Infrastructure.ShipmentEvents;
 using TransitOps.Api.Infrastructure.Transports;
+using TransitOps.Api.Infrastructure.Users;
 using TransitOps.Api.Infrastructure.Vehicles;
 using TransitOps.Api.Security;
 
@@ -86,6 +88,7 @@ public class Program
         builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
         builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
         builder.Services.AddScoped<ITransportService, TransportService>();
+        builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IVehicleService, VehicleService>();
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -141,6 +144,9 @@ public class Program
             options.AddPolicy(
                 AuthorizationPolicies.OperationalAccess,
                 policy => policy.RequireRole(RoleNames.Admin, RoleNames.Operator));
+            options.AddPolicy(
+                AuthorizationPolicies.AdminAccess,
+                policy => policy.RequireRole(RoleNames.Admin));
         });
 
         builder.Services.AddOpenApi();

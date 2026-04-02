@@ -98,7 +98,6 @@ Close the full local MVP and freeze the cloud design baseline.
 
 - Missing vehicle or driver CRUD behavior.
 - Missing assignment or lifecycle flow.
-- Missing admin user-management baseline.
 - Missing transport filters/pagination needed for demo use.
 - Unclear AWS target topology or unclear environment/naming conventions.
 

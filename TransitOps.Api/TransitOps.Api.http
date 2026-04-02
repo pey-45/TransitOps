@@ -2,10 +2,12 @@
 @transportId = 40000000-0000-0000-0000-000000000001
 @vehicleId = 30000000-0000-0000-0000-000000000001
 @driverId = 20000000-0000-0000-0000-000000000001
+@seededAdminUserId = 10000000-0000-0000-0000-000000000001
 @seededAdminUsername = seed.admin
 @seededAdminPassword = SeedAdmin!123
 @bootstrapAdminToken =
 @accessToken = paste-access-token-here
+@managedUserId = 10000000-0000-0000-0000-000000000002
 
 GET {{TransitOps.Api_HostAddress}}/api/v1/health/live
 Accept: application/json
@@ -37,6 +39,54 @@ Content-Type: application/json
 {
   "username": "{{seededAdminUsername}}",
   "password": "{{seededAdminPassword}}"
+}
+
+###
+
+GET {{TransitOps.Api_HostAddress}}/api/v1/users
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{TransitOps.Api_HostAddress}}/api/v1/users/{{managedUserId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+POST {{TransitOps.Api_HostAddress}}/api/v1/users
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "username": "managed.operator",
+  "email": "managed.operator@transitops.local",
+  "password": "Managed!12345",
+  "userRole": "operator"
+}
+
+###
+
+PUT {{TransitOps.Api_HostAddress}}/api/v1/users/{{managedUserId}}/role
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "userRole": "admin"
+}
+
+###
+
+PUT {{TransitOps.Api_HostAddress}}/api/v1/users/{{managedUserId}}/activation
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "isActive": false
 }
 
 ###

@@ -81,7 +81,7 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 | --- | --- | --- | --- |
 | FR-01 | Health and platform endpoints | Must | Completed baseline |
 | FR-02 | First admin bootstrap | Must | Partial |
-| FR-03 | User administration | Must | Pending |
+| FR-03 | User administration | Must | Completed |
 | FR-04 | Authentication | Must | Completed |
 | FR-05 | Authorization | Must | Completed |
 | FR-06 | Transport management | Must | Completed |
@@ -132,7 +132,7 @@ The system shall provide basic user administration for admins.
 
 Behavior:
 
-- `Admin` can list active users and inspect user detail.
+- `Admin` can list non-deleted users and inspect user detail.
 - `Admin` can create new users with `username`, `email`, `password`, and role `admin` or `operator`.
 - `Admin` can change a user's role.
 - `Admin` can activate or deactivate a user.
@@ -142,9 +142,9 @@ Behavior:
 Acceptance criteria:
 
 - Only admins can reach user-administration endpoints.
-- Username and email must be unique among active, non-deleted users.
+- Username and email must be unique among non-deleted users.
 - Inactive or deleted users cannot authenticate.
-- The system prevents deactivation of the last active admin user.
+- The system prevents the last active admin user from being deactivated or losing the admin role.
 
 ### FR-04 · Authentication
 

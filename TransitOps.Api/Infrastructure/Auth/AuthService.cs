@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TransitOps.Api.Application.Auth;
+using TransitOps.Api.Common;
 using TransitOps.Api.Contracts.Requests.Auth;
 using TransitOps.Api.Contracts.Responses.Auth;
 using TransitOps.Api.Contracts.Responses.Users;
@@ -126,7 +127,7 @@ public sealed class AuthService : IAuthService
         if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
         {
             appUser.PasswordHash = _passwordHasher.HashPassword(appUser, request.Password);
-            appUser.UpdatedAt = DateTime.UtcNow;
+            appUser.UpdatedAt = DateTimePersistence.AsUnspecified(DateTime.UtcNow);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 

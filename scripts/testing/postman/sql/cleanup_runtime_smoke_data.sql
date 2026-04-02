@@ -17,4 +17,8 @@ DELETE FROM driver
 WHERE employee_code LIKE 'DRV-SMK-%'
    OR email LIKE 'smoke.%@transitops.local';
 
+DELETE FROM app_user
+WHERE username LIKE 'user-smk-%'
+   OR email LIKE 'smoke.user.%@transitops.local';
+
 COMMIT;
