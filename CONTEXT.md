@@ -9,8 +9,8 @@ It should contain the current state of the project, recent decisions, relevant a
 ## Repository Snapshot
 
 - Project: `TransitOps`
-- Reference date: 2026-04-03
-- Repository status: local backend baseline established, transport/vehicle/driver CRUD now operational on PostgreSQL with numeric enum persistence, transport list filters/pagination available for demo use, explicit transport assignment and lifecycle transitions available, shipment-event creation/history with actor traceability is now operational, first-admin bootstrap/login/JWT endpoint protection are now in place, admin-only user management is now operational, the local Docker startup path is now standardized through `.env.example`, compose validation, and a dedicated local verification guide, a dedicated Postman/Newman smoke flow exists against the live Docker stack with hard cleanup of both runtime and seed data, a manual Postman environment now exists for the main collection, the `scripts/` directory is organized by purpose (`database` vs `testing`), a GitHub Actions restore/build/test baseline now exists, and the delivery roadmap is organized into one-week sprints with the local MVP compressed into Sprint 1
+- Reference date: 2026-04-06
+- Repository status: local backend baseline established, transport/vehicle/driver CRUD now operational on PostgreSQL with numeric enum persistence, transport list filters/pagination available for demo use, explicit transport assignment and lifecycle transitions available, shipment-event creation/history with actor traceability is now operational, first-admin bootstrap/login/JWT endpoint protection are now in place, admin-only user management is now operational, the local Docker startup path is now standardized through `.env.example`, compose validation, and a dedicated local verification guide, a dedicated Postman/Newman smoke flow exists against the live Docker stack with hard cleanup of both runtime and seed data, a manual Postman environment now exists for the main collection, the `scripts/` directory is organized by purpose (`database` vs `testing`), a GitHub Actions restore/build/test baseline now exists, the AWS target topology is now fixed in repository documentation, the shared cloud naming/tagging/environment/configuration conventions are now defined, and the delivery roadmap is organized into one-week sprints with the local MVP compressed into Sprint 1
 - Solution: `TransitOps.slnx`
 - Main projects:
   - `TransitOps.Api`
@@ -31,6 +31,8 @@ It should contain the current state of the project, recent decisions, relevant a
 - The requirements specification now explicitly defines user management, role permissions for `admin` and `operator`, main operational flows, and stronger acceptance detail.
 - The roadmap is now structured from March 30, 2026 through May 31, 2026 as weekly sprints, with Sprint 1 intentionally compressing the full local-MVP closure plus cloud design baseline so the rest of the calendar can focus on AWS platform, delivery, observability, reliability, security, and final defense quality.
 - The current planning target end date is 2026-05-31, with cloud credibility now treated as the main differentiator of the project.
+- The AWS target runtime is now explicitly fixed as Route53 + ACM + ALB + ECS Fargate + RDS PostgreSQL + ECR + CloudWatch, with private ECS/RDS networking, OIDC-based GitHub Actions access, and externalized runtime configuration.
+- Shared cloud conventions are now documented for resource naming, tagging, environment isolation, DNS patterns, and runtime configuration/secrets placement so Terraform and delivery work can reuse the same rules instead of redefining them piecemeal.
 
 ## MVP Direction
 
@@ -68,6 +70,8 @@ These are outside the local functional MVP, but they are central to the overall 
 ## Source Documents
 
 - `README.md`
+- `docs/AwsTargetArchitecture.md`
+- `docs/CloudConventions.md`
 - `docs/Requirements.md`
 - `docs/Roadmap.md`
 
@@ -118,6 +122,7 @@ These are outside the local functional MVP, but they are central to the overall 
 - 2026-04-03: Implemented `POST /api/v1/auth/bootstrap-admin` and `POST /api/v1/auth/login`, using hashed passwords plus JWT issuance from externalized configuration, applied bearer protection to business controllers, switched shipment-event actor traceability from client-supplied `createdByUserId` to the authenticated caller, updated the deterministic seed users to valid loginable hashes, and extended the live Docker smoke flow to authenticate before exercising protected endpoints.
 - 2026-04-03: Implemented admin-only user-management on `GET /api/v1/users`, `GET /api/v1/users/{id}`, `POST /api/v1/users`, `PUT /api/v1/users/{id}/role`, and `PUT /api/v1/users/{id}/activation`, hashing created passwords, restricting access to admins only, and preventing the last active admin from being deactivated or demoted.
 - 2026-04-03: Stabilized the local MVP execution baseline by adding `.env.example`, making `docker compose` fail early when the JWT signing key is missing while treating the bootstrap token as optional, documenting the full local verification path in `docs/LocalVerification.md`, adding a ready-to-import local Postman environment for the manual collection, adding a GitHub Actions `restore/build/test + migration drift + compose config` workflow, and aligning `TransitOps.Api.csproj` to `Microsoft.EntityFrameworkCore.Relational` `10.0.5` so the previous EF Core version-conflict warning disappears from the test baseline.
+- 2026-04-06: Added `docs/AwsTargetArchitecture.md` and `docs/CloudConventions.md` to freeze the cloud-design baseline before Terraform work, fixing the target AWS topology to Route53 + ACM + ALB + ECS Fargate + RDS PostgreSQL + ECR + CloudWatch, defining private networking and OIDC-based delivery as the intended model, and standardizing naming, tagging, environment, DNS, and runtime configuration conventions for all upcoming cloud artifacts.
 - 2026-04-01: Replanned `docs/Roadmap.md` through 2026-05-31 so the backend functional surface is closed quickly and the majority of remaining time is explicitly allocated to Terraform, AWS deployment, CI/CD, observability, security, runbooks, evidence capture, and final technical defense material.
 - 2026-04-02: Refined `docs/Roadmap.md` again so each day has a more even time budget, a deterministic primary artifact, a mandatory verification step, and explicit coverage of cloud-engineering concerns such as remote Terraform state, tagging, Route53/ACM, ECR scanning, GitHub OIDC, rollback, and backup/restore.
 - 2026-04-02: Reworked `docs/Roadmap.md` from daily planning into weekly sprints starting on 2026-03-30, each with a dominant phase, bounded scope, deliverables, and exit criteria, because sprint-level planning better fits the project than day-level task slicing.
@@ -133,5 +138,6 @@ These are outside the local functional MVP, but they are central to the overall 
 - The most reliable "all endpoints against real data" local verification path is now `scripts/testing/postman/run_local_api_smoke.bat`; it uses the live Docker API plus PostgreSQL, deterministic seed reset, a runner-safe Postman collection, and cleanup of both runtime and seed rows so no generated smoke data remains after execution.
 - The manual verification path is now intentionally standardized: `.env.example` -> `docker compose up --build` -> login through `.http` or the Postman collection using `scripts/testing/postman/environments/TransitOps.Api.manual.local.postman_environment.json`.
 - The CI baseline is now `.NET restore/build/test`, EF Core migration drift check through `dotnet-ef migrations has-pending-model-changes`, and `docker compose config` validation.
+- The cloud-design baseline is now intentionally explicit before Terraform starts: use `docs/AwsTargetArchitecture.md` for the target topology and `docs/CloudConventions.md` for names, tags, environment boundaries, DNS patterns, and configuration/secrets rules.
 - Roadmap entries through 2026-03-29 should be treated as completed history. From 2026-03-30 onward, the actionable plan now runs as one-week sprints through 2026-05-31 with explicit cloud-first prioritization.
 - Future sessions should update this file when meaningful project decisions, architecture changes, or scope adjustments are made.
