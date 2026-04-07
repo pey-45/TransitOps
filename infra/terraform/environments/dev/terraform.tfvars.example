@@ -1,0 +1,17 @@
+aws_region = "eu-west-1"
+
+aws_profile = ""
+
+project_slug = "transitops"
+service_slug = "api"
+owner        = "pey"
+repository   = "pey-45/TransitOps"
+
+root_domain = ""
+
+availability_zones = [
+  "eu-west-1a",
+  "eu-west-1b",
+]
+
+tags_override = {}
