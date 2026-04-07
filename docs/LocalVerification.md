@@ -51,9 +51,14 @@ Use [TransitOps.Api.http](../TransitOps.Api/TransitOps.Api.http).
 
 Recommended order:
 
-1. `POST /api/v1/auth/login` with the seeded admin credentials.
-2. Copy the returned bearer token into `@accessToken`.
-3. Exercise `/api/v1/users`, `/api/v1/transports`, `/api/v1/vehicles`, `/api/v1/drivers`, and `/api/v1/transports/{id}/shipment-events`.
+1. On a fresh local stack, call `POST /api/v1/auth/bootstrap-admin`.
+2. Then call the `POST /api/v1/auth/login` example that uses the bootstrapped admin credentials.
+3. Copy the returned bearer token into `@accessToken`.
+4. Exercise `/api/v1/users`, `/api/v1/transports`, `/api/v1/vehicles`, `/api/v1/drivers`, and `/api/v1/transports/{id}/shipment-events`.
+
+Alternative path:
+
+- If you manually apply the deterministic local sample seed first, use the seeded-admin login example instead of the bootstrap flow.
 
 Deterministic local seed credentials:
 
@@ -69,9 +74,14 @@ Import:
 
 Recommended order:
 
-1. Run `Auth / Login With Seeded Admin`.
-2. Verify that `accessToken` is stored in collection variables.
-3. Run the protected folders in order: `Users`, `Transports`, `Vehicles`, `Drivers`, `Shipment Events`.
+1. On a fresh local stack, run `Auth / Bootstrap First Admin`.
+2. Then run `Auth / Login With Bootstrapped Admin`.
+3. Verify that `accessToken` is stored in the active Postman environment.
+4. Run the protected folders in order: `Users`, `Transports`, `Vehicles`, `Drivers`, `Shipment Events`.
+
+Alternative path:
+
+- If you manually apply the deterministic local sample seed first, skip bootstrap and run `Auth / Login With Seeded Admin` instead.
 
 ## 6. Explicit Migration Consistency Check
 

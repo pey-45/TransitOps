@@ -2,6 +2,9 @@
 @transportId = 40000000-0000-0000-0000-000000000001
 @vehicleId = 30000000-0000-0000-0000-000000000001
 @driverId = 20000000-0000-0000-0000-000000000001
+@bootstrapAdminUsername = admin
+@bootstrapAdminEmail = admin@transitops.local
+@bootstrapAdminPassword = Admin!12345
 @seededAdminUserId = 10000000-0000-0000-0000-000000000001
 @seededAdminUsername = seed.admin
 @seededAdminPassword = SeedAdmin!123
@@ -25,9 +28,20 @@ Content-Type: application/json
 X-Bootstrap-Token: {{bootstrapAdminToken}}
 
 {
-  "username": "admin",
-  "email": "admin@transitops.local",
-  "password": "Admin!12345"
+  "username": "{{bootstrapAdminUsername}}",
+  "email": "{{bootstrapAdminEmail}}",
+  "password": "{{bootstrapAdminPassword}}"
+}
+
+###
+
+POST {{TransitOps.Api_HostAddress}}/api/v1/auth/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "{{bootstrapAdminUsername}}",
+  "password": "{{bootstrapAdminPassword}}"
 }
 
 ###

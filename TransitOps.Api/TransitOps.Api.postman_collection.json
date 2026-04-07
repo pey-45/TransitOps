@@ -92,7 +92,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"email\": \"admin@transitops.local\",\n  \"password\": \"Admin!12345\"\n}"
+              "raw": "{\n  \"username\": \"{{bootstrapAdminUsername}}\",\n  \"email\": \"{{bootstrapAdminEmail}}\",\n  \"password\": \"{{bootstrapAdminPassword}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/bootstrap-admin",
@@ -106,7 +106,58 @@
                 "bootstrap-admin"
               ]
             },
-            "description": "One-time controlled setup endpoint. It only succeeds when no active admin exists and requires X-Bootstrap-Token from external configuration."
+            "description": "One-time controlled setup endpoint for a fresh environment. It only succeeds when no active admin exists and requires X-Bootstrap-Token from external configuration."
+          }
+        },
+        {
+          "name": "Login With Bootstrapped Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const payload = pm.response.json();",
+                  "  pm.collectionVariables.set(\"accessToken\", payload.data.accessToken);",
+                  "  pm.environment.set(\"accessToken\", payload.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrapAdminUsername}}\",\n  \"password\": \"{{bootstrapAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in with the credentials used in Bootstrap First Admin and stores accessToken for protected requests. Use this path on a fresh local stack without the manual seed dataset."
           }
         },
         {
@@ -120,6 +171,7 @@
                   "if (pm.response.code === 200) {",
                   "  const payload = pm.response.json();",
                   "  pm.collectionVariables.set(\"accessToken\", payload.data.accessToken);",
+                  "  pm.environment.set(\"accessToken\", payload.data.accessToken);",
                   "}"
                 ]
               }
@@ -156,7 +208,7 @@
                 "login"
               ]
             },
-            "description": "Logs in with the seeded admin credentials and stores accessToken as a collection variable for protected requests."
+            "description": "Logs in with the deterministic seeded admin credentials and stores accessToken for protected requests. Use this path only after manually applying the local sample seed dataset."
           }
         }
       ]
@@ -722,6 +774,21 @@
       "description": "Seeded driver SEED-DRV-001 from scripts/database/postgres/seed/002_seed_sample_data.sql"
     },
     {
+      "key": "bootstrapAdminUsername",
+      "value": "admin",
+      "description": "Username used by the Bootstrap First Admin flow on a fresh environment"
+    },
+    {
+      "key": "bootstrapAdminEmail",
+      "value": "admin@transitops.local",
+      "description": "Email used by the Bootstrap First Admin flow on a fresh environment"
+    },
+    {
+      "key": "bootstrapAdminPassword",
+      "value": "Admin!12345",
+      "description": "Password used by the Bootstrap First Admin flow on a fresh environment"
+    },
+    {
       "key": "seededAdminUsername",
       "value": "seed.admin",
       "description": "Seeded admin username from scripts/database/postgres/seed/002_seed_sample_data.sql"
@@ -734,7 +801,7 @@
     {
       "key": "bootstrapAdminToken",
       "value": "",
-      "description": "External bootstrap token required only for the first-admin bootstrap endpoint"
+      "description": "External bootstrap token required by POST /api/v1/auth/bootstrap-admin; it must match TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN or Bootstrap:FirstAdminToken"
     },
     {
       "key": "accessToken",
