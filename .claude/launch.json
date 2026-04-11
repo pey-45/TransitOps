@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PostgreSQL (Docker)",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["up", "db"],
+      "port": 5432
+    },
+    {
+      "name": "TransitOps API (Docker)",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["up", "api"],
+      "port": 8080
+    },
+    {
+      "name": "TransitOps API (dotnet HTTP)",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "TransitOps.Api/TransitOps.Api.csproj", "--launch-profile", "http"],
+      "port": 5098
+    },
+    {
+      "name": "TransitOps API (dotnet HTTPS)",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "TransitOps.Api/TransitOps.Api.csproj", "--launch-profile", "https"],
+      "port": 7032
+    }
+  ]
+}

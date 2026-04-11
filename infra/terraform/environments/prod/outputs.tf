@@ -15,3 +15,25 @@ output "foundation" {
     terraform_state_key = module.platform_foundation.terraform_state_key
   }
 }
+
+output "network" {
+  description = "Network resource IDs for the prod environment."
+  value = {
+    vpc_id              = module.platform_foundation.vpc_id
+    vpc_cidr            = module.platform_foundation.vpc_cidr
+    public_subnet_ids   = module.platform_foundation.public_subnet_ids
+    app_subnet_ids      = module.platform_foundation.app_subnet_ids
+    data_subnet_ids     = module.platform_foundation.data_subnet_ids
+    internet_gateway_id = module.platform_foundation.internet_gateway_id
+    nat_gateway_id      = module.platform_foundation.nat_gateway_id
+  }
+}
+
+output "security_groups" {
+  description = "Security group IDs for the prod environment."
+  value = {
+    alb_id = module.platform_foundation.alb_security_group_id
+    ecs_id = module.platform_foundation.ecs_security_group_id
+    rds_id = module.platform_foundation.rds_security_group_id
+  }
+}

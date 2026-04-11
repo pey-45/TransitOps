@@ -44,6 +44,18 @@ variable "availability_zones" {
   type        = list(string)
 }
 
+variable "vpc_cidr" {
+  description = "CIDR block for the environment VPC."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "api_container_port" {
+  description = "Port the API container listens on inside ECS tasks."
+  type        = number
+  default     = 8080
+}
+
 variable "tags_override" {
   description = "Optional extra tags merged on top of the mandatory baseline."
   type        = map(string)
