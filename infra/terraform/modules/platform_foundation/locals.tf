@@ -26,7 +26,7 @@ locals {
     : "api.${var.environment}.${var.root_domain}"
   )
 
-  secrets_prefix    = "${var.project_slug}/${var.environment}/app"
-  parameters_prefix = "/${var.project_slug}/${var.environment}/app"
+  secrets_prefix      = "${var.project_slug}/${var.environment}/app"
+  parameters_prefix   = "/${var.project_slug}/${var.environment}/app"
   terraform_state_key = "${var.environment}/foundation.tfstate"
 }

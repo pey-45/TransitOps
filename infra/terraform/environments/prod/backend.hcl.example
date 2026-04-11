@@ -1,6 +1,5 @@
-# This file is intentionally an example because the real backend resources
-# do not exist yet. The next Sprint 2 slice will create the remote-state
-# bootstrap path that can satisfy these placeholders.
+# Fill this file with the concrete outputs produced by
+# infra/terraform/bootstrap/remote_state after the remote backend exists.
 
 bucket         = "transitops-tfstate-<account-id>-eu-west-1"
 key            = "prod/foundation.tfstate"

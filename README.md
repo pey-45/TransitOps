@@ -4,7 +4,7 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: April 7, 2026.
+Reference date: April 11, 2026.
 
 The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
@@ -13,7 +13,7 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, admin-only user-management flows now cover list, detail, create, role change, and activate/deactivate with last-active-admin protection, the local Docker path is now documented through `.env.example` and a dedicated verification guide, a first GitHub Actions build/test workflow now exists, the target AWS topology plus cloud naming/tagging/configuration conventions are now fixed in project documentation, and Sprint 2 has started with a first Terraform foundation layout for `dev` and `prod`. Enum-like state fields are persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is still before the functional MVP, but it is no longer only a baseline. PostgreSQL-backed CRUD now exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, admin-only user-management flows now cover list, detail, create, role change, and activate/deactivate with last-active-admin protection, the local Docker path is now documented through `.env.example` and a dedicated verification guide, a first GitHub Actions build/test workflow now exists, the AWS architecture/conventions/remote-state strategy are consolidated in one cloud document, and Sprint 2 now includes both the first Terraform foundation layout for `dev` and `prod` and a dedicated Terraform bootstrap root for the shared S3 + DynamoDB remote-state backend. Enum-like state fields are persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
 
 Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
@@ -74,6 +74,8 @@ TransitOps/
 |-- dotnet-tools.json
 |-- infra/
 |   `-- terraform/
+|       |-- bootstrap/
+|       |   `-- remote_state/
 |       |-- modules/
 |       |   `-- platform_foundation/
 |       `-- environments/
@@ -83,8 +85,7 @@ TransitOps/
 |   `-- workflows/
 |       `-- ci.yml
 |-- docs/
-|   |-- AwsTargetArchitecture.md
-|   |-- CloudConventions.md
+|   |-- CloudArchitecture.md
 |   |-- LocalVerification.md
 |   |-- Requirements.md
 |   `-- Roadmap.md
@@ -130,8 +131,7 @@ The exact folder distribution may evolve. What matters at this stage is that the
 - Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
 - Sprint delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
 - Local verification guide: [docs/LocalVerification.md](docs/LocalVerification.md)
-- AWS target architecture note: [docs/AwsTargetArchitecture.md](docs/AwsTargetArchitecture.md)
-- Cloud naming/tagging/configuration conventions: [docs/CloudConventions.md](docs/CloudConventions.md)
+- Cloud architecture, conventions, and Terraform remote-state bootstrap: [docs/CloudArchitecture.md](docs/CloudArchitecture.md)
 - Architecture/model source: [docs/ClassDiagramV1.drawio](docs/ClassDiagramV1.drawio)
 
 ## Local Requirements
@@ -290,8 +290,8 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Next Milestones
 
-1. Build the remote Terraform state bootstrap path with S3 backend, encryption, versioning, and DynamoDB locking.
-2. Implement the first real network layer in Terraform: VPC, subnets, route tables, ingress path, and least-privilege security groups.
+1. Implement the first real network layer in Terraform: VPC, subnets, route tables, ingress path, and least-privilege security groups.
+2. Reinitialize the environment roots against the remote S3 backend after the bootstrap root is first applied.
 3. Extend the CI baseline later with Terraform validation/plan and deployment automation once the cloud artifacts exist.
 
 ## Roadmap Quality Criteria
@@ -304,4 +304,4 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Verification Note
 
-As of April 7, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, a documented local Docker verification path exists, a runner-safe smoke path exists, a manual Postman environment exists, a GitHub Actions restore/build/test baseline is present, the intended AWS topology plus shared cloud conventions are documented, and a first Terraform foundation structure now exists under `infra/terraform/`. Remote state, networking, and real AWS rollout work are still pending.
+As of April 11, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, a documented local Docker verification path exists, a runner-safe smoke path exists, a manual Postman environment exists, a GitHub Actions restore/build/test baseline is present, the intended AWS topology, cloud conventions, and Terraform remote-state bootstrap path are consolidated in [docs/CloudArchitecture.md](docs/CloudArchitecture.md), a first Terraform foundation structure exists under `infra/terraform/`, and a dedicated bootstrap root now defines the shared S3 + DynamoDB remote-state backend. Terraform validation passes locally for the current foundation roots with backend initialization disabled. VPC/networking and real AWS runtime rollout work are still pending.
