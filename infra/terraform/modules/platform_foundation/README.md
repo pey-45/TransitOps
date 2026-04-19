@@ -2,7 +2,7 @@
 
 Shared Terraform baseline for TransitOps environments.
 
-This module does not create infrastructure resources yet.
+This module creates the environment network foundation.
 
 It centralizes:
 
@@ -10,4 +10,5 @@ It centralizes:
 - mandatory tags
 - environment-specific host naming
 - secret and parameter path prefixes
-- shared outputs that later Terraform modules can consume
+- VPC, public/app/data subnets, routing, NAT, and security groups
+- shared outputs that runtime Terraform modules consume

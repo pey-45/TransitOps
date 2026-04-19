@@ -56,14 +56,14 @@ Subnet layout:
 
 Traffic model:
 
-1. public HTTPS enters through Route53 and the ACM-backed ALB;
+1. public application ingress enters through the ALB;
 2. ALB forwards only to ECS targets;
 3. ECS connects privately to RDS;
 4. RDS accepts PostgreSQL traffic only from the ECS security group.
 
 Security-group intent:
 
-- ALB security group accepts public HTTPS ingress.
+- ALB security group accepts public HTTP ingress in `dev` until a real domain/certificate exists, and public HTTPS ingress when ACM/Route53 are enabled.
 - ECS security group accepts only ALB-to-container traffic.
 - RDS security group accepts only ECS-to-PostgreSQL traffic.
 
@@ -72,6 +72,9 @@ Initial `dev` posture:
 - ECS desired count: `1`;
 - RDS: `Single-AZ`;
 - NAT gateway: `1` to keep ECS private while controlling cost.
+- planned hostname: `api.dev.transitops.net`.
+
+The Terraform runtime module supports both HTTP-only development plans and the target HTTPS path. With the Route53 hosted zone for `transitops.net` available, the `dev` plan enables ACM certificate validation, Route53 records, HTTP-to-HTTPS redirect, and HTTPS listener `443` for `api.dev.transitops.net`.
 
 ## Naming, Tags, And Environments
 
@@ -157,6 +160,35 @@ Preferred placement:
 - `Bootstrap__FirstAdminToken`
 
 AWS migrations should not depend on API startup side effects. The later deployment path should run EF Core migrations explicitly as a deployment step or dedicated task.
+
+## Terraform Runtime Layer
+
+Sprint 3 encodes the AWS runtime path as Terraform, but it does not apply it yet.
+
+Reusable modules:
+
+- `container_registry`: creates the ECR repository for the API image, enables image scanning on push, and applies a basic image retention policy.
+- `observability`: creates the CloudWatch log group consumed by ECS container logs.
+- `database`: creates the private RDS PostgreSQL baseline, DB subnet group, and DB parameter group using the data subnets and RDS security group from the foundation module.
+- `runtime_config`: defines the Secrets Manager and SSM Parameter Store contract for runtime configuration without committing secret values.
+- `container_runtime`: creates ECS cluster, task execution role, task role, task definition, ECS service, ALB, target group, HTTP listener, health check, and optional future HTTPS/ACM/Route53 wiring.
+
+The `dev` environment wires these modules to the Sprint 2 foundation outputs:
+
+- ALB uses `public_subnet_ids`.
+- ECS service uses `app_subnet_ids`.
+- RDS uses `data_subnet_ids`.
+- Security groups come from the foundation module: ALB -> ECS -> RDS.
+- Common tags and service tags come from the same Terraform convention outputs.
+
+The API container contract is:
+
+- container port: `8080`;
+- readiness path: `/api/v1/health/ready`;
+- launch type: ECS Fargate with `awsvpc` networking;
+- logs: CloudWatch through the `awslogs` driver;
+- .NET configuration keys keep the existing `__` environment-variable shape;
+- secrets are referenced by ARN from Secrets Manager, never embedded in Terraform values.
 
 ## Terraform Remote State
 

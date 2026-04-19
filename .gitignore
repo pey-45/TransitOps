@@ -368,6 +368,10 @@ FodyWeavers.xsd
 .templateengine/
 .env
 .terraform/
+**/.terraform/
+**/backend.hcl
+**/terraform.tfvars
+**/terraform.tfvars.json
 *.tfstate
 *.tfstate.*
 *.tfplan

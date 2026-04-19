@@ -51,3 +51,9 @@ variable "tags_override" {
   type        = map(string)
   default     = {}
 }
+
+variable "api_container_port" {
+  description = "Port the API container listens on inside ECS tasks."
+  type        = number
+  default     = 8080
+}

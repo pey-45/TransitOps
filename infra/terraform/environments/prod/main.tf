@@ -9,5 +9,6 @@ module "platform_foundation" {
   repository         = var.repository
   root_domain        = var.root_domain
   availability_zones = var.availability_zones
+  api_container_port = var.api_container_port
   tags_override      = var.tags_override
 }

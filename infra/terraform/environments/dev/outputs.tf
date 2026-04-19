@@ -37,3 +37,51 @@ output "security_groups" {
     rds_id = module.platform_foundation.rds_security_group_id
   }
 }
+
+output "container_registry" {
+  description = "ECR repository details for the dev API image path."
+  value = {
+    repository_name = module.container_registry.repository_name
+    repository_url  = module.container_registry.repository_url
+  }
+}
+
+output "observability" {
+  description = "CloudWatch observability resources for the dev runtime."
+  value = {
+    api_log_group_name = module.observability.api_log_group_name
+    api_log_group_arn  = module.observability.api_log_group_arn
+  }
+}
+
+output "database" {
+  description = "RDS PostgreSQL baseline for the dev runtime."
+  value = {
+    db_instance_identifier = module.database.db_instance_identifier
+    db_endpoint            = module.database.db_endpoint
+    db_name                = module.database.db_name
+    db_subnet_group_name   = module.database.db_subnet_group_name
+  }
+}
+
+output "runtime_config" {
+  description = "Runtime configuration references for the dev ECS task."
+  value = {
+    secret_arns     = module.runtime_config.secret_arns
+    parameter_names = module.runtime_config.parameter_names
+  }
+}
+
+output "container_runtime" {
+  description = "ECS and ALB runtime resources for the dev API."
+  value = {
+    cluster_name        = module.container_runtime.cluster_name
+    service_name        = module.container_runtime.service_name
+    task_definition_arn = module.container_runtime.task_definition_arn
+    alb_dns_name        = module.container_runtime.alb_dns_name
+    target_group_arn    = module.container_runtime.target_group_arn
+    http_listener_arn   = module.container_runtime.http_listener_arn
+    https_listener_arn  = module.container_runtime.https_listener_arn
+    api_dns_record_fqdn = module.container_runtime.api_dns_record_fqdn
+  }
+}

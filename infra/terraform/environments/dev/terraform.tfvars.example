@@ -14,4 +14,31 @@ availability_zones = [
   "eu-west-1b",
 ]
 
+api_container_port = 8080
+api_image_tag      = "latest"
+
+enable_https   = false
+hosted_zone_id = ""
+
+log_retention_days     = 30
+jwt_issuer             = "TransitOps.Api"
+jwt_audience           = "TransitOps.Client"
+jwt_expiration_minutes = 60
+
+database_name                     = "transitops"
+database_instance_class           = "db.t4g.micro"
+database_allocated_storage_gb     = 20
+database_max_allocated_storage_gb = 100
+database_backup_retention_days    = 7
+database_deletion_protection      = false
+database_skip_final_snapshot      = true
+
+# Required for terraform plan/apply. Keep real values outside git.
+# database_username = "<set-outside-git>"
+# database_password = "<set-outside-git>"
+
+ecs_cpu           = 512
+ecs_memory        = 1024
+ecs_desired_count = 1
+
 tags_override = {}
