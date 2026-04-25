@@ -4,24 +4,62 @@
 \section{Estrategia de validación}
 \label{sec:estrategia-validacion}
 
-Pendiente de redactar. Se describirá cómo se validan requisitos funcionales, infraestructura, despliegue y comportamiento operativo.
+La validación se ha organizado en tres niveles: pruebas de backend, validación de infraestructura y pruebas de operación sobre el entorno desplegado. Esta estrategia evita depender de una sola evidencia y permite demostrar tanto comportamiento funcional como capacidad real de despliegue.
+
+En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una API viva. En infraestructura se usan \texttt{terraform fmt}, \texttt{terraform validate}, \texttt{terraform plan} y \texttt{terraform apply}. En AWS se comprueba el estado de ECS, la migración puntual, la salud HTTPS y el login.
 
 \section{Pruebas funcionales}
 \label{sec:pruebas-funcionales}
 
-Pendiente de completar. Se documentarán pruebas automatizadas, pruebas de integración y flujos Postman/Newman.
+La suite principal de pruebas automatizadas contiene 84 pruebas superadas. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios y reglas de estado. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
+
+Además, se verificaron manualmente el bootstrap del primer administrador y el login en el entorno cloud.
 
 \section{Validación de infraestructura}
 \label{sec:validacion-infraestructura}
 
-Pendiente de redactar. Se recogerán validaciones de Terraform, planificación de cambios y evidencias de despliegue.
+La infraestructura se validó con Terraform antes y después del despliegue. Las acciones principales fueron:
+
+\begin{itemize}
+  \item Inicialización de backend remoto S3/DynamoDB.
+  \item \texttt{terraform validate} correcto para el entorno \texttt{dev}.
+  \item \texttt{terraform apply} real de la infraestructura \texttt{dev}.
+  \item Publicación de imagen en ECR.
+  \item Aplicación de migraciones EF Core mediante ECS task.
+  \item Escalado del servicio ECS a una tarea.
+  \item Activación de DNS y HTTPS con Route 53 y ACM.
+  \item \texttt{terraform plan} con \path{-detailed-exitcode} final sin cambios pendientes.
+\end{itemize}
 
 \section{Resultados obtenidos}
 \label{sec:resultados-obtenidos}
 
-Pendiente de completar hacia el final del proyecto con capturas, métricas, endpoints desplegados y resultados de ejecución.
+Los resultados técnicos obtenidos hasta el momento son:
+
+\begin{itemize}
+  \item Endpoint final: \url{https://api.dev.transitops.net}.
+  \item Health check final: \texttt{GET} \path{/api/v1/health/ready} devuelve \texttt{200}.
+  \item Certificado ACM: emitido para \path{api.dev.transitops.net}.
+  \item Servicio ECS: \texttt{ACTIVE}, \texttt{desired = 1}, \texttt{running = 1}.
+  \item Imagen ECR desplegada: \path{sprint4-local-d00aa6b}.
+  \item Task definition desplegada: \path{transitops-dev-api:2}.
+  \item Tarea ECS de migración: finalizada con código \texttt{0}.
+  \item Login administrador por HTTPS: respuesta \texttt{200} con \acrshort{jwt}.
+  \item Terraform final: infraestructura convergida sin cambios pendientes.
+\end{itemize}
+
+Estos resultados demuestran que el sistema no solo compila, sino que se ejecuta sobre infraestructura cloud real y verificable.
 
 \section{Análisis de limitaciones}
 \label{sec:analisis-limitaciones}
 
-Pendiente de redactar. Se identificarán limitaciones técnicas, funcionales y operativas detectadas durante el proyecto.
+Las principales limitaciones son:
+
+\begin{itemize}
+  \item No existe interfaz gráfica; el sistema se consume mediante API, Postman o clientes equivalentes.
+  \item El entorno desplegado es \texttt{dev}, no una arquitectura productiva multi-entorno completa.
+  \item No se han implementado políticas de autoscaling ni pruebas de carga.
+  \item La observabilidad se limita a salud, logs y métricas básicas de servicios gestionados.
+  \item El pipeline de GitHub Actions está preparado, pero debe ejecutarse y archivarse como evidencia final de CI/CD completo.
+  \item Algunas políticas IAM son prácticas para el sprint actual y pueden afinarse más en fases posteriores.
+\end{itemize}

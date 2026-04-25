@@ -4,19 +4,45 @@
 \section{Objetivos del pipeline}
 \label{sec:objetivos-pipeline}
 
-Pendiente de redactar. Se describirá qué garantías aporta el pipeline antes de desplegar cambios.
+El objetivo del pipeline es convertir el despliegue en un proceso repetible y auditable. Antes de desplegar, el sistema debe restaurar dependencias, compilar, ejecutar pruebas, construir la imagen Docker y validar Terraform. En el despliegue cloud, además, debe publicar la imagen en ECR, aplicar infraestructura, ejecutar migraciones y realizar pruebas de humo.
+
+El pipeline se diseña para ejecución manual en \texttt{dev}. Esta decisión evita despliegues accidentales durante el desarrollo del TFG y permite capturar evidencias controladas.
 
 \section{Validación automática}
 \label{sec:validacion-automatica}
 
-Pendiente de completar. Se documentarán restauración de dependencias, compilación, pruebas, validación de migraciones y comprobación de configuración Docker.
+La validación automática incluye:
+
+\begin{itemize}
+  \item \texttt{dotnet restore} para restaurar dependencias.
+  \item \texttt{dotnet build} para compilar la solución.
+  \item \texttt{dotnet test} para ejecutar pruebas automatizadas.
+  \item Validación de migraciones EF Core en el flujo de CI base.
+  \item \texttt{docker compose config} para comprobar que la composición local es válida.
+  \item \texttt{terraform fmt} y \texttt{terraform validate} para asegurar formato y coherencia de infraestructura.
+\end{itemize}
 
 \section{Publicación de artefactos}
 \label{sec:publicacion-artefactos}
 
-Pendiente de redactar. Se explicará la construcción y publicación de imágenes en ECR cuando esta parte esté cerrada.
+La imagen de la API se construye a partir de \path{TransitOps.Api/Dockerfile}. En el flujo de despliegue, la imagen se etiqueta con el identificador del commit o con un tag operativo, y se publica en el repositorio ECR \path{transitops/api}. En el despliegue real de Sprint 4 se publicó la imagen \path{sprint4-local-d00aa6b}.
+
+ECR actúa como frontera entre construcción y ejecución: ECS no arranca una versión nueva de la API hasta que la task definition apunta a una imagen disponible.
 
 \section{Despliegue automatizado}
 \label{sec:despliegue-automatizado}
 
-Pendiente de completar. Se describirá la estrategia de despliegue desde GitHub Actions hacia AWS, incluyendo autenticación mediante OIDC si aplica.
+Se han definido dos workflows manuales:
+
+\begin{itemize}
+  \item \path{terraform-dev.yml}: inicializa Terraform, valida formato y configuración, genera plan y permite aplicar manualmente.
+  \item \path{deploy-dev.yml}: ejecuta build, tests, construcción de imagen, publicación en ECR, Terraform, migraciones ECS, escalado del servicio, health check, bootstrap de administrador y login.
+\end{itemize}
+
+GitHub Actions accede a AWS mediante OIDC y asume un rol IAM de despliegue específico para TransitOps:
+
+\begin{center}
+{\small\path{transitops-dev-github-actions-deploy-role}}
+\end{center}
+
+No se utilizan claves AWS persistentes en GitHub. La reducción fina de permisos queda como mejora futura, pero el rol ya está limitado al repositorio y rama previstos.

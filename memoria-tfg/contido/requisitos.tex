@@ -4,24 +4,81 @@
 \section{Actores}
 \label{sec:actores}
 
-Pendiente de redactar. Se describirán los perfiles principales del sistema, diferenciando al usuario administrador y al usuario operador.
+El sistema distingue los siguientes actores:
+
+\begin{itemize}
+  \item Usuario no autenticado: puede consultar los endpoints públicos de salud y realizar login, pero no acceder a operaciones de negocio.
+  \item Operador: usuario autenticado encargado de la operación diaria. Puede gestionar transportes, vehículos, conductores, asignaciones, transiciones de estado y eventos logísticos.
+  \item Administrador: usuario autenticado con permisos completos. Además de las operaciones del operador, puede gestionar usuarios, roles y activación de cuentas.
+  \item Plataforma: conjunto de componentes técnicos que interactúan con la API, como Docker, GitHub Actions, ECS, ALB y comprobaciones de salud.
+\end{itemize}
 
 \section{Requisitos funcionales}
 \label{sec:requisitos-funcionales}
 
-Pendiente de completar desde \texttt{docs/Requirements.md}. Como base, el sistema cubre gestión de transportes, vehículos, conductores, usuarios, asignaciones, transiciones de estado y eventos logísticos.
+Los requisitos funcionales principales son:
+
+\begin{longtable}{@{}p{0.12\textwidth}p{0.76\textwidth}@{}}
+\caption{Requisitos funcionales principales}
+\label{tab:requisitos-funcionales}\\
+\textbf{ID} & \textbf{Descripción} \\
+\hline
+RF-01 & Exponer endpoints de salud de proceso y de preparación, diferenciando disponibilidad de la aplicación y conectividad con PostgreSQL. \\
+RF-02 & Permitir la creación controlada del primer administrador mediante un endpoint de bootstrap protegido por token externo. \\
+RF-03 & Autenticar usuarios mediante login con usuario y contraseña, devolviendo un \acrshort{jwt} válido. \\
+RF-04 & Autorizar endpoints protegidos mediante roles \texttt{admin} y \texttt{operator}. \\
+RF-05 & Gestionar usuarios desde endpoints exclusivos para administradores. \\
+RF-06 & Gestionar transportes con creación, consulta, actualización, listado filtrado, paginación y borrado lógico. \\
+RF-07 & Gestionar vehículos como recursos asignables, incluyendo validación de matrícula y código interno. \\
+RF-08 & Gestionar conductores como recursos asignables, incluyendo licencia, contacto y estado activo. \\
+RF-09 & Asignar vehículo y conductor a un transporte planificado mediante una acción explícita. \\
+RF-10 & Controlar el ciclo de vida de un transporte mediante transiciones de estado válidas. \\
+RF-11 & Registrar y consultar eventos logísticos asociados a un transporte, conservando el usuario que los creó. \\
+RF-12 & Devolver errores coherentes para validación, autenticación, autorización, recursos inexistentes y conflictos de negocio. \\
+\end{longtable}
 
 \section{Requisitos no funcionales}
 \label{sec:requisitos-no-funcionales}
 
-Pendiente de redactar. Se incluirán requisitos de reproducibilidad, seguridad, mantenibilidad, observabilidad, despliegue automatizado y operación en cloud.
+Los requisitos no funcionales se centran en la calidad operativa:
+
+\begin{itemize}
+  \item Reproducibilidad: el entorno local debe poder levantarse con Docker Compose y configuración externa.
+  \item Mantenibilidad: el código debe conservar una estructura simple, con responsabilidades claras y sin dividir el sistema en proyectos innecesarios.
+  \item Persistencia consistente: PostgreSQL y las migraciones de EF Core son la fuente de verdad del esquema.
+  \item Seguridad básica: contraseñas con hash, JWT externo, roles, secretos fuera del repositorio y red privada para ECS y RDS.
+  \item Despliegue reproducible: los recursos cloud deben definirse en Terraform y almacenarse con estado remoto.
+  \item Observabilidad mínima: la API debe exponer salud, emitir logs a CloudWatch y permitir diagnosticar estado del servicio.
+  \item Validación automática: la solución debe compilarse y probarse mediante comandos locales y flujos CI.
+  \item Operación cloud: el entorno \texttt{dev} debe ejecutarse en AWS con HTTPS y base de datos privada.
+\end{itemize}
 
 \section{Modelo de dominio}
 \label{sec:modelo-dominio}
 
-Pendiente de completar con entidades, relaciones principales y reglas de negocio relevantes.
+El modelo de dominio se articula alrededor de cinco entidades principales:
+
+\begin{itemize}
+  \item \texttt{AppUser}: representa usuarios autenticables, con nombre de usuario, correo, hash de contraseña, rol, estado activo y campos de auditoría.
+  \item \texttt{Transport}: entidad principal del sistema, con referencia, origen, destino, fechas planificadas y reales, estado y asignación opcional de vehículo y conductor.
+  \item \texttt{Vehicle}: recurso material asignable a transportes, identificado por matrícula y, opcionalmente, código interno.
+  \item \texttt{Driver}: recurso humano asignable, identificado por licencia y datos básicos de contacto.
+  \item \texttt{ShipmentEvent}: evento cronológico vinculado a un transporte y al usuario que lo registra.
+\end{itemize}
+
+Las reglas más relevantes son que un transporte nuevo comienza en estado \texttt{planned}, solo puede pasar a \texttt{in\_transit} si tiene vehículo y conductor asignados, y los estados \texttt{delivered} y \texttt{cancelled} son terminales. Las entidades operativas aplican borrado lógico, por lo que las restricciones de unicidad se definen sobre registros activos.
 
 \section{Casos de uso principales}
 \label{sec:casos-uso}
 
-Pendiente de redactar. Se documentarán los flujos de autenticación, administración de usuarios, gestión de recursos, asignación, cambio de estado y registro de eventos.
+Los casos de uso principales son:
+
+\begin{enumerate}
+  \item Bootstrap del primer administrador: se configura un token externo, se llama al endpoint de bootstrap y se crea el primer usuario \texttt{admin} si no existe otro administrador activo.
+  \item Login: un usuario activo obtiene un \acrshort{jwt} para acceder a endpoints protegidos.
+  \item Administración de usuarios: un administrador lista usuarios, crea operadores o administradores, cambia roles y activa o desactiva cuentas.
+  \item Gestión operativa: un operador crea transportes, vehículos y conductores, consulta listados y actualiza datos básicos.
+  \item Asignación: se asigna conjuntamente un vehículo y un conductor a un transporte planificado.
+  \item Ejecución del transporte: se cambia el estado del transporte siguiendo transiciones válidas y se registran eventos logísticos.
+  \item Consulta de trazabilidad: se recupera el historial cronológico de eventos de un transporte.
+\end{enumerate}

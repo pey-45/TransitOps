@@ -6,12 +6,18 @@ Este trabajo presenta el diseño, desarrollo, despliegue y operación de una pla
 \section{Motivación}
 \label{sec:motivacion}
 
-Pendiente de redactar. Esta sección deberá explicar por qué una plataforma de gestión de transportes es un caso adecuado para demostrar competencias de ingeniería del software, cloud y DevOps.
+El desarrollo de software actual no se limita a escribir lógica de negocio. Un sistema backend debe poder compilarse, probarse, configurarse, desplegarse, observarse y recuperarse de forma repetible. Esta realidad hace que la ingeniería del software moderna incorpore prácticas de DevOps, infraestructura como código, contenedores, servicios gestionados y automatización de despliegues.
+
+El dominio de gestión de transportes resulta adecuado para este trabajo porque permite modelar entidades y reglas de negocio reales sin convertir el proyecto en un sistema funcionalmente excesivo. Transportes, vehículos, conductores, usuarios, estados y eventos logísticos ofrecen suficiente complejidad para demostrar diseño de API, persistencia, validación, seguridad y trazabilidad, pero mantienen el alcance dentro de un tamaño razonable para un Trabajo Fin de Grado.
+
+La motivación principal del proyecto es construir un sistema pequeño en funcionalidad, pero serio en operación. En lugar de ampliar indefinidamente las características de producto, el trabajo prioriza demostrar que una API backend puede pasar de código fuente a un entorno cloud real en AWS de forma reproducible y documentada.
 
 \section{Problema a resolver}
 \label{sec:problema}
 
-Pendiente de redactar. Se describirá la necesidad de gestionar transportes, vehículos, conductores, estados operativos y eventos logísticos desde un backend desplegable y operable en un entorno cloud.
+El problema abordado consiste en proporcionar un backend que permita a un equipo operativo gestionar transportes y sus recursos asociados. El sistema debe permitir crear y consultar transportes, mantener vehículos y conductores, asignar recursos, controlar el ciclo de vida de cada transporte y registrar eventos que aporten trazabilidad.
+
+Además del problema funcional, el trabajo aborda un problema de ingeniería: cómo empaquetar, desplegar y operar esa API en un entorno cloud sin depender de pasos manuales frágiles ni de infraestructura creada de forma informal. Para ello, la infraestructura se define con Terraform, la aplicación se ejecuta como contenedor, la base de datos se despliega como servicio gestionado y los secretos se externalizan.
 
 \section{Alcance del trabajo}
 \label{sec:alcance}
@@ -21,4 +27,4 @@ El trabajo se centra en un \gls{backend} \acrshort{api}, persistencia relacional
 \section{Estructura de la memoria}
 \label{sec:estructura-memoria}
 
-Pendiente de completar al final de la redacción. Esta sección resumirá brevemente el contenido de cada capítulo.
+La memoria se organiza en once capítulos. Tras esta introducción, el capítulo~\ref{chap:contexto-objetivos} presenta el contexto tecnológico y los objetivos del trabajo. El capítulo~\ref{chap:metodologia} describe la metodología y la planificación seguida. El capítulo~\ref{chap:requisitos} recoge los requisitos, actores y reglas del dominio. El capítulo~\ref{chap:arquitectura} explica la arquitectura lógica, de datos y cloud. El capítulo~\ref{chap:implementacion-backend} detalla la implementación del backend. Los capítulos~\ref{chap:infraestructura-despliegue} y~\ref{chap:cicd} tratan la infraestructura, el despliegue y la automatización. El capítulo~\ref{chap:observabilidad-seguridad} resume las medidas de observabilidad y seguridad. El capítulo~\ref{chap:validacion-resultados} recoge la validación realizada y los resultados obtenidos. Finalmente, el capítulo~\ref{chap:conclusions} presenta conclusiones, competencias aplicadas y líneas futuras.

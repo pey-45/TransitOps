@@ -4,7 +4,13 @@
 \section{Contexto tecnológico}
 \label{sec:contexto-tecnologico}
 
-Pendiente de redactar. Se introducirá el papel de los sistemas backend, los despliegues contenerizados, la infraestructura como código y las prácticas DevOps en sistemas software actuales.
+Las aplicaciones backend actuales suelen desplegarse en entornos distribuidos, contenerizados y gestionados por proveedores cloud. Esto permite reducir la administración directa de servidores, pero introduce nuevas responsabilidades: definir redes, permisos, secretos, balanceadores, bases de datos, registros de imágenes, observabilidad y procesos de despliegue.
+
+En este contexto, la \gls{infraestructura-como-codigo} permite describir la infraestructura mediante ficheros versionables, revisables y repetibles. Terraform se utiliza en este proyecto para codificar la red, la base de datos, los servicios de ejecución, los repositorios de imágenes, el balanceador de carga, la configuración de DNS y los permisos necesarios~\cite{TerraformDocs}.
+
+La contenerización proporciona una unidad de despliegue estable entre el entorno local y AWS. La API se empaqueta en una imagen Docker y se ejecuta en ECS Fargate, evitando la gestión directa de servidores. La persistencia se apoya en PostgreSQL gestionado mediante RDS, y el acceso público se concentra en un Application Load Balancer protegido por HTTPS.
+
+El enfoque DevOps aparece en la conexión entre código, validación automática, construcción de imagen, publicación en ECR, despliegue Terraform, migraciones de base de datos y pruebas de humo. El proyecto busca que estas piezas formen un camino verificable desde el repositorio hasta un entorno real.
 
 \section{Objetivo general}
 \label{sec:objetivo-general}
@@ -29,4 +35,17 @@ Diseñar, implementar, desplegar y operar una plataforma cloud para la gestión 
 \section{Criterios de éxito}
 \label{sec:criterios-exito}
 
-Pendiente de concretar. Esta sección recogerá los criterios verificables que permitan demostrar que el trabajo cumple los objetivos anteriores.
+Los criterios de éxito se han formulado como resultados observables:
+
+\begin{itemize}
+  \item La solución compila y las pruebas automatizadas principales se ejecutan correctamente.
+  \item La API permite gestionar el flujo operativo básico: autenticación, usuarios, transportes, vehículos, conductores, asignación, cambios de estado y eventos.
+  \item La base de datos se gestiona mediante migraciones de Entity Framework Core y no mediante cambios manuales no versionados.
+  \item El entorno local puede arrancarse con Docker Compose y configuración externa.
+  \item La infraestructura de AWS se define en Terraform y usa estado remoto S3 con bloqueo DynamoDB.
+  \item La aplicación se despliega como contenedor en ECS Fargate, detrás de ALB y con persistencia en RDS PostgreSQL.
+  \item El entorno \texttt{dev} expone un endpoint HTTPS real en \path{api.dev.transitops.net}.
+  \item Las migraciones en AWS se ejecutan como tarea ECS puntual, no como efecto lateral opaco del arranque web.
+  \item Los secretos no se almacenan en el repositorio y se consumen desde Secrets Manager.
+  \item Existe documentación suficiente para explicar arquitectura, despliegue, validación y limitaciones.
+\end{itemize}

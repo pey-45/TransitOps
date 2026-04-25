@@ -4,24 +4,66 @@
 \section{Contenerización}
 \label{sec:contenerizacion}
 
-Pendiente de redactar. Se describirá la imagen Docker de la \acrshort{api} y el entorno local reproducible mediante Docker Compose, usando \glspl{contenedor} como unidad de empaquetado y ejecución.
+La API se empaqueta en una imagen Docker construida a partir de su \texttt{Dockerfile}. El contenedor expone el puerto \texttt{8080}, instala las dependencias necesarias para el runtime .NET y se configura mediante variables de entorno. La imagen se utiliza tanto para despliegue cloud como para validar el comportamiento de empaquetado.
+
+El entorno local se reproduce con Docker Compose, levantando la API y PostgreSQL. La configuración sensible se proporciona mediante un fichero \texttt{.env} no versionado. Esto permite ejecutar el sistema local sin instalar PostgreSQL de forma manual y mantiene una ruta de validación cercana al despliegue real.
 
 \section{Infraestructura como código}
 \label{sec:infraestructura-codigo}
 
-Pendiente de completar. Se explicará la estructura de Terraform, los módulos, los entornos y la estrategia de estado remoto.
+Terraform se organiza bajo \path{infra/terraform}. La estructura separa un bootstrap de estado remoto, módulos reutilizables y raíces de entorno:
+
+\begin{itemize}
+  \item \path{bootstrap/remote_state}: crea el bucket S3 de estado y la tabla DynamoDB de bloqueo.
+  \item \path{modules/platform_foundation}: VPC, subredes, rutas, NAT y grupos de seguridad.
+  \item \path{modules/container_registry}: repositorio ECR.
+  \item \path{modules/database}: RDS PostgreSQL.
+  \item \path{modules/runtime_config}: Secrets Manager y SSM.
+  \item \path{modules/container_runtime}: ECS, task definition, ALB, listeners, Route 53 y ACM.
+  \item \path{modules/github_oidc}: rol de despliegue para GitHub Actions.
+  \item \path{environments/dev}: composición real del entorno de desarrollo.
+\end{itemize}
+
+El estado remoto se almacena en S3 y se bloquea con DynamoDB. Esto evita estados locales divergentes y reduce el riesgo de cambios concurrentes.
 
 \section{Entorno AWS}
 \label{sec:entorno-aws}
 
-Pendiente de redactar. Se documentará la cuenta utilizada, región, nomenclatura, etiquetas, DNS y separación de recursos.
+El entorno desplegado utiliza:
+
+\begin{itemize}
+  \item Cuenta AWS: \texttt{142966787103}.
+  \item Región: \texttt{eu-west-1}.
+  \item Entorno: \texttt{dev}.
+  \item Dominio: \path{api.dev.transitops.net}.
+  \item Hosted zone: \texttt{Z0675583AI7IBDN9DQWU}.
+  \item Certificado ACM: \path{api.dev.transitops.net}.
+\end{itemize}
+
+Los recursos siguen la convención \path{transitops-dev-<componente>} y se etiquetan con proyecto, entorno, propietario, repositorio, servicio y origen Terraform. Esta nomenclatura facilita identificar recursos y costes.
 
 \section{Despliegue de la aplicación}
 \label{sec:despliegue-aplicacion}
 
-Pendiente de completar. Se describirá el flujo desde la construcción de la imagen hasta la ejecución en ECS Fargate detrás de un Application Load Balancer.
+El flujo de despliegue aplicado en \texttt{dev} fue:
+
+\begin{enumerate}
+  \item Crear la infraestructura base con ECS en \texttt{desired\_count} = \texttt{0}, evitando arrancar tareas antes de tener imagen en ECR.
+  \item Construir la imagen Docker de la API.
+  \item Publicar la imagen en ECR con el tag \path{sprint4-local-d00aa6b}.
+  \item Actualizar la task definition para usar la imagen publicada.
+  \item Cargar los secretos de runtime en Secrets Manager.
+  \item Ejecutar migraciones con una tarea ECS puntual usando \path{--migrate-only}.
+  \item Escalar el servicio ECS a \texttt{desired\_count} = \texttt{1}.
+  \item Activar Route 53, ACM, HTTPS y redirección HTTP a HTTPS.
+  \item Validar el endpoint público \url{https://api.dev.transitops.net/api/v1/health/ready}.
+\end{enumerate}
+
+El resultado es un servicio ECS estable, con una tarea en ejecución y acceso público únicamente a través del ALB.
 
 \section{Gestión de configuración y secretos}
 \label{sec:configuracion-secretos}
 
-Pendiente de redactar. Se explicará cómo se gestionan parámetros de configuración, credenciales y secretos sin introducirlos en el repositorio.
+La configuración sensible se externaliza. La cadena de conexión a PostgreSQL, la clave de firma JWT y el token de bootstrap se almacenan en Secrets Manager. Otros parámetros, como emisor, audiencia y expiración del JWT, se almacenan en SSM Parameter Store o se proporcionan como variables no secretas.
+
+En el repositorio solo se incluyen ejemplos y nombres de variables. Los ficheros locales que pueden contener secretos, como \texttt{terraform.tfvars}, \texttt{backend.hcl} o \texttt{.env}, están excluidos del control de versiones.

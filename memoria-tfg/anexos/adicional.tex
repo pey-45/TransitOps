@@ -9,4 +9,21 @@ El anteproyecto firmado se conserva en el repositorio de la memoria como referen
 \section{Evidencias técnicas}
 \label{sec:anexo-evidencias}
 
-Pendiente de completar con evidencias de ejecución, capturas, salidas relevantes de comandos, diagramas complementarios o enlaces a artefactos de validación.
+Las siguientes evidencias deberían incorporarse como capturas o anexos finales antes de la entrega:
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.40\textwidth}>{\raggedright\arraybackslash}p{0.50\textwidth}@{}}
+\caption{Capturas recomendadas para la memoria}
+\label{tab:capturas-recomendadas}\\
+\textbf{Archivo sugerido} & \textbf{Contenido recomendado} \\
+\hline
+\path{imaxes/aws-ecs-service.png} & Servicio ECS \path{transitops-dev-api-svc} mostrando estado \texttt{ACTIVE}, desired \texttt{1} y running \texttt{1}. \\
+\path{imaxes/aws-alb-listeners.png} & Listeners del ALB con puerto \texttt{80} redirigiendo a HTTPS y puerto \texttt{443} usando el certificado ACM. \\
+\path{imaxes/aws-acm-issued.png} & Certificado ACM de \path{api.dev.transitops.net} en estado \texttt{Issued}. \\
+\path{imaxes/aws-route53-records.png} & Hosted zone \path{transitops.net} con registro \path{api.dev.transitops.net} y CNAME de validación ACM. \\
+\path{imaxes/aws-ecr-image.png} & Repositorio ECR \path{transitops/api} mostrando la imagen desplegada. \\
+\path{imaxes/health-ready-https.png} & Salida de terminal o navegador mostrando \url{https://api.dev.transitops.net/api/v1/health/ready} con respuesta \texttt{200}. \\
+\path{imaxes/github-actions-deploy.png} & Ejecución verde del workflow \path{deploy-dev.yml}, cuando se ejecute desde GitHub Actions. \\
+\path{imaxes/terraform-no-changes.png} & Salida de \texttt{terraform plan} indicando que la infraestructura no tiene cambios pendientes. \\
+\end{longtable}
+
+Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. Cuando se incorporen, deberán añadirse como figuras en los capítulos correspondientes o mantenerse como anexo de evidencias.

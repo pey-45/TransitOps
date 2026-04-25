@@ -4,24 +4,53 @@
 \section{Comprobaciones de salud}
 \label{sec:health-checks}
 
-Pendiente de redactar. Se documentarán los endpoints de salud y su uso en entorno local y cloud.
+La API expone dos endpoints de salud. \path{/api/v1/health/live} indica que el proceso está vivo. \path{/api/v1/health/ready} comprueba la conectividad real con PostgreSQL mediante el \texttt{DbContext}. Esta distinción permite diferenciar entre una aplicación arrancada y una aplicación preparada para servir tráfico.
+
+En AWS, el target group del Application Load Balancer utiliza la ruta de readiness para decidir si la tarea ECS puede recibir tráfico. También se ha usado el mismo endpoint como prueba de humo final sobre \url{https://api.dev.transitops.net}.
 
 \section{Logs y métricas}
 \label{sec:logs-metricas}
 
-Pendiente de completar. Se explicará la estrategia de logs de aplicación, logs de contenedor y métricas en CloudWatch.
+Los logs del contenedor se envían a CloudWatch Logs mediante el driver \texttt{awslogs} de ECS. El grupo de logs sigue la convención \path{/aws/ecs/transitops/dev/api}. Esta integración permite inspeccionar errores de arranque, fallos de configuración, problemas de conexión con RDS y salidas de tareas puntuales como las migraciones.
+
+Las métricas básicas de ECS, ALB y RDS quedan disponibles en CloudWatch como parte de los servicios gestionados. Aunque el proyecto no implementa dashboards avanzados, la infraestructura queda preparada para evolucionar hacia alarmas sobre disponibilidad, errores HTTP, salud de targets, CPU, memoria y conexiones de base de datos.
 
 \section{Alarmas y operación}
 \label{sec:alarmas-operacion}
 
-Pendiente de redactar. Se recogerán alarmas, criterios de operación y evidencias de comportamiento en ejecución.
+En el alcance actual, la operación se apoya en comprobaciones manuales y salidas verificables:
+
+\begin{itemize}
+  \item Estado del servicio ECS: \texttt{ACTIVE}, \texttt{desired = 1}, \texttt{running = 1}.
+  \item Health check HTTPS con respuesta \texttt{200}.
+  \item Logs de contenedor disponibles en CloudWatch.
+  \item Salida de la tarea de migración ECS con código \texttt{0}.
+  \item Estado del certificado ACM como \texttt{ISSUED}.
+\end{itemize}
+
+Como evolución, se proponen alarmas formales de ALB 5xx, ausencia de targets sanos, CPU/memoria de ECS y almacenamiento/conexiones de RDS.
 
 \section{Seguridad aplicada}
 \label{sec:seguridad-aplicada}
 
-Pendiente de completar. Se documentarán controles de autenticación, autorización, red, secretos, permisos e infraestructura.
+Las medidas de seguridad aplicadas son:
+
+\begin{itemize}
+  \item Autenticación mediante login y emisión de \acrshort{jwt}.
+  \item Contraseñas almacenadas como hash, no en claro.
+  \item Autorización por roles \texttt{admin} y \texttt{operator}.
+  \item Bootstrap del primer administrador protegido por token externo.
+  \item Secretos en Secrets Manager, no en el repositorio.
+  \item RDS en subredes privadas y sin acceso público.
+  \item ECS en subredes privadas, recibiendo tráfico solo desde ALB.
+  \item ALB como único punto de entrada público.
+  \item HTTPS mediante ACM y redirección HTTP a HTTPS.
+  \item GitHub Actions con OIDC en lugar de claves AWS permanentes.
+\end{itemize}
 
 \section{Limitaciones de seguridad}
 \label{sec:limitaciones-seguridad}
 
-Pendiente de redactar. Se explicarán los límites razonables del trabajo por tratarse de un TFG y no de un producto productivo completo.
+El sistema no pretende cubrir todos los controles exigibles a un producto crítico en producción. Quedan fuera del alcance actual la rotación automática de secretos, WAF, protección avanzada contra abuso, auditoría detallada de acciones administrativas, cifrado con claves KMS propias, políticas IAM de mínimo privilegio refinadas al extremo, pruebas de penetración y hardening exhaustivo de cabeceras HTTP.
+
+Estas limitaciones no invalidan el objetivo del trabajo, ya que se ha priorizado una línea base realista y demostrable: autenticación, autorización, red privada, secretos externos, HTTPS e infraestructura reproducible.

@@ -2,15 +2,19 @@
 
 \pagestyle{empty}
 \begin{abstract}
-  Este Trabajo Fin de Grado aborda el diseño, despliegue y operación de una plataforma cloud para la gestión de transportes sobre AWS. El sistema se construye como un backend contenerizado con persistencia en PostgreSQL, infraestructura definida mediante Terraform, automatización CI/CD y mecanismos de observabilidad y seguridad básica.
+  Este Trabajo Fin de Grado aborda el diseño, desarrollo, despliegue y operación de una plataforma cloud para la gestión de transportes sobre AWS. El proyecto se plantea como un backend de alcance funcional acotado, pero con una carga técnica significativa en arquitectura, automatización, infraestructura como código, seguridad básica y validación operativa.
 
-  Pendiente de completar con el resumen final cuando el alcance técnico y las evidencias de despliegue estén cerrados.
+  La solución implementa una API REST en ASP.NET Core sobre PostgreSQL para gestionar transportes, vehículos, conductores, usuarios, asignaciones, transiciones de estado y eventos logísticos. La aplicación se empaqueta mediante Docker y se despliega en AWS usando Terraform, ECS Fargate, RDS PostgreSQL, ECR, Application Load Balancer, Route 53, ACM, Secrets Manager, SSM Parameter Store y CloudWatch. También se ha definido un flujo de despliegue manual desde GitHub Actions con autenticación OIDC, evitando claves AWS persistentes.
+
+  Como resultado, se ha obtenido un entorno \texttt{dev} real accesible mediante \url{https://api.dev.transitops.net}, con certificado TLS emitido por ACM, servicio ECS estable, migraciones EF Core ejecutadas como tarea puntual de ECS y verificación de salud, bootstrap de administrador y login con JWT.
 
   \vspace*{25pt}
   \begin{segundoresumo}
-    This Bachelor's Thesis addresses the design, deployment, and operation of a cloud-based transport management platform on AWS. The system is built as a containerized backend with PostgreSQL persistence, Terraform-based infrastructure, CI/CD automation, and basic observability and security mechanisms.
+    This Bachelor's Thesis addresses the design, development, deployment, and operation of a cloud-based transport management platform on AWS. The project is implemented as a deliberately scoped backend, with a strong technical focus on architecture, automation, infrastructure as code, basic security, and operational validation.
 
-    To be completed with the final abstract once the technical scope and deployment evidence are closed.
+    The solution provides a REST API built with ASP.NET Core and PostgreSQL to manage transports, vehicles, drivers, users, assignments, state transitions, and logistics events. The application is packaged with Docker and deployed to AWS using Terraform, ECS Fargate, RDS PostgreSQL, ECR, Application Load Balancer, Route 53, ACM, Secrets Manager, SSM Parameter Store, and CloudWatch. A manual GitHub Actions deployment flow with OIDC authentication has also been defined, avoiding persistent AWS access keys.
+
+    The resulting \texttt{dev} environment is reachable at \url{https://api.dev.transitops.net}, uses an ACM-issued TLS certificate, runs a stable ECS service, applies EF Core migrations through a one-off ECS task, and has been validated through health checks, first-admin bootstrap, and JWT login.
   \end{segundoresumo}
 \vspace*{25pt}
 \input{portada/palabras_chave}

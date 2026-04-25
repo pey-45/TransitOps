@@ -4,19 +4,50 @@
 \section{Conclusiones del trabajo}
 \label{sec:conclusiones-trabajo}
 
-Pendiente de redactar al cierre del proyecto. Se resumirá el grado de cumplimiento de los objetivos y el valor técnico del trabajo realizado.
+El trabajo ha alcanzado un estado técnico avanzado respecto a sus objetivos principales. Se ha construido un backend funcional para gestión de transportes y se ha desplegado en AWS mediante infraestructura como código, con dominio HTTPS real, base de datos privada, contenedores, secretos externos y validación operativa.
+
+El valor principal del proyecto no reside únicamente en la API implementada, sino en haber completado un camino de ingeniería real: código fuente, pruebas, imagen Docker, ECR, Terraform, RDS, ECS, migraciones, DNS, TLS, health check y login validado. Esto permite defender el trabajo como una plataforma cloud operable, no solo como una aplicación local.
 
 \section{Competencias aplicadas}
 \label{sec:competencias-aplicadas}
 
-Pendiente de completar. Se relacionará el trabajo con competencias de ingeniería del software, arquitectura, bases de datos, cloud, DevOps, seguridad y operación.
+Durante el desarrollo se han aplicado competencias de:
+
+\begin{itemize}
+  \item Ingeniería de requisitos y control de alcance.
+  \item Diseño de API REST y contratos de error.
+  \item Modelado de dominio y reglas de negocio.
+  \item Persistencia relacional con PostgreSQL y migraciones.
+  \item Pruebas automatizadas e integración.
+  \item Contenerización con Docker.
+  \item Infraestructura como código con Terraform.
+  \item Diseño de red y servicios cloud en AWS.
+  \item CI/CD con GitHub Actions y OIDC.
+  \item Seguridad básica de aplicación e infraestructura.
+  \item Documentación técnica y preparación de evidencias.
+\end{itemize}
 
 \section{Lecciones aprendidas}
 \label{sec:lecciones-aprendidas}
 
-Pendiente de redactar. Se recogerán aprendizajes técnicos y metodológicos relevantes.
+Una lección importante es que la complejidad real de un sistema cloud no aparece solo en el código de negocio. DNS, certificados, roles, secretos, migraciones, estado Terraform y permisos pueden bloquear un despliegue si no se tratan como parte del diseño.
+
+También se ha comprobado el valor de mantener un alcance funcional reducido. Esta decisión permitió dedicar tiempo a cerrar aspectos que a menudo quedan fuera de proyectos académicos: despliegue real, HTTPS, base de datos privada, migraciones controladas y validación de extremo a extremo.
+
+Por último, el proyecto muestra que documentar decisiones durante el desarrollo facilita retomar el trabajo, justificar cambios y preparar la defensa.
 
 \section{Líneas futuras}
 \label{sec:lineas-futuras}
 
-Pendiente de completar. Se propondrán mejoras razonables: frontend, mayor cobertura funcional, despliegues multi-entorno, endurecimiento de seguridad, pruebas de carga y evolución de observabilidad.
+Las líneas futuras más relevantes son:
+
+\begin{itemize}
+  \item Desarrollar un frontend web para operadores y administradores.
+  \item Ejecutar y archivar el flujo completo de despliegue desde GitHub Actions como evidencia CI/CD final.
+  \item Añadir entorno \texttt{prod} separado, con configuración y estado Terraform independientes.
+  \item Refinar permisos IAM hacia mínimo privilegio estricto.
+  \item Añadir dashboards y alarmas CloudWatch.
+  \item Incorporar pruebas de carga y análisis de capacidad.
+  \item Implementar rotación de secretos y políticas de backup/restore verificadas.
+  \item Ampliar el dominio con planificación, costes, rutas o integración con servicios externos.
+\end{itemize}

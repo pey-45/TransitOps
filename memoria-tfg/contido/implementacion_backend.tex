@@ -4,24 +4,47 @@
 \section{Estructura del proyecto}
 \label{sec:estructura-proyecto}
 
-Pendiente de redactar. Se describirá la solución .NET, los proyectos principales y las responsabilidades de cada carpeta, tomando ASP.NET Core como base del servicio HTTP~\cite{MicrosoftAspNetCoreDocs}.
+La solución contiene dos proyectos principales. \path{TransitOps.Api} implementa el servicio HTTP, la lógica de aplicación, el dominio y la persistencia. \path{TransitOps.Tests} agrupa las pruebas automatizadas. Esta estructura mantiene bajo el número de proyectos y facilita navegar el código durante el desarrollo y la defensa.
+
+ASP.NET Core se utiliza como framework HTTP~\cite{MicrosoftAspNetCoreDocs}. La API define controladores versionados bajo \path{/api/v1}, un contrato común de respuesta y middleware de errores para homogeneizar las salidas. La configuración se obtiene desde \texttt{appsettings}, variables de entorno, secretos locales en desarrollo y servicios AWS en despliegue.
 
 \section{API REST}
 \label{sec:api-rest}
 
-Pendiente de completar. Se documentarán los endpoints principales y los criterios seguidos para respuestas, validación y errores.
+La API REST cubre las siguientes áreas:
+
+\begin{itemize}
+  \item Salud: \texttt{GET} \path{/api/v1/health/live} y \texttt{GET} \path{/api/v1/health/ready}.
+  \item Autenticación: \texttt{POST} \path{/api/v1/auth/bootstrap-admin} y \texttt{POST} \path{/api/v1/auth/login}.
+  \item Usuarios: listado, detalle, creación, cambio de rol y activación/desactivación.
+  \item Transportes: creación, listado filtrado y paginado, detalle, actualización, borrado lógico, asignación y cambio de estado.
+  \item Vehículos y conductores: CRUD con borrado lógico.
+  \item Eventos logísticos: creación y consulta cronológica por transporte.
+\end{itemize}
+
+Las respuestas de éxito se encapsulan en un contrato común. Los errores distinguen validación, autenticación, autorización, no encontrado y conflicto de negocio, usando códigos HTTP coherentes como \texttt{400}, \texttt{401}, \texttt{403}, \texttt{404} y \texttt{409}.
 
 \section{Persistencia}
 \label{sec:persistencia}
 
-Pendiente de redactar. Se explicará el uso de Entity Framework Core, PostgreSQL, migraciones y reglas de integridad.
+La persistencia se implementa con Entity Framework Core sobre PostgreSQL. El \texttt{TransitOpsDbContext} representa el punto central de acceso a datos y define entidades, relaciones, restricciones e índices. Las migraciones permiten evolucionar el esquema de forma controlada.
+
+El proyecto evolucionó desde una primera aproximación basada en SQL de arranque hacia un modelo donde EF Core migrations es la fuente canónica. Esto simplifica el despliegue y evita divergencias entre entorno local, pruebas y AWS.
+
+En local Docker, la API puede aplicar migraciones al arrancar cuando la opción \path{Database:ApplyMigrationsOnStartup} está habilitada. En AWS, en cambio, las migraciones se ejecutan mediante el modo \path{--migrate-only}, como tarea ECS puntual.
 
 \section{Autenticación y autorización}
 \label{sec:autenticacion-autorizacion}
 
-Pendiente de completar. Se documentará el arranque del primer administrador, login, emisión de \acrshort{jwt} y control de acceso por roles.
+El sistema incorpora un flujo controlado para crear el primer administrador. El endpoint \texttt{POST} \path{/api/v1/auth/bootstrap-admin} requiere un token externo configurado fuera del repositorio y solo permite crear el primer usuario administrador si no existe ya un administrador activo.
+
+El login se realiza mediante \texttt{POST} \path{/api/v1/auth/login}. Las contraseñas se almacenan como hash y, si las credenciales son válidas, la API devuelve un \acrshort{jwt}. Este token incluye la identidad y el rol del usuario, permitiendo proteger los endpoints de negocio.
+
+El modelo de autorización distingue \texttt{admin} y \texttt{operator}. El administrador puede gestionar usuarios; el operador se limita a las operaciones de transporte. Además, la API impide dejar el sistema sin ningún administrador activo.
 
 \section{Pruebas del backend}
 \label{sec:pruebas-backend}
 
-Pendiente de redactar. Se recogerán las pruebas automatizadas y los criterios de validación funcional del backend.
+Las pruebas del backend se encuentran en \path{TransitOps.Tests}. Cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y flujos de negocio principales. Se utiliza \texttt{WebApplicationFactory} para ejecutar pruebas de integración sobre la API.
+
+En el estado actual, la suite principal ejecuta 84 pruebas automatizadas. Estas pruebas se complementan con colecciones Postman/Newman para verificar flujos contra una API viva y con pruebas de humo sobre el entorno AWS desplegado.

@@ -23,9 +23,26 @@ El proyecto se desarrolla con un enfoque iterativo e incremental. Cada iteració
 \section{Gestión del alcance}
 \label{sec:gestion-alcance}
 
-Pendiente de redactar. Se justificará la decisión de priorizar profundidad operativa y calidad de despliegue frente a amplitud funcional.
+La gestión del alcance se ha basado en una decisión explícita: construir un producto funcionalmente pequeño, pero técnicamente completo. En vez de añadir módulos de negocio avanzados, como optimización de rutas, facturación, geolocalización en tiempo real o panel web, se priorizó que el backend mínimo pudiera desplegarse y operarse en AWS de forma creíble.
+
+Esta decisión reduce el riesgo de terminar con una aplicación amplia pero superficial. El valor del trabajo se concentra en demostrar el ciclo completo de ingeniería: modelado de dominio, API, persistencia, pruebas, contenedores, infraestructura cloud, seguridad básica, CI/CD, migraciones y validación operativa.
+
+El alcance funcional se fijó alrededor de transportes, vehículos, conductores, usuarios, asignaciones, estados y eventos logísticos. Cualquier funcionalidad fuera de ese flujo se trató como línea futura salvo que fuese necesaria para demostrar el despliegue o la operación.
 
 \section{Herramientas utilizadas}
 \label{sec:herramientas}
 
-Pendiente de completar. Se documentarán las herramientas utilizadas: .NET, PostgreSQL, Docker, Terraform, AWS, GitHub Actions, Postman/Newman y herramientas de documentación.
+Las herramientas principales utilizadas han sido:
+
+\begin{itemize}
+  \item ASP.NET Core y .NET 10 para la implementación de la API REST~\cite{MicrosoftAspNetCoreDocs}.
+  \item Entity Framework Core como ORM y herramienta de migraciones.
+  \item PostgreSQL como base de datos relacional.
+  \item xUnit y \texttt{WebApplicationFactory} para pruebas automatizadas.
+  \item Docker y Docker Compose para empaquetado y ejecución local reproducible.
+  \item Terraform para definir infraestructura AWS como código.
+  \item AWS ECS Fargate, ECR, RDS, ALB, Route 53, ACM, CloudWatch, Secrets Manager y SSM Parameter Store como servicios cloud principales~\cite{AwsEcsDocs,AwsRdsDocs,AwsRoute53Docs,AwsAcmDocs}.
+  \item GitHub Actions para integración continua y despliegue manual.
+  \item Postman/Newman para pruebas de humo manuales y automatizables.
+  \item LaTeX para la elaboración de la memoria.
+\end{itemize}

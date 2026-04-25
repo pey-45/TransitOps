@@ -1,6 +1,8 @@
 add_cus_dep('glo', 'gls', 0, 'run_makeglossaries');
 add_cus_dep('acn', 'acr', 0, 'run_makeglossaries');
 
+$pdf_mode = 5;
+
 sub run_makeglossaries {
   if ( $silent ) {
     system "makeglossaries -q \"$_[0]\"";

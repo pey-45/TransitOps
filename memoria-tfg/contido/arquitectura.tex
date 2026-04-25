@@ -4,24 +4,59 @@
 \section{Visión general}
 \label{sec:vision-general-arquitectura}
 
-Pendiente de redactar. Se presentará la arquitectura global del sistema, diferenciando backend, base de datos, contenedores, infraestructura cloud, pipeline y servicios de observabilidad.
+La arquitectura global se basa en una API REST monolítica, stateless y contenerizada. El cliente accede al sistema a través de un endpoint HTTPS público, mientras que la ejecución de la aplicación y la base de datos permanecen en subredes privadas. Esta separación permite exponer únicamente el balanceador de carga y mantener PostgreSQL aislado de Internet.
+
+En local, el sistema se ejecuta con Docker Compose, levantando la API y PostgreSQL. En AWS, la API se publica como imagen Docker en ECR y se ejecuta en ECS Fargate. RDS PostgreSQL actúa como almacén persistente. Route 53 resuelve el dominio \path{api.dev.transitops.net}, ACM emite el certificado TLS y el Application Load Balancer centraliza el tráfico público.
+
+La infraestructura se define mediante Terraform, con módulos reutilizables para red, registro de contenedores, base de datos, configuración, observabilidad y runtime de contenedores. Esta decisión permite reproducir el entorno y revisar los cambios de infraestructura como parte del repositorio.
 
 \section{Arquitectura lógica del backend}
 \label{sec:arquitectura-logica-backend}
 
-Pendiente de completar. Se explicará la organización del backend ASP.NET Core, la separación entre controladores, servicios de aplicación, dominio e infraestructura de persistencia.
+El backend se organiza como una solución .NET deliberadamente simple con dos proyectos: \path{TransitOps.Api} y \path{TransitOps.Tests}. Dentro de la API se distinguen responsabilidades por carpetas:
+
+\begin{itemize}
+  \item \texttt{Controllers}: puntos de entrada HTTP versionados.
+  \item \texttt{Contracts}: objetos de petición y respuesta expuestos por la API.
+  \item \texttt{Application}: servicios de aplicación que contienen la lógica de casos de uso.
+  \item \texttt{Domain}: entidades y enumeraciones del dominio.
+  \item \texttt{Infrastructure}: persistencia, configuración EF Core y migraciones.
+  \item \texttt{Common}, \texttt{Errors} y \texttt{Middleware}: contrato común de respuestas, errores y tratamiento transversal.
+\end{itemize}
+
+No se ha dividido el backend en múltiples proyectos de dominio, aplicación e infraestructura porque el tamaño del sistema no lo justifica. La separación interna por carpetas ofrece suficiente claridad sin añadir coste accidental.
 
 \section{Arquitectura de datos}
 \label{sec:arquitectura-datos}
 
-Pendiente de completar. Se documentará el uso de PostgreSQL, migraciones de Entity Framework Core, borrado lógico, restricciones e índices relevantes.
+PostgreSQL se utiliza como base de datos principal. El esquema se gestiona mediante migraciones de Entity Framework Core, ubicadas bajo \path{TransitOps.Api/Infrastructure/Persistence/Migrations}. Esta carpeta es la fuente de verdad del esquema, tanto para local como para cloud.
+
+Las entidades principales aplican campos de auditoría y borrado lógico mediante \texttt{deleted\_at}. Por ello, varias restricciones de unicidad se han diseñado para registros activos, permitiendo reutilizar identificadores de negocio cuando un registro anterior ha sido eliminado lógicamente. Este criterio aparece en referencias como matrículas de vehículos, licencias de conductores o referencias de transporte.
+
+Los estados y tipos de evento se almacenan como \texttt{smallint} con restricciones \texttt{check}. Esta solución evita depender de enumerados nativos de PostgreSQL y simplifica la integración con EF Core, manteniendo a la vez validación a nivel de base de datos.
 
 \section{Arquitectura cloud en AWS}
 \label{sec:arquitectura-cloud}
 
-Pendiente de completar desde \texttt{docs/CloudArchitecture.md}. La arquitectura objetivo incluye Route 53, ACM, Application Load Balancer, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, Systems Manager Parameter Store y CloudWatch~\cite{AwsEcsDocs}.
+La arquitectura cloud desplegada en AWS incluye Route 53, ACM, Application Load Balancer, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, Systems Manager Parameter Store y CloudWatch~\cite{AwsEcsDocs,AwsRoute53Docs,AwsAcmDocs,AwsRdsDocs}.
+
+El entorno \texttt{dev} se despliega en la cuenta AWS \texttt{142966787103}, región \texttt{eu-west-1}. La red está formada por una VPC con subredes públicas para ALB y NAT, subredes privadas de aplicación para ECS y subredes privadas de datos para RDS. Los grupos de seguridad restringen el flujo a: Internet hacia ALB, ALB hacia ECS y ECS hacia RDS.
+
+La API queda disponible en \url{https://api.dev.transitops.net}. El puerto 80 redirige a HTTPS, el certificado se gestiona con ACM y el registro DNS vive en Route 53. La base de datos RDS no es pública y solo acepta tráfico PostgreSQL desde el grupo de seguridad de ECS.
 
 \section{Decisiones arquitectónicas}
 \label{sec:decisiones-arquitectonicas}
 
-Pendiente de redactar. Esta sección justificará las decisiones principales y sus alternativas razonables, incluyendo el uso de Terraform como herramienta de \gls{infraestructura-como-codigo}~\cite{TerraformDocs}.
+Las decisiones arquitectónicas principales han sido:
+
+\begin{itemize}
+  \item Monolito modular frente a microservicios: el dominio y el tamaño del trabajo no justifican la complejidad de microservicios, mensajería o orquestación avanzada.
+  \item ECS Fargate frente a servidores EC2: Fargate reduce administración de infraestructura y encaja bien con una API stateless contenerizada.
+  \item RDS PostgreSQL frente a PostgreSQL autogestionado: RDS simplifica backups, operación y red privada.
+  \item Terraform frente a creación manual: la infraestructura queda versionada, reproducible y revisable~\cite{TerraformDocs}.
+  \item Secrets Manager y SSM frente a variables hardcodeadas: los secretos no se almacenan en el repositorio y pueden gestionarse de forma separada.
+  \item Migraciones como tarea ECS puntual frente a migraciones automáticas en producción: el despliegue gana control explícito y evita que cada arranque web modifique el esquema.
+  \item OIDC en GitHub Actions frente a claves AWS persistentes: se reduce el riesgo de credenciales de larga duración.
+\end{itemize}
+
+Estas decisiones favorecen una arquitectura pequeña pero defendible, orientada a demostrar operación real en cloud.
