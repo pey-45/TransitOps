@@ -86,6 +86,7 @@ These are outside the local functional MVP, but they are central to the overall 
 
 ## Recent Decision Log
 
+- 2026-04-25: Added the university TFG LaTeX template under `memoria-tfg/` and replaced its demo content with a minimal Spanish thesis structure aligned with the signed anteproyecto: cloud transport-management backend on AWS, Terraform/IaC, CI/CD, observability, security, validation, and final conclusions.
 - 2026-03-25: Established repository convention to use `AGENTS.md` for stable agent instructions/preferences and `CONTEXT.md` for evolving project context.
 - 2026-03-25: Added initial PostgreSQL schema script under `database/postgres/` to keep database artifacts outside the API project code and aligned with the documented stack.
 - 2026-03-26: Updated `database/postgres/001_initial_schema.sql` to use partial unique indexes on active rows (`deleted_at IS NULL`) so business keys can be reused after soft delete.
