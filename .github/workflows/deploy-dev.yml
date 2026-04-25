@@ -1,0 +1,260 @@
+name: deploy-dev
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DOTNET_CLI_HOME: ${{ github.workspace }}
+      IMAGE_TAG: ${{ github.sha }}
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_terraform_state_bucket_name: ${{ vars.TF_STATE_BUCKET }}
+      TF_VAR_terraform_lock_table_name: ${{ vars.TF_LOCK_TABLE }}
+      TF_VAR_root_domain: ${{ vars.ROOT_DOMAIN }}
+      TF_VAR_hosted_zone_id: ${{ vars.HOSTED_ZONE_ID }}
+      TF_VAR_enable_https: ${{ vars.ENABLE_HTTPS || 'false' }}
+      TF_VAR_database_username: ${{ vars.DATABASE_USERNAME }}
+      TF_VAR_database_password: ${{ secrets.DATABASE_PASSWORD }}
+      TF_VAR_api_image_tag: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/transitops-dev-github-actions-deploy-role
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Restore solution
+        run: dotnet restore TransitOps.slnx
+
+      - name: Build solution
+        run: dotnet build TransitOps.slnx -c Release --no-restore
+
+      - name: Run tests
+        run: dotnet test TransitOps.Tests/TransitOps.Tests.csproj -c Release --no-build
+
+      - name: Build API image
+        run: docker build -f TransitOps.Api/Dockerfile -t transitops-api:${IMAGE_TAG} .
+
+      - name: Write Terraform backend config
+        working-directory: infra/terraform/environments/dev
+        run: |
+          cat > backend.ci.hcl <<EOF
+          bucket         = "${{ vars.TF_STATE_BUCKET }}"
+          key            = "${{ vars.TF_STATE_KEY }}"
+          region         = "${{ vars.AWS_REGION }}"
+          dynamodb_table = "${{ vars.TF_LOCK_TABLE }}"
+          encrypt        = true
+          EOF
+
+      - name: Terraform init
+        working-directory: infra/terraform/environments/dev
+        run: terraform init -backend-config=backend.ci.hcl
+
+      - name: Terraform apply platform without tasks
+        working-directory: infra/terraform/environments/dev
+        env:
+          TF_VAR_ecs_desired_count: "0"
+        run: terraform apply -auto-approve
+
+      - name: Read Terraform outputs
+        id: tfout
+        working-directory: infra/terraform/environments/dev
+        run: |
+          terraform output -json > tf-output.json
+          echo "repository_url=$(jq -r '.container_registry.value.repository_url' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "cluster_name=$(jq -r '.container_runtime.value.cluster_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "service_name=$(jq -r '.container_runtime.value.service_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "task_definition_arn=$(jq -r '.container_runtime.value.task_definition_arn' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "alb_dns_name=$(jq -r '.container_runtime.value.alb_dns_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "api_dns_record_fqdn=$(jq -r '.container_runtime.value.api_dns_record_fqdn // empty' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "db_endpoint=$(jq -r '.database.value.db_endpoint' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "db_name=$(jq -r '.database.value.db_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "app_subnets=$(jq -r '.network.value.app_subnet_ids | join(",")' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "ecs_security_group=$(jq -r '.security_groups.value.ecs_id' tf-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push API image
+        run: |
+          docker tag transitops-api:${IMAGE_TAG} "${{ steps.tfout.outputs.repository_url }}:${IMAGE_TAG}"
+          docker push "${{ steps.tfout.outputs.repository_url }}:${IMAGE_TAG}"
+
+      - name: Update runtime secrets
+        env:
+          DB_ENDPOINT: ${{ steps.tfout.outputs.db_endpoint }}
+          DB_NAME: ${{ steps.tfout.outputs.db_name }}
+          DATABASE_USERNAME: ${{ vars.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
+          BOOTSTRAP_ADMIN_TOKEN: ${{ secrets.BOOTSTRAP_ADMIN_TOKEN }}
+        run: |
+          DB_HOST="${DB_ENDPOINT%:*}"
+          DB_PORT="${DB_ENDPOINT##*:}"
+          CONNECTION_STRING="Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DATABASE_USERNAME};Password=${DATABASE_PASSWORD}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id "transitops/dev/app/db-connection-string" \
+            --secret-string "${CONNECTION_STRING}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id "transitops/dev/app/jwt-signing-key" \
+            --secret-string "${JWT_SIGNING_KEY}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id "transitops/dev/app/bootstrap-first-admin-token" \
+            --secret-string "${BOOTSTRAP_ADMIN_TOKEN}"
+
+      - name: Run EF Core migrations as ECS task
+        env:
+          CLUSTER_NAME: ${{ steps.tfout.outputs.cluster_name }}
+          TASK_DEFINITION_ARN: ${{ steps.tfout.outputs.task_definition_arn }}
+          APP_SUBNETS: ${{ steps.tfout.outputs.app_subnets }}
+          ECS_SECURITY_GROUP: ${{ steps.tfout.outputs.ecs_security_group }}
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${CLUSTER_NAME}" \
+            --launch-type FARGATE \
+            --task-definition "${TASK_DEFINITION_ARN}" \
+            --network-configuration "awsvpcConfiguration={subnets=[${APP_SUBNETS}],securityGroups=[${ECS_SECURITY_GROUP}],assignPublicIp=DISABLED}" \
+            --overrides '{"containerOverrides":[{"name":"api","command":["--migrate-only"]}]}' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          if [ -z "${TASK_ARN}" ] || [ "${TASK_ARN}" = "None" ]; then
+            echo "Migration ECS task was not started."
+            exit 1
+          fi
+
+          aws ecs wait tasks-stopped --cluster "${CLUSTER_NAME}" --tasks "${TASK_ARN}"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "${CLUSTER_NAME}" \
+            --tasks "${TASK_ARN}" \
+            --query 'tasks[0].containers[?name==`api`].exitCode | [0]' \
+            --output text)
+
+          if [ "${EXIT_CODE}" != "0" ]; then
+            aws ecs describe-tasks --cluster "${CLUSTER_NAME}" --tasks "${TASK_ARN}"
+            exit 1
+          fi
+
+      - name: Terraform apply service desired count
+        working-directory: infra/terraform/environments/dev
+        env:
+          TF_VAR_ecs_desired_count: "1"
+        run: terraform apply -auto-approve
+
+      - name: Wait for ECS service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ steps.tfout.outputs.cluster_name }}" \
+            --services "${{ steps.tfout.outputs.service_name }}"
+
+      - name: Smoke test health endpoint
+        env:
+          ALB_DNS_NAME: ${{ steps.tfout.outputs.alb_dns_name }}
+          API_DNS_RECORD_FQDN: ${{ steps.tfout.outputs.api_dns_record_fqdn }}
+        run: |
+          if [ -n "${API_DNS_RECORD_FQDN}" ]; then
+            API_BASE_URL="https://${API_DNS_RECORD_FQDN%.}"
+          else
+            API_BASE_URL="http://${ALB_DNS_NAME}"
+          fi
+
+          echo "API_BASE_URL=${API_BASE_URL}" >> "$GITHUB_ENV"
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS "${API_BASE_URL}/api/v1/health/ready"; then
+              exit 0
+            fi
+
+            echo "Health check not ready yet (${attempt}/30)."
+            sleep 10
+          done
+
+          curl -v "${API_BASE_URL}/api/v1/health/ready"
+          exit 1
+
+      - name: Bootstrap or verify cloud admin
+        env:
+          API_BASE_URL: ${{ env.API_BASE_URL }}
+          BOOTSTRAP_ADMIN_TOKEN: ${{ secrets.BOOTSTRAP_ADMIN_TOKEN }}
+          CLOUD_ADMIN_USERNAME: ${{ vars.CLOUD_ADMIN_USERNAME }}
+          CLOUD_ADMIN_EMAIL: ${{ vars.CLOUD_ADMIN_EMAIL }}
+          CLOUD_ADMIN_PASSWORD: ${{ secrets.CLOUD_ADMIN_PASSWORD }}
+        run: |
+          jq -n \
+            --arg username "${CLOUD_ADMIN_USERNAME}" \
+            --arg email "${CLOUD_ADMIN_EMAIL}" \
+            --arg password "${CLOUD_ADMIN_PASSWORD}" \
+            '{username: $username, email: $email, password: $password}' > bootstrap-admin.json
+
+          STATUS=$(curl -sS -o bootstrap-response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -H "X-Bootstrap-Token: ${BOOTSTRAP_ADMIN_TOKEN}" \
+            --data @bootstrap-admin.json \
+            "${API_BASE_URL}/api/v1/auth/bootstrap-admin")
+
+          if [ "${STATUS}" = "201" ]; then
+            exit 0
+          fi
+
+          if [ "${STATUS}" = "409" ] && jq -e '.error.code == "first_admin_already_exists"' bootstrap-response.json > /dev/null; then
+            exit 0
+          fi
+
+          cat bootstrap-response.json
+          exit 1
+
+      - name: Smoke test admin login
+        env:
+          API_BASE_URL: ${{ env.API_BASE_URL }}
+          CLOUD_ADMIN_USERNAME: ${{ vars.CLOUD_ADMIN_USERNAME }}
+          CLOUD_ADMIN_PASSWORD: ${{ secrets.CLOUD_ADMIN_PASSWORD }}
+        run: |
+          jq -n \
+            --arg username "${CLOUD_ADMIN_USERNAME}" \
+            --arg password "${CLOUD_ADMIN_PASSWORD}" \
+            '{username: $username, password: $password}' > login.json
+
+          STATUS=$(curl -sS -o login-response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            --data @login.json \
+            "${API_BASE_URL}/api/v1/auth/login")
+
+          if [ "${STATUS}" != "200" ]; then
+            cat login-response.json
+            exit 1
+          fi
+
+          jq -e '.data.accessToken | length > 0' login-response.json > /dev/null

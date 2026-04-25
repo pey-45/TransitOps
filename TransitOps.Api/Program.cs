@@ -27,155 +27,179 @@ namespace TransitOps.Api;
 
 public class Program
 {
-    public static void Main(string[] args)
+    private const string MigrateOnlyFlag = "--migrate-only";
+
+    public static int Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
-        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        try
+        {
+            var migrateOnly = args.Any(argument => string.Equals(argument, MigrateOnlyFlag, StringComparison.OrdinalIgnoreCase));
+            var builder = WebApplication.CreateBuilder(args);
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        builder.Services
-            .AddControllers()
-            .ConfigureApiBehaviorOptions(options =>
-            {
-                options.InvalidModelStateResponseFactory = context =>
+            builder.Services
+                .AddControllers()
+                .ConfigureApiBehaviorOptions(options =>
                 {
-                    var validationErrors = context.ModelState
-                        .Where(modelState => modelState.Value?.Errors.Count > 0)
-                        .ToDictionary(
-                            keySelector: modelState => modelState.Key,
-                            elementSelector: modelState => modelState.Value!.Errors
-                                .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
-                                    ? "The submitted value is invalid."
-                                    : error.ErrorMessage)
-                                .ToArray());
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var validationErrors = context.ModelState
+                            .Where(modelState => modelState.Value?.Errors.Count > 0)
+                            .ToDictionary(
+                                keySelector: modelState => modelState.Key,
+                                elementSelector: modelState => modelState.Value!.Errors
+                                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                        ? "The submitted value is invalid."
+                                        : error.ErrorMessage)
+                                    .ToArray());
 
-                    var response = Common.ApiErrorResponse.Create(
-                        code: "validation_error",
-                        message: "One or more validation errors occurred.",
-                        requestId: context.HttpContext.TraceIdentifier,
-                        details: validationErrors);
+                        var response = Common.ApiErrorResponse.Create(
+                            code: "validation_error",
+                            message: "One or more validation errors occurred.",
+                            requestId: context.HttpContext.TraceIdentifier,
+                            details: validationErrors);
 
-                    return new BadRequestObjectResult(response);
-                };
+                        return new BadRequestObjectResult(response);
+                    };
+                });
+
+            builder.Services.AddRouting(options =>
+            {
+                options.LowercaseUrls = true;
+                options.LowercaseQueryStrings = true;
             });
 
-        builder.Services.AddRouting(options =>
-        {
-            options.LowercaseUrls = true;
-            options.LowercaseQueryStrings = true;
-        });
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+            var jwtOptions = builder.Configuration
+                .GetRequiredSection(JwtOptions.SectionName)
+                .Get<JwtOptions>()
+                ?? new JwtOptions();
+            jwtOptions.Validate();
 
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
-        var jwtOptions = builder.Configuration
-            .GetRequiredSection(JwtOptions.SectionName)
-            .Get<JwtOptions>()
-            ?? new JwtOptions();
-        jwtOptions.Validate();
+            var bootstrapOptions = builder.Configuration
+                .GetSection(BootstrapOptions.SectionName)
+                .Get<BootstrapOptions>()
+                ?? new BootstrapOptions();
 
-        var bootstrapOptions = builder.Configuration
-            .GetSection(BootstrapOptions.SectionName)
-            .Get<BootstrapOptions>()
-            ?? new BootstrapOptions();
+            builder.Services.AddDbContext<TransitOpsDbContext>(
+                options => options.UseNpgsql(connectionString));
 
-        builder.Services.AddDbContext<TransitOpsDbContext>(
-            options => options.UseNpgsql(connectionString));
+            builder.Services.AddSingleton(jwtOptions);
+            builder.Services.AddSingleton(bootstrapOptions);
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IDriverService, DriverService>();
+            builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+            builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
+            builder.Services.AddScoped<ITransportService, TransportService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IVehicleService, VehicleService>();
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.MapInboundClaims = false;
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromSeconds(30),
+                        ValidIssuer = jwtOptions.Issuer,
+                        ValidAudience = jwtOptions.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                        NameClaimType = "unique_name",
+                        RoleClaimType = "role"
+                    };
 
-        builder.Services.AddSingleton(jwtOptions);
-        builder.Services.AddSingleton(bootstrapOptions);
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddScoped<IAuthService, AuthService>();
-        builder.Services.AddScoped<IDriverService, DriverService>();
-        builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
-        builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
-        builder.Services.AddScoped<ITransportService, TransportService>();
-        builder.Services.AddScoped<IUserService, UserService>();
-        builder.Services.AddScoped<IVehicleService, VehicleService>();
-        builder.Services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnChallenge = async context =>
+                        {
+                            context.HandleResponse();
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            context.Response.ContentType = "application/json";
+
+                            var payload = ApiErrorResponse.Create(
+                                "authentication_required",
+                                "A valid bearer token is required to access this resource.",
+                                context.HttpContext.TraceIdentifier);
+
+                            await context.Response.WriteAsync(JsonSerializer.Serialize(payload, jsonOptions));
+                        },
+                        OnForbidden = async context =>
+                        {
+                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            context.Response.ContentType = "application/json";
+
+                            var payload = ApiErrorResponse.Create(
+                                "authorization_forbidden",
+                                "You do not have permission to access this resource.",
+                                context.HttpContext.TraceIdentifier);
+
+                            await context.Response.WriteAsync(JsonSerializer.Serialize(payload, jsonOptions));
+                        }
+                    };
+                });
+            builder.Services.AddAuthorization(options =>
             {
-                options.MapInboundClaims = false;
-                options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(30),
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
-                    NameClaimType = "unique_name",
-                    RoleClaimType = "role"
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnChallenge = async context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        context.Response.ContentType = "application/json";
-
-                        var payload = ApiErrorResponse.Create(
-                            "authentication_required",
-                            "A valid bearer token is required to access this resource.",
-                            context.HttpContext.TraceIdentifier);
-
-                        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, jsonOptions));
-                    },
-                    OnForbidden = async context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                        context.Response.ContentType = "application/json";
-
-                        var payload = ApiErrorResponse.Create(
-                            "authorization_forbidden",
-                            "You do not have permission to access this resource.",
-                            context.HttpContext.TraceIdentifier);
-
-                        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, jsonOptions));
-                    }
-                };
+                options.AddPolicy(
+                    AuthorizationPolicies.OperationalAccess,
+                    policy => policy.RequireRole(RoleNames.Admin, RoleNames.Operator));
+                options.AddPolicy(
+                    AuthorizationPolicies.AdminAccess,
+                    policy => policy.RequireRole(RoleNames.Admin));
             });
-        builder.Services.AddAuthorization(options =>
-        {
-            options.AddPolicy(
-                AuthorizationPolicies.OperationalAccess,
-                policy => policy.RequireRole(RoleNames.Admin, RoleNames.Operator));
-            options.AddPolicy(
-                AuthorizationPolicies.AdminAccess,
-                policy => policy.RequireRole(RoleNames.Admin));
-        });
 
-        builder.Services.AddOpenApi();
+            builder.Services.AddOpenApi();
 
-        var app = builder.Build();
+            var app = builder.Build();
 
-        var applyMigrationsOnStartup = app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
-
-        if (applyMigrationsOnStartup)
-        {
-            using var scope = app.Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
-
-            if (dbContext.Database.IsRelational())
+            if (migrateOnly)
             {
-                dbContext.Database.Migrate();
+                RunDatabaseMigrations(app.Services);
+                return 0;
             }
-        }
 
-        if (app.Environment.IsDevelopment())
+            var applyMigrationsOnStartup = app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+
+            if (applyMigrationsOnStartup)
+            {
+                RunDatabaseMigrations(app.Services);
+            }
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+            }
+
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.MapControllers();
+
+            app.Run();
+            return 0;
+        }
+        catch (Exception exception)
         {
-            app.MapOpenApi();
+            Console.Error.WriteLine($"TransitOps API startup failed: {exception.Message}");
+            Console.Error.WriteLine(exception);
+            return 1;
         }
+    }
 
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
-        app.UseAuthentication();
-        app.UseAuthorization();
-        app.MapControllers();
+    private static void RunDatabaseMigrations(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TransitOpsDbContext>();
 
-        app.Run();
+        if (dbContext.Database.IsRelational())
+        {
+            dbContext.Database.Migrate();
+        }
     }
 }

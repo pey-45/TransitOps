@@ -6,8 +6,10 @@
 **/.project
 **/.settings
 **/.toolstarget
+**/.terraform
 **/.vs
 **/.vscode
+**/*.tfplan
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm

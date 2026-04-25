@@ -74,7 +74,7 @@ Initial `dev` posture:
 - NAT gateway: `1` to keep ECS private while controlling cost.
 - planned hostname: `api.dev.transitops.net`.
 
-The Terraform runtime module supports both HTTP-only development plans and the target HTTPS path. With the Route53 hosted zone for `transitops.net` available, the `dev` plan enables ACM certificate validation, Route53 records, HTTP-to-HTTPS redirect, and HTTPS listener `443` for `api.dev.transitops.net`.
+The Terraform runtime module supports both HTTP-only development plans and the target HTTPS path. With the Route53 hosted zone for `transitops.net` available, the `dev` plan enables ACM certificate validation, Route53 records, HTTP-to-HTTPS redirect, and HTTPS listener `443` for `api.dev.transitops.net`. If the hosted zone is not present in the target AWS account, the first deployment uses the ALB DNS name over HTTP and keeps HTTPS disabled until DNS is delegated into the account.
 
 ## Naming, Tags, And Environments
 
@@ -161,6 +161,8 @@ Preferred placement:
 
 AWS migrations should not depend on API startup side effects. The later deployment path should run EF Core migrations explicitly as a deployment step or dedicated task.
 
+Sprint 4 fixes that deployment model as a one-off ECS task. The API image supports a `--migrate-only` command that builds the normal application services, applies EF Core migrations through `TransitOpsDbContext.Database.Migrate()`, and exits without starting the HTTP server. GitHub Actions runs that command with `aws ecs run-task` inside the private app subnets, so migrations can reach the private RDS instance without exposing the database publicly.
+
 ## Terraform Runtime Layer
 
 Sprint 3 encodes the AWS runtime path as Terraform, but it does not apply it yet.
@@ -172,6 +174,7 @@ Reusable modules:
 - `database`: creates the private RDS PostgreSQL baseline, DB subnet group, and DB parameter group using the data subnets and RDS security group from the foundation module.
 - `runtime_config`: defines the Secrets Manager and SSM Parameter Store contract for runtime configuration without committing secret values.
 - `container_runtime`: creates ECS cluster, task execution role, task role, task definition, ECS service, ALB, target group, HTTP listener, health check, and optional future HTTPS/ACM/Route53 wiring.
+- `github_oidc`: creates the GitHub Actions OIDC trust path and the `transitops-dev-github-actions-deploy-role` role used by CI/CD without long-lived AWS keys.
 
 The `dev` environment wires these modules to the Sprint 2 foundation outputs:
 

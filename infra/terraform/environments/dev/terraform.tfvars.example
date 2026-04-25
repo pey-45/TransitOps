@@ -1,11 +1,20 @@
 aws_region = "eu-west-1"
 
 aws_profile = ""
+aws_account_id = "142966787103"
 
 project_slug = "transitops"
 service_slug = "api"
 owner        = "pey"
 repository   = "pey-45/TransitOps"
+
+deployment_branch = "main"
+
+terraform_state_bucket_name = "transitops-tfstate-142966787103-eu-west-1"
+terraform_lock_table_name   = "transitops-tfstate-locks"
+
+create_github_oidc_provider       = true
+existing_github_oidc_provider_arn = ""
 
 root_domain = ""
 
@@ -39,6 +48,6 @@ database_skip_final_snapshot      = true
 
 ecs_cpu           = 512
 ecs_memory        = 1024
-ecs_desired_count = 1
+ecs_desired_count = 0
 
 tags_override = {}

@@ -72,6 +72,15 @@ output "runtime_config" {
   }
 }
 
+output "github_actions" {
+  description = "GitHub Actions deployment identity for the dev environment."
+  value = {
+    deploy_role_arn   = module.github_oidc.deploy_role_arn
+    deploy_role_name  = module.github_oidc.deploy_role_name
+    oidc_provider_arn = module.github_oidc.oidc_provider_arn
+  }
+}
+
 output "container_runtime" {
   description = "ECS and ALB runtime resources for the dev API."
   value = {

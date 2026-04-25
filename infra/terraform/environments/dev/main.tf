@@ -42,6 +42,21 @@ module "runtime_config" {
   tags                   = module.platform_foundation.api_service_tags
 }
 
+module "github_oidc" {
+  source = "../../modules/github_oidc"
+
+  name_prefix                 = module.platform_foundation.name_prefix
+  repository                  = var.repository
+  branch                      = var.deployment_branch
+  aws_account_id              = var.aws_account_id
+  aws_region                  = var.aws_region
+  terraform_state_bucket_name = var.terraform_state_bucket_name
+  terraform_lock_table_name   = var.terraform_lock_table_name
+  create_oidc_provider        = var.create_github_oidc_provider
+  existing_oidc_provider_arn  = var.existing_github_oidc_provider_arn
+  tags                        = module.platform_foundation.api_service_tags
+}
+
 module "database" {
   source = "../../modules/database"
 

@@ -11,6 +11,7 @@ The cloud architecture, naming/tagging rules, environment conventions, and remot
 - `modules/container_registry/`: ECR repository, scanning, and image lifecycle policy.
 - `modules/observability/`: CloudWatch log group baseline.
 - `modules/runtime_config/`: Secrets Manager and SSM runtime configuration contract.
+- `modules/github_oidc/`: IAM OIDC trust and deployment role for GitHub Actions.
 - `modules/database/`: RDS PostgreSQL baseline.
 - `modules/container_runtime/`: ECS Fargate, IAM roles, ALB, target group, listener, and task/service definition.
 - `environments/dev/`: root Terraform configuration for the `dev` environment.
@@ -34,15 +35,16 @@ It now establishes:
 - remote Terraform state strategy with S3 backend configuration shape, encryption, versioning, and DynamoDB locking bootstrap
 - VPC, subnets, routing, NAT, and least-privilege security groups
 - ECR, CloudWatch logs, RDS PostgreSQL, ECS Fargate, ALB, target group, and runtime config/secrets contract
+- GitHub OIDC deployment role for keyless CI/CD access to AWS
 
 ## Expected Next Steps
 
 The next slices will add:
 
-- cloud-safe EF Core migration execution
-- cloud-safe first-admin bootstrap procedure
-- GitHub Actions Terraform plan/deploy workflow
-- first real plan/apply against the `dev` environment
+- first real `dev` apply with `ecs_desired_count=0`
+- GitHub Actions image publication and deployment through OIDC
+- cloud-safe EF Core migration execution as a one-off ECS task
+- cloud-safe first-admin bootstrap and smoke verification
 
 ## Basic Commands
 
@@ -66,3 +68,17 @@ terraform plan
 ```
 
 As of April 20, 2026, Terraform CLI is installed locally, the remote-state bootstrap has been applied in the isolated `transitops-dev` AWS account, `environments/dev` is initialized against the S3/DynamoDB backend, and a real AWS `terraform plan` succeeds for the `dev` foundation/runtime stack. The `dev` plan includes HTTPS ingress through ACM, Route53, and ALB for `api.dev.transitops.net`; the stack has not been applied yet.
+
+## Dev Apply Shape
+
+The first `dev` apply should create the cloud platform without starting API tasks, because ECR is initially empty:
+
+```powershell
+terraform apply `
+  -var="root_domain=" `
+  -var="hosted_zone_id=" `
+  -var="enable_https=false" `
+  -var="ecs_desired_count=0"
+```
+
+After the first image is pushed to ECR, the GitHub Actions deployment workflow updates `api_image_tag`, runs the EF Core migration task, and applies `ecs_desired_count=1`. Once the `transitops.net` hosted zone is available in the AWS account, set `root_domain`, `hosted_zone_id`, and `enable_https=true` to move from the ALB DNS fallback to `api.dev.transitops.net`.

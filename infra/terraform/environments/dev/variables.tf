@@ -10,6 +10,12 @@ variable "aws_profile" {
   default     = ""
 }
 
+variable "aws_account_id" {
+  description = "AWS account ID for IAM trust and deployment role ARNs."
+  type        = string
+  default     = "142966787103"
+}
+
 variable "project_slug" {
   description = "Lowercase project slug."
   type        = string
@@ -32,6 +38,36 @@ variable "repository" {
   description = "Repository tag value."
   type        = string
   default     = "pey-45/TransitOps"
+}
+
+variable "deployment_branch" {
+  description = "Git branch allowed to deploy the dev environment through GitHub OIDC."
+  type        = string
+  default     = "main"
+}
+
+variable "terraform_state_bucket_name" {
+  description = "S3 bucket used by the dev Terraform remote backend."
+  type        = string
+  default     = "transitops-tfstate-142966787103-eu-west-1"
+}
+
+variable "terraform_lock_table_name" {
+  description = "DynamoDB table used by the dev Terraform remote backend."
+  type        = string
+  default     = "transitops-tfstate-locks"
+}
+
+variable "create_github_oidc_provider" {
+  description = "Whether Terraform should create the GitHub OIDC provider for this AWS account."
+  type        = bool
+  default     = true
+}
+
+variable "existing_github_oidc_provider_arn" {
+  description = "Existing GitHub OIDC provider ARN when create_github_oidc_provider is false."
+  type        = string
+  default     = ""
 }
 
 variable "root_domain" {
