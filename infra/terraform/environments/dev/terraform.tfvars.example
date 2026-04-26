@@ -1,7 +1,7 @@
 aws_region = "eu-west-1"
 
 aws_profile = ""
-aws_account_id = "142966787103"
+aws_account_id = "661000947340"
 
 project_slug = "transitops"
 service_slug = "api"
@@ -10,7 +10,7 @@ repository   = "pey-45/TransitOps"
 
 deployment_branch = "main"
 
-terraform_state_bucket_name = "transitops-tfstate-142966787103-eu-west-1"
+terraform_state_bucket_name = "transitops-tfstate-661000947340-eu-west-1"
 terraform_lock_table_name   = "transitops-tfstate-locks"
 
 create_github_oidc_provider       = true
@@ -38,7 +38,7 @@ database_name                     = "transitops"
 database_instance_class           = "db.t4g.micro"
 database_allocated_storage_gb     = 20
 database_max_allocated_storage_gb = 100
-database_backup_retention_days    = 7
+database_backup_retention_days    = 0
 database_deletion_protection      = false
 database_skip_final_snapshot      = true
 

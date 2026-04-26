@@ -67,7 +67,7 @@ terraform validate
 terraform plan
 ```
 
-As of April 20, 2026, Terraform CLI is installed locally, the remote-state bootstrap has been applied in the isolated `transitops-dev` AWS account, `environments/dev` is initialized against the S3/DynamoDB backend, and a real AWS `terraform plan` succeeds for the `dev` foundation/runtime stack. The `dev` plan includes HTTPS ingress through ACM, Route53, and ALB for `api.dev.transitops.net`; the stack has not been applied yet.
+As of April 26, 2026, the Terraform target account has moved to AWS account `661000947340` (`Pablo`, alias `aws-pey-v1`). The `dev` backend configuration now points at `transitops-tfstate-661000947340-eu-west-1`, which must be bootstrapped in that account before the environment root is initialized. The previous cost-bearing `dev` runtime in account `142966787103` was destroyed for cost control.
 
 ## Dev Apply Shape
 
@@ -81,4 +81,6 @@ terraform apply `
   -var="ecs_desired_count=0"
 ```
 
-After the first image is pushed to ECR, the GitHub Actions deployment workflow updates `api_image_tag`, runs the EF Core migration task, and applies `ecs_desired_count=1`. Once the `transitops.net` hosted zone is available in the AWS account, set `root_domain`, `hosted_zone_id`, and `enable_https=true` to move from the ALB DNS fallback to `api.dev.transitops.net`.
+After the first image is pushed to ECR, the GitHub Actions deployment workflow updates `api_image_tag`, runs the EF Core migration task, and applies `ecs_desired_count=1`. Once the `transitops.net` hosted zone is available in account `661000947340`, set `root_domain`, `hosted_zone_id`, and `enable_https=true` to move from the ALB DNS fallback to `api.dev.transitops.net`.
+
+Terraform-managed resources carry the cleanup tags `TerraformStack` and `ResourceGroup`. Filter by `tag:TerraformStack = transitops-dev` in AWS Resource Explorer or Resource Groups to audit environment resources before and after `terraform destroy`; filter by `tag:TerraformStack = transitops-bootstrap-remote-state` for the remote-state bootstrap resources that intentionally survive environment destroys.

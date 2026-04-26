@@ -32,15 +32,16 @@ El estado remoto se almacena en S3 y se bloquea con DynamoDB. Esto evita estados
 El entorno desplegado utiliza:
 
 \begin{itemize}
-  \item Cuenta AWS: \texttt{142966787103}.
+  \item Cuenta AWS: \texttt{661000947340}.
   \item Región: \texttt{eu-west-1}.
   \item Entorno: \texttt{dev}.
-  \item Dominio: \path{api.dev.transitops.net}.
-  \item Hosted zone: \texttt{Z0675583AI7IBDN9DQWU}.
-  \item Certificado ACM: \path{api.dev.transitops.net}.
+  \item Dominio previsto: \path{api.dev.transitops.net}.
+  \item Fallback inicial: DNS público del ALB cuando Route 53/ACM no están disponibles en la cuenta objetivo.
 \end{itemize}
 
-Los recursos siguen la convención \path{transitops-dev-<componente>} y se etiquetan con proyecto, entorno, propietario, repositorio, servicio y origen Terraform. Esta nomenclatura facilita identificar recursos y costes.
+Los recursos siguen la convención \path{transitops-dev-<componente>} y se etiquetan con proyecto, entorno, propietario, repositorio, servicio, origen Terraform y las etiquetas \texttt{TerraformStack} y \texttt{ResourceGroup}. Esta nomenclatura permite identificar recursos y costes, y comprobar tras un \texttt{terraform destroy} que no quedan recursos del entorno \texttt{dev}.
+
+Como el entorno \texttt{dev} es educativo y desechable, la configuración actual desactiva la retención automática de backups de RDS mediante \texttt{database\_backup\_retention\_days = 0} y omite snapshots finales. Esta decisión reduce costes residuales en ciclos frecuentes de creación y destrucción, sin impedir que un entorno futuro de producción defina una política de backup más conservadora.
 
 \section{Despliegue de la aplicación}
 \label{sec:despliegue-aplicacion}

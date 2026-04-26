@@ -3,12 +3,14 @@ locals {
 
   common_tags = merge(
     {
-      Project     = "TransitOps"
-      Environment = var.environment
-      ManagedBy   = "Terraform"
-      Owner       = var.owner
-      Repository  = var.repository
-      Service     = "platform"
+      Project        = "TransitOps"
+      Environment    = var.environment
+      ManagedBy      = "Terraform"
+      Owner          = var.owner
+      Repository     = var.repository
+      ResourceGroup  = local.name_prefix
+      Service        = "platform"
+      TerraformStack = local.name_prefix
     },
     var.tags_override
   )

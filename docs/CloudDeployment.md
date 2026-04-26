@@ -6,19 +6,19 @@ This document defines the Sprint 4 code-to-cloud path for the `dev` environment.
 
 The deployment target is:
 
-- AWS account: `142966787103`
+- AWS account: `661000947340` (`Pablo`, alias `aws-pey-v1`)
 - Region: `eu-west-1`
 - Environment: `dev`
 - Hostname: `api.dev.transitops.net` when the Route53 hosted zone is available; otherwise the first AWS smoke run uses the ALB DNS name over HTTP.
-- Terraform state bucket: `transitops-tfstate-142966787103-eu-west-1`
+- Terraform state bucket: `transitops-tfstate-661000947340-eu-west-1`
 - Terraform lock table: `transitops-tfstate-locks`
 - Terraform state key: `dev/foundation.tfstate`
 
 ## One-Time Local Bootstrap
 
-The remote-state bootstrap has already created the S3 state bucket and DynamoDB lock table. Before GitHub Actions can deploy, the `dev` Terraform root must also create the GitHub OIDC deployment role.
+In account `661000947340`, run the remote-state bootstrap first so the S3 state bucket and DynamoDB lock table exist. Before GitHub Actions can deploy, the `dev` Terraform root must also create the GitHub OIDC deployment role.
 
-Run the first apply locally with the AWS SSO profile `transitops-dev` and keep ECS at desired count `0` so the platform can be created before ECR contains an image. If the `transitops.net` hosted zone is not present in this AWS account yet, keep HTTPS disabled for the first deployment:
+Run the first apply locally with the AWS SSO profile `aws-pey-v1` and keep ECS at desired count `0` so the platform can be created before ECR contains an image. If the `transitops.net` hosted zone is not present in this AWS account yet, keep HTTPS disabled for the first deployment:
 
 ```powershell
 cd infra\terraform\environments\dev
@@ -58,9 +58,9 @@ Required environment variables:
 
 | Name | Value |
 | --- | --- |
-| `AWS_ACCOUNT_ID` | `142966787103` |
+| `AWS_ACCOUNT_ID` | `661000947340` |
 | `AWS_REGION` | `eu-west-1` |
-| `TF_STATE_BUCKET` | `transitops-tfstate-142966787103-eu-west-1` |
+| `TF_STATE_BUCKET` | `transitops-tfstate-661000947340-eu-west-1` |
 | `TF_LOCK_TABLE` | `transitops-tfstate-locks` |
 | `TF_STATE_KEY` | `dev/foundation.tfstate` |
 | `ROOT_DOMAIN` | Empty until the hosted zone exists in this account; then `transitops.net` |
@@ -82,7 +82,7 @@ Required environment secrets:
 Do not configure AWS access keys. GitHub Actions authenticates by assuming:
 
 ```text
-arn:aws:iam::142966787103:role/transitops-dev-github-actions-deploy-role
+arn:aws:iam::661000947340:role/transitops-dev-github-actions-deploy-role
 ```
 
 ## Manual Workflows

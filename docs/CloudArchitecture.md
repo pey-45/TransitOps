@@ -71,6 +71,7 @@ Initial `dev` posture:
 
 - ECS desired count: `1`;
 - RDS: `Single-AZ`;
+- RDS automated backup retention: `0` days for disposable educational `dev` runs;
 - NAT gateway: `1` to keep ECS private while controlling cost.
 - planned hostname: `api.dev.transitops.net`.
 
@@ -127,7 +128,11 @@ Mandatory tags for taggable resources:
 | `ManagedBy` | `Terraform` |
 | `Owner` | `pey` |
 | `Repository` | `pey-45/TransitOps` |
+| `ResourceGroup` | `transitops-dev` |
 | `Service` | `api` or `platform` |
+| `TerraformStack` | `transitops-dev` |
+
+`ResourceGroup` and `TerraformStack` are intentionally stable cleanup tags. In AWS Resource Explorer/Resource Groups, filtering by `tag:TerraformStack = transitops-dev` identifies the resources Terraform created for the `dev` stack; filtering by `tag:TerraformStack = transitops-bootstrap-remote-state` identifies the remote-state bootstrap resources that are intentionally outside the environment destroy cycle.
 
 Environment rules:
 

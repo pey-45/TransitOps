@@ -38,11 +38,11 @@ Los estados y tipos de evento se almacenan como \texttt{smallint} con restriccio
 \section{Arquitectura cloud en AWS}
 \label{sec:arquitectura-cloud}
 
-La arquitectura cloud desplegada en AWS incluye Route 53, ACM, Application Load Balancer, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, Systems Manager Parameter Store y CloudWatch~\cite{AwsEcsDocs,AwsRoute53Docs,AwsAcmDocs,AwsRdsDocs}.
+La arquitectura cloud desplegable en AWS incluye Route 53, ACM, Application Load Balancer, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, Systems Manager Parameter Store y CloudWatch~\cite{AwsEcsDocs,AwsRoute53Docs,AwsAcmDocs,AwsRdsDocs}.
 
-El entorno \texttt{dev} se despliega en la cuenta AWS \texttt{142966787103}, región \texttt{eu-west-1}. La red está formada por una VPC con subredes públicas para ALB y NAT, subredes privadas de aplicación para ECS y subredes privadas de datos para RDS. Los grupos de seguridad restringen el flujo a: Internet hacia ALB, ALB hacia ECS y ECS hacia RDS.
+El entorno \texttt{dev} se despliega en la cuenta AWS \texttt{661000947340}, región \texttt{eu-west-1}. La red está formada por una VPC con subredes públicas para ALB y NAT, subredes privadas de aplicación para ECS y subredes privadas de datos para RDS. Los grupos de seguridad restringen el flujo a: Internet hacia ALB, ALB hacia ECS y ECS hacia RDS.
 
-La API queda disponible en \url{https://api.dev.transitops.net}. El puerto 80 redirige a HTTPS, el certificado se gestiona con ACM y el registro DNS vive en Route 53. La base de datos RDS no es pública y solo acepta tráfico PostgreSQL desde el grupo de seguridad de ECS.
+La API queda preparada para exponerse como \url{https://api.dev.transitops.net} cuando la zona DNS esté delegada en la cuenta objetivo; mientras tanto, el entorno puede validarse mediante el DNS público del ALB sobre HTTP. La base de datos RDS no es pública y solo acepta tráfico PostgreSQL desde el grupo de seguridad de ECS.
 
 \section{Decisiones arquitectónicas}
 \label{sec:decisiones-arquitectonicas}

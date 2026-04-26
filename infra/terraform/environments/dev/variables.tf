@@ -13,7 +13,12 @@ variable "aws_profile" {
 variable "aws_account_id" {
   description = "AWS account ID for IAM trust and deployment role ARNs."
   type        = string
-  default     = "142966787103"
+  default     = "661000947340"
+
+  validation {
+    condition     = can(regex("^\\d{12}$", var.aws_account_id))
+    error_message = "AWS account ID must be the 12-digit canonical account ID without separators."
+  }
 }
 
 variable "project_slug" {
@@ -49,7 +54,7 @@ variable "deployment_branch" {
 variable "terraform_state_bucket_name" {
   description = "S3 bucket used by the dev Terraform remote backend."
   type        = string
-  default     = "transitops-tfstate-142966787103-eu-west-1"
+  default     = "transitops-tfstate-661000947340-eu-west-1"
 }
 
 variable "terraform_lock_table_name" {

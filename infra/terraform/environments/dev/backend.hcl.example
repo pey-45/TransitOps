@@ -1,7 +1,7 @@
 # Fill this file with the concrete outputs produced by
 # infra/terraform/bootstrap/remote_state after the remote backend exists.
 
-bucket         = "transitops-tfstate-<account-id>-eu-west-1"
+bucket         = "transitops-tfstate-661000947340-eu-west-1"
 key            = "dev/foundation.tfstate"
 region         = "eu-west-1"
 dynamodb_table = "transitops-tfstate-locks"

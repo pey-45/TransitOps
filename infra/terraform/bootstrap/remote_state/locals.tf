@@ -6,12 +6,14 @@ locals {
 
   common_tags = merge(
     {
-      Project     = "TransitOps"
-      Environment = "shared"
-      ManagedBy   = "Terraform"
-      Owner       = var.owner
-      Repository  = var.repository
-      Service     = "platform"
+      Project        = "TransitOps"
+      Environment    = "shared"
+      ManagedBy      = "Terraform"
+      Owner          = var.owner
+      Repository     = var.repository
+      ResourceGroup  = "${var.project_slug}-bootstrap-remote-state"
+      Service        = "platform"
+      TerraformStack = "${var.project_slug}-bootstrap-remote-state"
     },
     var.tags_override
   )
