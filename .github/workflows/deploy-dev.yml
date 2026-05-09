@@ -25,6 +25,7 @@ jobs:
       TF_VAR_root_domain: ${{ vars.ROOT_DOMAIN }}
       TF_VAR_hosted_zone_id: ${{ vars.HOSTED_ZONE_ID }}
       TF_VAR_enable_https: ${{ vars.ENABLE_HTTPS || 'false' }}
+      TF_VAR_alarm_email: ${{ vars.ALARM_EMAIL || '' }}
       TF_VAR_database_username: ${{ vars.DATABASE_USERNAME }}
       TF_VAR_database_password: ${{ secrets.DATABASE_PASSWORD }}
       TF_VAR_api_image_tag: ${{ github.sha }}
@@ -100,6 +101,10 @@ jobs:
           echo "db_name=$(jq -r '.database.value.db_name' tf-output.json)" >> "$GITHUB_OUTPUT"
           echo "app_subnets=$(jq -r '.network.value.app_subnet_ids | join(",")' tf-output.json)" >> "$GITHUB_OUTPUT"
           echo "ecs_security_group=$(jq -r '.security_groups.value.ecs_id' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "api_log_group_name=$(jq -r '.observability.value.api_log_group_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "dashboard_name=$(jq -r '.observability.value.dashboard_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "alarm_topic_arn=$(jq -r '.observability.value.alarm_topic_arn // empty' tf-output.json)" >> "$GITHUB_OUTPUT"
+          jq -r '.observability.value.alarm_names[]' tf-output.json > alarm-names.txt
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -203,6 +208,59 @@ jobs:
           done
 
           curl -v "${API_BASE_URL}/api/v1/health/ready"
+          exit 1
+
+      - name: Verify CloudWatch observability resources
+        env:
+          API_LOG_GROUP_NAME: ${{ steps.tfout.outputs.api_log_group_name }}
+          DASHBOARD_NAME: ${{ steps.tfout.outputs.dashboard_name }}
+          ALARM_TOPIC_ARN: ${{ steps.tfout.outputs.alarm_topic_arn }}
+        run: |
+          aws logs describe-log-groups \
+            --log-group-name-prefix "${API_LOG_GROUP_NAME}" \
+            --query "logGroups[?logGroupName=='${API_LOG_GROUP_NAME}'].logGroupName | [0]" \
+            --output text | grep -Fx "${API_LOG_GROUP_NAME}"
+
+          aws cloudwatch get-dashboard \
+            --dashboard-name "${DASHBOARD_NAME}" \
+            --query 'DashboardName' \
+            --output text | grep -Fx "${DASHBOARD_NAME}"
+
+          while IFS= read -r alarm_name; do
+            aws cloudwatch describe-alarms \
+              --alarm-names "${alarm_name}" \
+              --query 'MetricAlarms[0].AlarmName' \
+              --output text | grep -Fx "${alarm_name}"
+          done < infra/terraform/environments/dev/alarm-names.txt
+
+          if [ -n "${ALARM_TOPIC_ARN}" ]; then
+            aws sns get-topic-attributes --topic-arn "${ALARM_TOPIC_ARN}" > /dev/null
+          fi
+
+      - name: Verify correlated API log entry
+        env:
+          API_LOG_GROUP_NAME: ${{ steps.tfout.outputs.api_log_group_name }}
+        run: |
+          START_TIME="$(($(date -u -d '15 minutes ago' +%s) * 1000))"
+
+          for attempt in $(seq 1 12); do
+            if aws logs filter-log-events \
+              --log-group-name "${API_LOG_GROUP_NAME}" \
+              --start-time "${START_TIME}" \
+              --filter-pattern "CorrelationId" \
+              --query 'events[0].message' \
+              --output text | grep -q "CorrelationId"; then
+              exit 0
+            fi
+
+            echo "Correlated log entry not visible yet (${attempt}/12)."
+            sleep 10
+          done
+
+          aws logs filter-log-events \
+            --log-group-name "${API_LOG_GROUP_NAME}" \
+            --start-time "${START_TIME}" \
+            --limit 20
           exit 1
 
       - name: Bootstrap or verify cloud admin

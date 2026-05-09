@@ -6,29 +6,72 @@
 
 La API expone dos endpoints de salud. \path{/api/v1/health/live} indica que el proceso está vivo. \path{/api/v1/health/ready} comprueba la conectividad real con PostgreSQL mediante el \texttt{DbContext}. Esta distinción permite diferenciar entre una aplicación arrancada y una aplicación preparada para servir tráfico.
 
-En AWS, el target group del Application Load Balancer utiliza la ruta de readiness para decidir si la tarea ECS puede recibir tráfico. También se ha usado el mismo endpoint como prueba de humo final sobre \url{https://api.dev.transitops.net}.
+En AWS, el target group del Application Load Balancer utiliza la ruta de readiness para decidir si la tarea ECS puede recibir tráfico. También se ha usado el mismo endpoint como prueba de humo final. En Sprint 6 se fijó esta ruta como valor por defecto parametrizable del target group y se añadió un periodo de gracia de ECS para evitar que tareas recién arrancadas sean sustituidas antes de completar el arranque.
 
 \section{Logs y métricas}
 \label{sec:logs-metricas}
 
 Los logs del contenedor se envían a CloudWatch Logs mediante el driver \texttt{awslogs} de ECS. El grupo de logs sigue la convención \path{/aws/ecs/transitops/dev/api}. Esta integración permite inspeccionar errores de arranque, fallos de configuración, problemas de conexión con RDS y salidas de tareas puntuales como las migraciones.
 
-Las métricas básicas de ECS, ALB y RDS quedan disponibles en CloudWatch como parte de los servicios gestionados. Aunque el proyecto no implementa dashboards avanzados, la infraestructura queda preparada para evolucionar hacia alarmas sobre disponibilidad, errores HTTP, salud de targets, CPU, memoria y conexiones de base de datos.
+En Sprint 6 se sustituyó la salida de consola no estructurada por logging JSON mediante \texttt{AddJsonConsole}. La configuración incluye scopes, marcas temporales UTC y campos que CloudWatch puede filtrar. También se añadió un middleware de correlación de peticiones:
+
+\begin{itemize}
+  \item acepta \texttt{X-Correlation-ID} si el cliente lo proporciona;
+  \item genera un identificador nuevo si el header no existe;
+  \item devuelve siempre \texttt{X-Correlation-ID} en la respuesta;
+  \item alinea \texttt{HttpContext.TraceIdentifier} con ese valor;
+  \item abre un scope de logging con \texttt{CorrelationId};
+  \item registra por petición método, ruta, código HTTP, duración, usuario y rol cuando existen.
+\end{itemize}
+
+Esto permite seguir una petición concreta desde la respuesta HTTP hasta los logs de CloudWatch. Además, los errores gestionados por el middleware de excepciones heredan el mismo identificador, por lo que el campo de error devuelto al cliente y el log del servidor quedan correlados.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Consulta de CloudWatch Logs Insights filtrando por \texttt{State.CorrelationId = "sprint6-login-final"} y mostrando logs JSON de una petición de login.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia prevista de logs JSON correlables.}
+\label{fig:placeholder-cloudwatch-logs-correlation}
+\end{figure}
+
+Las métricas básicas de ECS, ALB y RDS quedan disponibles en CloudWatch como parte de los servicios gestionados. El módulo de observabilidad añade un dashboard \path{transitops-dev-api} con paneles para ALB, utilización de ECS, RDS y logs recientes. El dashboard no sustituye a una plataforma APM completa, pero ofrece una superficie operativa suficiente para un entorno \texttt{dev} defendible.
 
 \section{Alarmas y operación}
 \label{sec:alarmas-operacion}
 
-En el alcance actual, la operación se apoya en comprobaciones manuales y salidas verificables:
+La operación de Sprint 6 deja de depender solo de comprobaciones manuales. Terraform crea alarmas CloudWatch para:
 
 \begin{itemize}
-  \item Estado del servicio ECS: \texttt{ACTIVE}, \texttt{desired = 1}, \texttt{running = 1}.
-  \item Health check HTTPS con respuesta \texttt{200}.
-  \item Logs de contenedor disponibles en CloudWatch.
-  \item Salida de la tarea de migración ECS con código \texttt{0}.
-  \item Estado del certificado ACM como \texttt{ISSUED}.
+  \item errores de aplicación detectados por filtro métrico sobre logs JSON;
+  \item respuestas 5xx del target group del ALB;
+  \item tiempo de respuesta del ALB;
+  \item ausencia de targets sanos;
+  \item utilización de CPU de ECS;
+  \item utilización de memoria de ECS;
+  \item CPU de RDS;
+  \item conexiones de base de datos;
+  \item almacenamiento libre en RDS.
 \end{itemize}
 
-Como evolución, se proponen alarmas formales de ALB 5xx, ausencia de targets sanos, CPU/memoria de ECS y almacenamiento/conexiones de RDS.
+Las alarmas usan \texttt{treat\_missing\_data} conservador para reducir ruido cuando \texttt{dev} está destruido o con \texttt{desired\_count = 0}. Si se configura \texttt{alarm\_email}, Terraform crea un topic SNS y una suscripción de email; si no se configura, las alarmas existen sin acciones. Durante la validación de Sprint 6 no se creó topic SNS porque no se proporcionó email.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Dashboard CloudWatch \path{transitops-dev-api} con widgets de ALB, ECS, RDS y logs recientes.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia prevista del dashboard operativo.}
+\label{fig:placeholder-cloudwatch-dashboard}
+\end{figure}
 
 \section{Seguridad aplicada}
 \label{sec:seguridad-aplicada}
@@ -46,11 +89,12 @@ Las medidas de seguridad aplicadas son:
   \item ALB como único punto de entrada público.
   \item HTTPS mediante ACM y redirección HTTP a HTTPS.
   \item GitHub Actions con OIDC en lugar de claves AWS permanentes.
+  \item Correlación de errores y respuestas mediante \texttt{X-Correlation-ID}, evitando exponer trazas internas al cliente.
 \end{itemize}
 
 \section{Limitaciones de seguridad}
 \label{sec:limitaciones-seguridad}
 
-El sistema no pretende cubrir todos los controles exigibles a un producto crítico en producción. Quedan fuera del alcance actual la rotación automática de secretos, WAF, protección avanzada contra abuso, auditoría detallada de acciones administrativas, cifrado con claves KMS propias, políticas IAM de mínimo privilegio refinadas al extremo, pruebas de penetración y hardening exhaustivo de cabeceras HTTP.
+El sistema no pretende cubrir todos los controles exigibles a un producto crítico en producción. Quedan fuera del alcance actual la rotación automática de secretos, WAF, protección avanzada contra abuso, auditoría detallada de acciones administrativas, cifrado con claves KMS propias, políticas IAM de mínimo privilegio refinadas al extremo, pruebas de penetración, OpenTelemetry/X-Ray y hardening exhaustivo de cabeceras HTTP.
 
 Estas limitaciones no invalidan el objetivo del trabajo, ya que se ha priorizado una línea base realista y demostrable: autenticación, autorización, red privada, secretos externos, HTTPS e infraestructura reproducible.

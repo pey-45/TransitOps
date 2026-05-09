@@ -33,6 +33,11 @@ output "alb_arn" {
   value       = aws_lb.api.arn
 }
 
+output "alb_arn_suffix" {
+  description = "Application Load Balancer ARN suffix used by CloudWatch metric dimensions."
+  value       = aws_lb.api.arn_suffix
+}
+
 output "alb_dns_name" {
   description = "Application Load Balancer DNS name."
   value       = aws_lb.api.dns_name
@@ -41,6 +46,11 @@ output "alb_dns_name" {
 output "target_group_arn" {
   description = "API target group ARN."
   value       = aws_lb_target_group.api.arn
+}
+
+output "target_group_arn_suffix" {
+  description = "API target group ARN suffix used by CloudWatch metric dimensions."
+  value       = aws_lb_target_group.api.arn_suffix
 }
 
 output "http_listener_arn" {

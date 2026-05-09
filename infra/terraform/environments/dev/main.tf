@@ -24,11 +24,19 @@ module "container_registry" {
 module "observability" {
   source = "../../modules/observability"
 
-  project_slug       = var.project_slug
-  environment        = module.platform_foundation.environment
-  service_slug       = var.service_slug
-  log_retention_days = var.log_retention_days
-  tags               = module.platform_foundation.api_service_tags
+  project_slug            = var.project_slug
+  environment             = module.platform_foundation.environment
+  service_slug            = var.service_slug
+  aws_region              = var.aws_region
+  log_retention_days      = var.log_retention_days
+  alb_arn_suffix          = module.container_runtime.alb_arn_suffix
+  target_group_arn_suffix = module.container_runtime.target_group_arn_suffix
+  ecs_cluster_name        = module.container_runtime.cluster_name
+  ecs_service_name        = module.container_runtime.service_name
+  db_instance_identifier  = module.database.db_instance_identifier
+  alarm_email             = var.alarm_email
+  enable_alarm_actions    = var.enable_alarm_actions
+  tags                    = module.platform_foundation.api_service_tags
 }
 
 module "runtime_config" {
@@ -78,26 +86,28 @@ module "database" {
 module "container_runtime" {
   source = "../../modules/container_runtime"
 
-  name_prefix           = module.platform_foundation.name_prefix
-  project_slug          = var.project_slug
-  environment           = module.platform_foundation.environment
-  service_slug          = var.service_slug
-  aws_region            = var.aws_region
-  image_uri             = "${module.container_registry.repository_url}:${var.api_image_tag}"
-  container_port        = var.api_container_port
-  public_subnet_ids     = module.platform_foundation.public_subnet_ids
-  app_subnet_ids        = module.platform_foundation.app_subnet_ids
-  vpc_id                = module.platform_foundation.vpc_id
-  alb_security_group_id = module.platform_foundation.alb_security_group_id
-  ecs_security_group_id = module.platform_foundation.ecs_security_group_id
-  log_group_name        = module.observability.api_log_group_name
-  cpu                   = var.ecs_cpu
-  memory                = var.ecs_memory
-  desired_count         = var.ecs_desired_count
-  enable_https          = var.enable_https
-  domain_name           = module.platform_foundation.dns_api_hostname
-  hosted_zone_id        = var.hosted_zone_id
-  tags                  = module.platform_foundation.api_service_tags
+  name_prefix                               = module.platform_foundation.name_prefix
+  project_slug                              = var.project_slug
+  environment                               = module.platform_foundation.environment
+  service_slug                              = var.service_slug
+  aws_region                                = var.aws_region
+  image_uri                                 = "${module.container_registry.repository_url}:${var.api_image_tag}"
+  container_port                            = var.api_container_port
+  public_subnet_ids                         = module.platform_foundation.public_subnet_ids
+  app_subnet_ids                            = module.platform_foundation.app_subnet_ids
+  vpc_id                                    = module.platform_foundation.vpc_id
+  alb_security_group_id                     = module.platform_foundation.alb_security_group_id
+  ecs_security_group_id                     = module.platform_foundation.ecs_security_group_id
+  log_group_name                            = "/aws/ecs/${var.project_slug}/${module.platform_foundation.environment}/${var.service_slug}"
+  cpu                                       = var.ecs_cpu
+  memory                                    = var.ecs_memory
+  desired_count                             = var.ecs_desired_count
+  health_check_grace_period_seconds         = var.ecs_health_check_grace_period_seconds
+  target_group_deregistration_delay_seconds = var.target_group_deregistration_delay_seconds
+  enable_https                              = var.enable_https
+  domain_name                               = module.platform_foundation.dns_api_hostname
+  hosted_zone_id                            = var.hosted_zone_id
+  tags                                      = module.platform_foundation.api_service_tags
 
   secrets = merge(
     module.runtime_config.secret_arns,

@@ -29,6 +29,13 @@ Esta decisión reduce el riesgo de terminar con una aplicación amplia pero supe
 
 El alcance funcional se fijó alrededor de transportes, vehículos, conductores, usuarios, asignaciones, estados y eventos logísticos. Cualquier funcionalidad fuera de ese flujo se trató como línea futura salvo que fuese necesaria para demostrar el despliegue o la operación.
 
+\section{Ejecución por sprints}
+\label{sec:ejecucion-sprints}
+
+La planificación del tramo cloud se organizó en sprints semanales. Esta estructura permitió separar claramente la construcción funcional del backend, la definición de infraestructura, el primer despliegue real y el endurecimiento operativo posterior.
+
+Sprint 6 se centró en observabilidad y hardening de despliegue. Su objetivo no fue añadir nuevos casos de uso de negocio, sino convertir el entorno \texttt{dev} en un sistema más diagnosticable y operable. El trabajo incluyó correlación de peticiones, logging JSON, dashboard CloudWatch, alarmas, verificación de observabilidad en el workflow de despliegue, circuit breaker de ECS, parametrización de health checks y ajuste del camino DNS/HTTPS en la cuenta AWS actual. El sprint terminó con una validación real en AWS y con el destroy del entorno para controlar costes.
+
 \section{Herramientas utilizadas}
 \label{sec:herramientas}
 

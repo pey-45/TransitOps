@@ -6,7 +6,7 @@
 
   La solución implementa una API REST en ASP.NET Core sobre PostgreSQL para gestionar transportes, vehículos, conductores, usuarios, asignaciones, transiciones de estado y eventos logísticos. La aplicación se empaqueta mediante Docker y se despliega en AWS usando Terraform, ECS Fargate, RDS PostgreSQL, ECR, Application Load Balancer, Route 53, ACM, Secrets Manager, SSM Parameter Store y CloudWatch. También se ha definido un flujo de despliegue manual desde GitHub Actions con autenticación OIDC, evitando claves AWS persistentes.
 
-  Como resultado, se ha obtenido un entorno \texttt{dev} real accesible mediante \url{https://api.dev.transitops.net}, con certificado TLS emitido por ACM, servicio ECS estable, migraciones EF Core ejecutadas como tarea puntual de ECS y verificación de salud, bootstrap de administrador y login con JWT.
+  Como resultado, se ha obtenido un entorno \texttt{dev} real recreable y validado en AWS, con servicio ECS estable, migraciones EF Core ejecutadas como tarea puntual de ECS, verificación de salud, bootstrap de administrador, login con JWT, logs JSON correlables en CloudWatch, dashboard operativo, alarmas Terraform para ALB/ECS/RDS/API y configuración DNS/HTTPS mediante Route 53 y ACM. Tras capturar la evidencia operativa, el entorno \texttt{dev} se destruyó con Terraform para evitar costes residuales, conservando únicamente recursos base de bajo coste como el dominio y la zona DNS.
 
   \vspace*{25pt}
   \begin{segundoresumo}
@@ -14,7 +14,7 @@
 
     The solution provides a REST API built with ASP.NET Core and PostgreSQL to manage transports, vehicles, drivers, users, assignments, state transitions, and logistics events. The application is packaged with Docker and deployed to AWS using Terraform, ECS Fargate, RDS PostgreSQL, ECR, Application Load Balancer, Route 53, ACM, Secrets Manager, SSM Parameter Store, and CloudWatch. A manual GitHub Actions deployment flow with OIDC authentication has also been defined, avoiding persistent AWS access keys.
 
-    The resulting \texttt{dev} environment is reachable at \url{https://api.dev.transitops.net}, uses an ACM-issued TLS certificate, runs a stable ECS service, applies EF Core migrations through a one-off ECS task, and has been validated through health checks, first-admin bootstrap, and JWT login.
+    The resulting \texttt{dev} environment is reproducible and has been validated on AWS with a stable ECS service, one-off EF Core migrations, health checks, first-admin bootstrap, JWT login, JSON structured logs with request correlation, a CloudWatch dashboard, Terraform-managed alarms for ALB/ECS/RDS/API, and DNS/HTTPS configuration through Route 53 and ACM. After collecting operational evidence, the \texttt{dev} stack was destroyed with Terraform to avoid residual cloud costs, leaving only low-cost foundational resources such as the domain and DNS zone.
   \end{segundoresumo}
 \vspace*{25pt}
 \input{portada/palabras_chave}

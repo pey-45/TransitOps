@@ -4,9 +4,9 @@
 \section{Conclusiones del trabajo}
 \label{sec:conclusiones-trabajo}
 
-El trabajo ha alcanzado un estado técnico avanzado respecto a sus objetivos principales. Se ha construido un backend funcional para gestión de transportes y se ha desplegado en AWS mediante infraestructura como código, con dominio HTTPS real, base de datos privada, contenedores, secretos externos y validación operativa.
+El trabajo ha alcanzado un estado técnico avanzado respecto a sus objetivos principales. Se ha construido un backend funcional para gestión de transportes y se ha desplegado en AWS mediante infraestructura como código, con base de datos privada, contenedores, secretos externos, configuración DNS/HTTPS, observabilidad en CloudWatch y validación operativa.
 
-El valor principal del proyecto no reside únicamente en la API implementada, sino en haber completado un camino de ingeniería real: código fuente, pruebas, imagen Docker, ECR, Terraform, RDS, ECS, migraciones, DNS, TLS, health check y login validado. Esto permite defender el trabajo como una plataforma cloud operable, no solo como una aplicación local.
+El valor principal del proyecto no reside únicamente en la API implementada, sino en haber completado un camino de ingeniería real: código fuente, pruebas, imagen Docker, ECR, Terraform, RDS, ECS, migraciones, DNS, TLS, logs estructurados, correlación de peticiones, dashboard, alarmas, health check, bootstrap, login validado y destrucción controlada del entorno para evitar coste innecesario. Esto permite defender el trabajo como una plataforma cloud operable, no solo como una aplicación local.
 
 \section{Competencias aplicadas}
 \label{sec:competencias-aplicadas}
@@ -24,15 +24,17 @@ Durante el desarrollo se han aplicado competencias de:
   \item Diseño de red y servicios cloud en AWS.
   \item CI/CD con GitHub Actions y OIDC.
   \item Seguridad básica de aplicación e infraestructura.
+  \item Observabilidad con logs estructurados, correlación, métricas y alarmas.
+  \item Operación y control de costes mediante ciclos de creación, validación y destrucción de infraestructura.
   \item Documentación técnica y preparación de evidencias.
 \end{itemize}
 
 \section{Lecciones aprendidas}
 \label{sec:lecciones-aprendidas}
 
-Una lección importante es que la complejidad real de un sistema cloud no aparece solo en el código de negocio. DNS, certificados, roles, secretos, migraciones, estado Terraform y permisos pueden bloquear un despliegue si no se tratan como parte del diseño.
+Una lección importante es que la complejidad real de un sistema cloud no aparece solo en el código de negocio. DNS, certificados, roles, secretos, migraciones, estado Terraform, observabilidad, limpieza de recursos y permisos pueden bloquear un despliegue si no se tratan como parte del diseño.
 
-También se ha comprobado el valor de mantener un alcance funcional reducido. Esta decisión permitió dedicar tiempo a cerrar aspectos que a menudo quedan fuera de proyectos académicos: despliegue real, HTTPS, base de datos privada, migraciones controladas y validación de extremo a extremo.
+También se ha comprobado el valor de mantener un alcance funcional reducido. Esta decisión permitió dedicar tiempo a cerrar aspectos que a menudo quedan fuera de proyectos académicos: despliegue real, HTTPS, base de datos privada, migraciones controladas, observabilidad, alarmas, rollback de despliegue y validación de extremo a extremo.
 
 Por último, el proyecto muestra que documentar decisiones durante el desarrollo facilita retomar el trabajo, justificar cambios y preparar la defensa.
 
@@ -46,7 +48,7 @@ Las líneas futuras más relevantes son:
   \item Ejecutar y archivar el flujo completo de despliegue desde GitHub Actions como evidencia CI/CD final.
   \item Añadir entorno \texttt{prod} separado, con configuración y estado Terraform independientes.
   \item Refinar permisos IAM hacia mínimo privilegio estricto.
-  \item Añadir dashboards y alarmas CloudWatch.
+  \item Evolucionar la observabilidad hacia trazas distribuidas, métricas de negocio y runbooks asociados a cada alarma.
   \item Incorporar pruebas de carga y análisis de capacidad.
   \item Implementar rotación de secretos y políticas de backup/restore verificadas.
   \item Ampliar el dominio con planificación, costes, rutas o integración con servicios externos.

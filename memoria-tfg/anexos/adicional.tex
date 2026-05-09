@@ -16,14 +16,20 @@ Las siguientes evidencias deberían incorporarse como capturas o anexos finales 
 \label{tab:capturas-recomendadas}\\
 \textbf{Archivo sugerido} & \textbf{Contenido recomendado} \\
 \hline
-\path{imaxes/aws-ecs-service.png} & Servicio ECS \path{transitops-dev-api-svc} mostrando estado \texttt{ACTIVE}, desired \texttt{1} y running \texttt{1}. \\
-\path{imaxes/aws-alb-listeners.png} & Listeners del ALB con puerto \texttt{80} redirigiendo a HTTPS y puerto \texttt{443} usando el certificado ACM. \\
+\path{imaxes/aws-ecs-service-sprint6.png} & Servicio ECS \path{transitops-dev-api-svc} mostrando estado \texttt{ACTIVE}, desired \texttt{1} y running \texttt{1} durante la validación de Sprint 6. \\
+\path{imaxes/aws-target-group-healthy.png} & Target group del ALB mostrando la tarea ECS como \texttt{healthy} usando \path{/api/v1/health/ready}. \\
+\path{imaxes/aws-alb-listeners-https.png} & Listeners del ALB con puerto \texttt{80} redirigiendo a HTTPS y puerto \texttt{443} usando el certificado ACM, en la recreación con \texttt{enable\_https = true}. \\
 \path{imaxes/aws-acm-issued.png} & Certificado ACM de \path{api.dev.transitops.net} en estado \texttt{Issued}. \\
 \path{imaxes/aws-route53-records.png} & Hosted zone \path{transitops.net} con registro \path{api.dev.transitops.net} y CNAME de validación ACM. \\
-\path{imaxes/aws-ecr-image.png} & Repositorio ECR \path{transitops/api} mostrando la imagen desplegada. \\
-\path{imaxes/health-ready-https.png} & Salida de terminal o navegador mostrando \url{https://api.dev.transitops.net/api/v1/health/ready} con respuesta \texttt{200}. \\
+\path{imaxes/aws-cloudwatch-dashboard.png} & Dashboard CloudWatch \path{transitops-dev-api} con widgets de ALB, ECS, RDS y logs recientes. \\
+\path{imaxes/aws-cloudwatch-alarms.png} & Lista de las 9 alarmas \path{transitops-dev-api-*} creadas por Terraform. \\
+\path{imaxes/aws-cloudwatch-correlation-log.png} & Consulta de CloudWatch Logs Insights filtrando por un \texttt{CorrelationId}, por ejemplo \path{sprint6-login-final}. \\
+\path{imaxes/aws-ecr-image-sprint6.png} & Repositorio ECR \path{transitops/api} mostrando la imagen \path{sprint6-local-6bb910c}. \\
+\path{imaxes/health-ready-sprint6.png} & Salida de terminal o navegador mostrando \path{/api/v1/health/ready} con respuesta \texttt{200} y header \texttt{X-Correlation-ID}. \\
+\path{imaxes/login-admin-sprint6.png} & Respuesta \texttt{200} de login administrador en cloud con JWT y correlación de petición. \\
 \path{imaxes/github-actions-deploy.png} & Ejecución verde del workflow \path{deploy-dev.yml}, cuando se ejecute desde GitHub Actions. \\
-\path{imaxes/terraform-no-changes.png} & Salida de \texttt{terraform plan} indicando que la infraestructura no tiene cambios pendientes. \\
+\path{imaxes/terraform-no-changes.png} & Salida de \texttt{terraform plan} indicando que la infraestructura no tiene cambios pendientes antes del cierre de coste. \\
+\path{imaxes/terraform-destroy-empty-state.png} & Evidencia posterior a \texttt{terraform destroy}: state vacío y ausencia de ALB, RDS, ECS, ECR, ACM, registros DNS del subdominio, logs, dashboard, alarmas y secretos del entorno \texttt{dev}. \\
 \end{longtable}
 
-Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. Cuando se incorporen, deberán añadirse como figuras en los capítulos correspondientes o mantenerse como anexo de evidencias.
+Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. La memoria contiene placeholders descriptivos en las secciones donde esas evidencias aportan más valor; cuando se incorporen las imágenes reales, deberán sustituirse los placeholders por \texttt{\textbackslash includegraphics} o mantenerse como anexo de evidencias.

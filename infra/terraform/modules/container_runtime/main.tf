@@ -87,21 +87,22 @@ resource "aws_lb" "api" {
 }
 
 resource "aws_lb_target_group" "api" {
-  name        = "${var.name_prefix}-${var.service_slug}-tg"
-  port        = var.container_port
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+  name                 = "${var.name_prefix}-${var.service_slug}-tg"
+  port                 = var.container_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  vpc_id               = var.vpc_id
+  deregistration_delay = var.target_group_deregistration_delay_seconds
 
   health_check {
     enabled             = true
     path                = var.health_check_path
     protocol            = "HTTP"
     matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
+    interval            = var.health_check_interval_seconds
+    timeout             = var.health_check_timeout_seconds
+    healthy_threshold   = var.health_check_healthy_threshold
+    unhealthy_threshold = var.health_check_unhealthy_threshold
   }
 
   tags = merge(var.tags, {
@@ -271,10 +272,15 @@ resource "aws_ecs_service" "api" {
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
-  health_check_grace_period_seconds = 60
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
 
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = var.app_subnet_ids

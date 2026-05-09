@@ -66,6 +66,7 @@ Required environment variables:
 | `ROOT_DOMAIN` | Empty until the hosted zone exists in this account; then `transitops.net` |
 | `HOSTED_ZONE_ID` | Empty until the hosted zone exists in this account |
 | `ENABLE_HTTPS` | `false` until Route53 is available; then `true` |
+| `ALARM_EMAIL` | Optional email address for CloudWatch alarm notifications |
 | `DATABASE_USERNAME` | RDS master username used by Terraform |
 | `CLOUD_ADMIN_USERNAME` | first cloud admin username |
 | `CLOUD_ADMIN_EMAIL` | first cloud admin email |
@@ -118,8 +119,9 @@ This is the main Sprint 4 delivery path:
 8. Apply Terraform with `ecs_desired_count=1`.
 9. Wait for ECS service stability.
 10. Verify `GET /api/v1/health/ready` through `https://api.dev.transitops.net` when DNS/HTTPS exists, otherwise through the ALB DNS name over HTTP.
-11. Bootstrap the first admin, accepting `201 Created` or `409 first_admin_already_exists`.
-12. Verify admin login returns a JWT.
+11. Verify the CloudWatch log group, dashboard, alarms, optional SNS topic, and at least one correlated API log entry.
+12. Bootstrap the first admin, accepting `201 Created` or `409 first_admin_already_exists`.
+13. Verify admin login returns a JWT.
 
 ## Migration Strategy
 
@@ -135,7 +137,7 @@ In AWS this command is executed by `aws ecs run-task` with the normal ECS task d
 
 ## Smoke Evidence To Capture
 
-For Sprint 4 completion, capture:
+For cloud deployment completion, capture:
 
 - GitHub workflow run URL for `deploy-dev`.
 - ECR image tag equal to the deployed commit SHA.
@@ -144,3 +146,12 @@ For Sprint 4 completion, capture:
 - Health endpoint response from `https://api.dev.transitops.net/api/v1/health/ready`, or the ALB DNS fallback while the hosted zone is absent.
 - Bootstrap response status: `201` first run or `409 first_admin_already_exists` on rerun.
 - Login response status `200` with non-empty `data.accessToken`.
+
+For Sprint 6 observability completion, also capture:
+
+- CloudWatch log group `/aws/ecs/transitops/dev/api`.
+- A log event containing `State.CorrelationId`.
+- Dashboard name `transitops-dev-api`.
+- Alarm names from Terraform output `observability.alarm_names`.
+- SNS topic ARN from `observability.alarm_topic_arn` when `ALARM_EMAIL` is configured.
+- ECS service deployment evidence showing the service reached stable state after circuit-breaker-enabled deployment settings were applied.

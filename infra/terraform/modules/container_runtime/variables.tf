@@ -88,6 +88,42 @@ variable "health_check_path" {
   default     = "/api/v1/health/ready"
 }
 
+variable "health_check_interval_seconds" {
+  description = "ALB target-group health check interval in seconds."
+  type        = number
+  default     = 30
+}
+
+variable "health_check_timeout_seconds" {
+  description = "ALB target-group health check timeout in seconds."
+  type        = number
+  default     = 5
+}
+
+variable "health_check_healthy_threshold" {
+  description = "Number of consecutive successful ALB health checks required before a target is healthy."
+  type        = number
+  default     = 2
+}
+
+variable "health_check_unhealthy_threshold" {
+  description = "Number of consecutive failed ALB health checks required before a target is unhealthy."
+  type        = number
+  default     = 3
+}
+
+variable "target_group_deregistration_delay_seconds" {
+  description = "Time in seconds for the target group to drain requests during deployments."
+  type        = number
+  default     = 30
+}
+
+variable "health_check_grace_period_seconds" {
+  description = "ECS service health check grace period in seconds."
+  type        = number
+  default     = 60
+}
+
 variable "environment_variables" {
   description = "Plain environment variables injected into the API container."
   type        = map(string)

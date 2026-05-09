@@ -51,6 +51,9 @@ output "observability" {
   value = {
     api_log_group_name = module.observability.api_log_group_name
     api_log_group_arn  = module.observability.api_log_group_arn
+    dashboard_name     = module.observability.dashboard_name
+    alarm_names        = module.observability.alarm_names
+    alarm_topic_arn    = module.observability.alarm_topic_arn
   }
 }
 
@@ -84,13 +87,15 @@ output "github_actions" {
 output "container_runtime" {
   description = "ECS and ALB runtime resources for the dev API."
   value = {
-    cluster_name        = module.container_runtime.cluster_name
-    service_name        = module.container_runtime.service_name
-    task_definition_arn = module.container_runtime.task_definition_arn
-    alb_dns_name        = module.container_runtime.alb_dns_name
-    target_group_arn    = module.container_runtime.target_group_arn
-    http_listener_arn   = module.container_runtime.http_listener_arn
-    https_listener_arn  = module.container_runtime.https_listener_arn
-    api_dns_record_fqdn = module.container_runtime.api_dns_record_fqdn
+    cluster_name            = module.container_runtime.cluster_name
+    service_name            = module.container_runtime.service_name
+    task_definition_arn     = module.container_runtime.task_definition_arn
+    alb_dns_name            = module.container_runtime.alb_dns_name
+    alb_arn_suffix          = module.container_runtime.alb_arn_suffix
+    target_group_arn        = module.container_runtime.target_group_arn
+    target_group_arn_suffix = module.container_runtime.target_group_arn_suffix
+    http_listener_arn       = module.container_runtime.http_listener_arn
+    https_listener_arn      = module.container_runtime.https_listener_arn
+    api_dns_record_fqdn     = module.container_runtime.api_dns_record_fqdn
   }
 }

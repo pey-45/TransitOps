@@ -30,7 +30,11 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unhandled exception while processing request {RequestPath}.", context.Request.Path);
+            _logger.LogError(
+                exception,
+                "Unhandled exception while processing request {RequestPath} with correlation {CorrelationId}.",
+                context.Request.Path,
+                context.TraceIdentifier);
 
             await WriteErrorAsync(
                 context,

@@ -37,6 +37,65 @@ public sealed class HealthEndpointsTests
         Assert.False(string.IsNullOrWhiteSpace(payload["meta"]?["requestId"]?.GetValue<string>()));
     }
 
+    [Fact]
+    public async Task Live_ReturnsGeneratedCorrelationId_WhenHeaderIsMissing()
+    {
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/health/live");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        var requestId = payload["meta"]?["requestId"]?.GetValue<string>();
+
+        Assert.False(string.IsNullOrWhiteSpace(requestId));
+        Assert.True(response.Headers.TryGetValues("X-Correlation-ID", out var values));
+        Assert.Equal(requestId, Assert.Single(values));
+    }
+
+    [Fact]
+    public async Task Live_PreservesSubmittedCorrelationId()
+    {
+        const string correlationId = "sprint6-correlation-test";
+
+        using var factory = new TransitOpsApiFactory();
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/health/live");
+        request.Headers.Add("X-Correlation-ID", correlationId);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal(correlationId, payload["meta"]?["requestId"]?.GetValue<string>());
+        Assert.True(response.Headers.TryGetValues("X-Correlation-ID", out var values));
+        Assert.Equal(correlationId, Assert.Single(values));
+    }
+
+    [Fact]
+    public async Task ProtectedEndpointError_UsesCorrelationIdInHeaderAndPayload()
+    {
+        const string correlationId = "sprint6-auth-error";
+
+        using var factory = new TransitOpsApiFactory(useTestAuthentication: false);
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/transports");
+        request.Headers.Add("X-Correlation-ID", correlationId);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        var payload = await ReadJsonAsync(response);
+        Assert.Equal("authentication_required", payload["error"]?["code"]?.GetValue<string>());
+        Assert.Equal(correlationId, payload["meta"]?["requestId"]?.GetValue<string>());
+        Assert.True(response.Headers.TryGetValues("X-Correlation-ID", out var values));
+        Assert.Equal(correlationId, Assert.Single(values));
+    }
+
     private static async Task<JsonNode> ReadJsonAsync(HttpResponseMessage response)
     {
         var content = await response.Content.ReadAsStringAsync();

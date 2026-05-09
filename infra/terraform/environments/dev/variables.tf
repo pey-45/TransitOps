@@ -123,6 +123,18 @@ variable "log_retention_days" {
   default     = 30
 }
 
+variable "alarm_email" {
+  description = "Optional email address subscribed to CloudWatch runtime alarms."
+  type        = string
+  default     = ""
+}
+
+variable "enable_alarm_actions" {
+  description = "Whether CloudWatch alarms should send SNS notifications when alarm_email is configured."
+  type        = bool
+  default     = true
+}
+
 variable "jwt_issuer" {
   description = "JWT issuer used by the AWS runtime."
   type        = string
@@ -211,4 +223,16 @@ variable "ecs_desired_count" {
   description = "Desired ECS task count."
   type        = number
   default     = 1
+}
+
+variable "ecs_health_check_grace_period_seconds" {
+  description = "ECS service health check grace period in seconds."
+  type        = number
+  default     = 60
+}
+
+variable "target_group_deregistration_delay_seconds" {
+  description = "Target group deregistration delay in seconds for API deployments."
+  type        = number
+  default     = 30
 }

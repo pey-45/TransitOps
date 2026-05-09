@@ -37,6 +37,14 @@ public class Program
             var builder = WebApplication.CreateBuilder(args);
             var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
+            builder.Logging.ClearProviders();
+            builder.Logging.AddJsonConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "O";
+                options.UseUtcTimestamp = true;
+            });
+
             builder.Services
                 .AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
@@ -176,6 +184,7 @@ public class Program
                 app.MapOpenApi();
             }
 
+            app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();

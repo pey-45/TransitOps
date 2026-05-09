@@ -20,12 +20,13 @@ La validación automática incluye:
   \item Validación de migraciones EF Core en el flujo de CI base.
   \item \texttt{docker compose config} para comprobar que la composición local es válida.
   \item \texttt{terraform fmt} y \texttt{terraform validate} para asegurar formato y coherencia de infraestructura.
+  \item Validación de recursos de observabilidad tras el despliegue: log group, dashboard CloudWatch, alarmas y presencia de logs correlados.
 \end{itemize}
 
 \section{Publicación de artefactos}
 \label{sec:publicacion-artefactos}
 
-La imagen de la API se construye a partir de \path{TransitOps.Api/Dockerfile}. En el flujo de despliegue, la imagen se etiqueta con el identificador del commit o con un tag operativo, y se publica en el repositorio ECR \path{transitops/api}. En el despliegue real de Sprint 4 se publicó la imagen \path{sprint4-local-d00aa6b}.
+La imagen de la API se construye a partir de \path{TransitOps.Api/Dockerfile}. En el flujo de despliegue, la imagen se etiqueta con el identificador del commit o con un tag operativo, y se publica en el repositorio ECR \path{transitops/api}. En el despliegue real de Sprint 4 se publicó la imagen \path{sprint4-local-d00aa6b}. En la validación de Sprint 6 se publicó y desplegó la imagen \path{sprint6-local-6bb910c}.
 
 ECR actúa como frontera entre construcción y ejecución: ECS no arranca una versión nueva de la API hasta que la task definition apunta a una imagen disponible.
 
@@ -36,7 +37,7 @@ Se han definido dos workflows manuales:
 
 \begin{itemize}
   \item \path{terraform-dev.yml}: inicializa Terraform, valida formato y configuración, genera plan y permite aplicar manualmente.
-  \item \path{deploy-dev.yml}: ejecuta build, tests, construcción de imagen, publicación en ECR, Terraform, migraciones ECS, escalado del servicio, health check, bootstrap de administrador y login.
+  \item \path{deploy-dev.yml}: ejecuta build, tests, construcción de imagen, publicación en ECR, Terraform, migraciones ECS, escalado del servicio, health check, bootstrap de administrador, login y verificaciones mínimas de observabilidad.
 \end{itemize}
 
 GitHub Actions accede a AWS mediante OIDC y asume un rol IAM de despliegue específico para TransitOps:
@@ -46,3 +47,20 @@ GitHub Actions accede a AWS mediante OIDC y asume un rol IAM de despliegue espec
 \end{center}
 
 No se utilizan claves AWS persistentes en GitHub. La reducción fina de permisos queda como mejora futura, pero el rol ya está limitado al repositorio y rama previstos.
+
+En Sprint 6 se amplió el workflow de despliegue para consumir variables de entorno relacionadas con observabilidad y DNS. La variable \texttt{ALARM\_EMAIL}, si existe en GitHub, se pasa a Terraform como \texttt{TF\_VAR\_alarm\_email} para crear una suscripción SNS de email. Cuando no se configura, Terraform crea las alarmas sin acciones de notificación, evitando depender de una dirección personal para que el entorno sea reproducible.
+
+Después de aplicar infraestructura, el workflow captura outputs relevantes del módulo de observabilidad y comprueba que existen el grupo de logs, el dashboard y las alarmas esperadas. También busca logs JSON con un identificador de correlación generado durante el smoke test. Estas comprobaciones convierten la observabilidad en un criterio de despliegue, no en una revisión manual posterior.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Ejecución del workflow \path{deploy-dev.yml} mostrando build/test, push a ECR, Terraform, migración ECS, smoke test y verificación de observabilidad en verde.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia prevista del pipeline de despliegue completo.}
+\label{fig:placeholder-github-actions-deploy}
+\end{figure}

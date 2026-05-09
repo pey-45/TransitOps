@@ -10,5 +10,7 @@ Current scope:
 - ECS service in private app subnets.
 - Public ALB, target group, and HTTP listener.
 - Optional HTTPS/ACM/Route53 path for when a real domain is available.
+- Deployment circuit breaker with rollback enabled.
+- Parameterized ALB target health-check and ECS health grace-period settings.
 
 The default `dev` posture uses HTTP on port 80 because no Route53-managed domain is available yet.

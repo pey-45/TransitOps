@@ -194,9 +194,34 @@ The API container contract is:
 - container port: `8080`;
 - readiness path: `/api/v1/health/ready`;
 - launch type: ECS Fargate with `awsvpc` networking;
-- logs: CloudWatch through the `awslogs` driver;
+- logs: JSON console output shipped to CloudWatch through the `awslogs` driver;
+- request correlation: every response includes `X-Correlation-ID`; callers may provide that header, otherwise the API generates one and uses it as the response metadata request id and log correlation value;
 - .NET configuration keys keep the existing `__` environment-variable shape;
 - secrets are referenced by ARN from Secrets Manager, never embedded in Terraform values.
+
+## Observability Baseline
+
+Sprint 6 fixes the minimum operational telemetry surface for `dev`.
+
+Application logging:
+
+- ASP.NET Core writes JSON console logs so CloudWatch can parse fields.
+- The API correlation middleware records method, path, status code, elapsed time, authenticated user id, role, and `State.CorrelationId` for each request.
+- Error responses and success envelopes use the same correlation id in `meta.requestId`.
+
+CloudWatch resources:
+
+- log group: `/aws/ecs/<project>/<env>/api`;
+- dashboard: `<project>-<env>-api`;
+- metric filter: application `Error` and `Critical` JSON log entries;
+- alarms: application errors, ALB target `5XX`, ALB target response time, unhealthy ALB targets, ECS CPU, ECS memory, RDS CPU, RDS connections, and RDS free storage;
+- optional SNS email alarm notifications through `alarm_email`.
+
+Deployment hardening:
+
+- ECS deployment circuit breaker rollback is enabled.
+- ALB target health-check settings and ECS health-check grace period are explicit Terraform variables.
+- `dev` keeps a short target deregistration delay to speed up deployment replacement while still allowing request draining.
 
 ## Terraform Remote State
 

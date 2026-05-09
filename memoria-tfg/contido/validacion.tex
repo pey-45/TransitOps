@@ -6,12 +6,12 @@
 
 La validación se ha organizado en tres niveles: pruebas de backend, validación de infraestructura y pruebas de operación sobre el entorno desplegado. Esta estrategia evita depender de una sola evidencia y permite demostrar tanto comportamiento funcional como capacidad real de despliegue.
 
-En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una API viva. En infraestructura se usan \texttt{terraform fmt}, \texttt{terraform validate}, \texttt{terraform plan} y \texttt{terraform apply}. En AWS se comprueba el estado de ECS, la migración puntual, la salud HTTPS y el login.
+En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una API viva. En infraestructura se usan \texttt{terraform fmt}, \texttt{terraform validate}, \texttt{terraform plan}, \texttt{terraform apply} y \texttt{terraform destroy}. En AWS se comprueba el estado de ECS, la migración puntual, la salud del endpoint, el bootstrap de administrador, el login y la existencia de recursos de observabilidad.
 
 \section{Pruebas funcionales}
 \label{sec:pruebas-funcionales}
 
-La suite principal de pruebas automatizadas contiene 84 pruebas superadas. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios y reglas de estado. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
+La suite principal de pruebas automatizadas contiene 87 pruebas superadas tras Sprint 6. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y el contrato de correlación de peticiones. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
 
 Además, se verificaron manualmente el bootstrap del primer administrador y el login en el entorno cloud.
 
@@ -27,28 +27,51 @@ La infraestructura se validó con Terraform antes y después del despliegue. Las
   \item Publicación de imagen en ECR.
   \item Aplicación de migraciones EF Core mediante ECS task.
   \item Escalado del servicio ECS a una tarea.
-  \item Activación de DNS y HTTPS con Route 53 y ACM.
-  \item \texttt{terraform plan} con \path{-detailed-exitcode} final sin cambios pendientes.
+  \item Activación del camino DNS/HTTPS con Route 53 y ACM.
+  \item Creación de dashboard, alarmas y filtro métrico de errores.
+  \item \texttt{terraform plan} con \path{-detailed-exitcode} sin cambios pendientes antes del cierre de coste.
+  \item \texttt{terraform destroy} para eliminar recursos costosos del entorno \texttt{dev}.
 \end{itemize}
 
 \section{Resultados obtenidos}
 \label{sec:resultados-obtenidos}
 
-Los resultados técnicos obtenidos hasta el momento son:
+Los resultados técnicos obtenidos en la validación cloud son:
 
 \begin{itemize}
-  \item Endpoint final: \url{https://api.dev.transitops.net}.
-  \item Health check final: \texttt{GET} \path{/api/v1/health/ready} devuelve \texttt{200}.
-  \item Certificado ACM: emitido para \path{api.dev.transitops.net}.
+  \item Endpoint de validación Sprint 6: DNS público del ALB registrado como evidencia operativa.
+  \item Endpoint objetivo DNS/HTTPS: \url{https://api.dev.transitops.net}, gestionado por Route 53 y ACM cuando el entorno se recrea con \texttt{enable\_https = true}.
+  \item Health check Sprint 6: \texttt{GET} \path{/api/v1/health/ready} devuelve \texttt{200}.
+  \item Certificado ACM: validación DNS corregida en la cuenta \texttt{661000947340}; el certificado para \path{api.dev.transitops.net} llegó a estado \texttt{ISSUED} antes del destroy.
   \item Servicio ECS: \texttt{ACTIVE}, \texttt{desired = 1}, \texttt{running = 1}.
-  \item Imagen ECR desplegada: \path{sprint4-local-d00aa6b}.
-  \item Task definition desplegada: \path{transitops-dev-api:2}.
-  \item Tarea ECS de migración: finalizada con código \texttt{0}.
-  \item Login administrador por HTTPS: respuesta \texttt{200} con \acrshort{jwt}.
-  \item Terraform final: infraestructura convergida sin cambios pendientes.
+  \item Imagen ECR desplegada en Sprint 6: \path{sprint6-local-6bb910c}.
+  \item Task definition desplegada: \path{transitops-dev-api:3}.
+  \item Tarea ECS de migración: \path{345ae53d1340475aa94a826328404998}, finalizada con código \texttt{0}.
+  \item Bootstrap de administrador: respuesta \texttt{201}.
+  \item Login administrador: respuesta \texttt{200} con \acrshort{jwt}.
+  \item Header de correlación: \texttt{X-Correlation-ID} presente en health, errores y login.
+  \item CloudWatch Logs: entradas JSON filtrables por \texttt{State.CorrelationId}, incluyendo \path{sprint6-login-final}.
+  \item Observabilidad: dashboard CloudWatch, log group de la API y 9 alarmas creadas por Terraform.
+  \item SNS: topic no creado porque \texttt{alarm\_email} no se configuró.
+  \item Cierre de coste: \texttt{terraform destroy} eliminó los recursos del entorno \texttt{dev}; el state quedó vacío.
 \end{itemize}
 
-Estos resultados demuestran que el sistema no solo compila, sino que se ejecuta sobre infraestructura cloud real y verificable.
+Estos resultados demuestran que el sistema no solo compila, sino que se ejecuta sobre infraestructura cloud real y verificable, y que también puede destruirse de forma controlada para evitar gasto residual.
+
+\section{Evidencia de cierre de coste}
+\label{sec:evidencia-cierre-coste}
+
+Tras la validación de Sprint 6 se ejecutó \texttt{terraform destroy}. El primer intento eliminó la mayoría de recursos y falló al borrar ECR porque el repositorio contenía imágenes. Se vació el repositorio con \texttt{aws ecr batch-delete-image} y se repitió el destroy, que finalizó correctamente. Después se verificó que:
+
+\begin{itemize}
+  \item \texttt{terraform state list} no devolvía recursos.
+  \item No quedaban ALB, RDS, ECS ni ECR asociados a \path{transitops-dev}.
+  \item El NAT Gateway aparecía en estado \texttt{deleted}.
+  \item No quedaban certificados ACM ni registros Route 53 de \path{api.dev.transitops.net}.
+  \item No quedaban log groups, dashboard, alarmas ni secretos del entorno \texttt{dev}.
+\end{itemize}
+
+Permanecen fuera de este destroy el dominio registrado \path{transitops.net}, su hosted zone pública y el backend remoto de Terraform, ya que son recursos de base necesarios para recreaciones posteriores y no forman parte del stack efímero de aplicación.
 
 \section{Análisis de limitaciones}
 \label{sec:analisis-limitaciones}
@@ -59,7 +82,7 @@ Las principales limitaciones son:
   \item No existe interfaz gráfica; el sistema se consume mediante API, Postman o clientes equivalentes.
   \item El entorno desplegado es \texttt{dev}, no una arquitectura productiva multi-entorno completa.
   \item No se han implementado políticas de autoscaling ni pruebas de carga.
-  \item La observabilidad se limita a salud, logs y métricas básicas de servicios gestionados.
-  \item El pipeline de GitHub Actions está preparado, pero debe ejecutarse y archivarse como evidencia final de CI/CD completo.
+  \item La observabilidad cubre logs JSON, correlación, dashboard y alarmas básicas, pero no incluye trazas distribuidas ni APM completo.
+  \item El pipeline de GitHub Actions está preparado y ampliado, pero todavía debe archivarse una ejecución completa desde GitHub como evidencia final de CI/CD.
   \item Algunas políticas IAM son prácticas para el sprint actual y pueden afinarse más en fases posteriores.
 \end{itemize}

@@ -47,5 +47,8 @@ Los criterios de éxito se han formulado como resultados observables:
   \item El entorno \texttt{dev} expone un endpoint HTTPS real en \path{api.dev.transitops.net}.
   \item Las migraciones en AWS se ejecutan como tarea ECS puntual, no como efecto lateral opaco del arranque web.
   \item Los secretos no se almacenan en el repositorio y se consumen desde Secrets Manager.
+  \item Las peticiones son correlables mediante \texttt{X-Correlation-ID} y los logs JSON pueden consultarse en CloudWatch.
+  \item La infraestructura crea dashboard y alarmas operativas mínimas para ALB, ECS, RDS y errores de aplicación.
+  \item El entorno \texttt{dev} puede destruirse con Terraform para eliminar recursos costosos tras capturar evidencias.
   \item Existe documentación suficiente para explicar arquitectura, despliegue, validación y limitaciones.
 \end{itemize}

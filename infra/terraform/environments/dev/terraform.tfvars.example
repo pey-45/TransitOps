@@ -30,6 +30,8 @@ enable_https   = false
 hosted_zone_id = ""
 
 log_retention_days     = 30
+alarm_email            = ""
+enable_alarm_actions   = true
 jwt_issuer             = "TransitOps.Api"
 jwt_audience           = "TransitOps.Client"
 jwt_expiration_minutes = 60
@@ -49,5 +51,7 @@ database_skip_final_snapshot      = true
 ecs_cpu           = 512
 ecs_memory        = 1024
 ecs_desired_count = 0
+ecs_health_check_grace_period_seconds        = 60
+target_group_deregistration_delay_seconds    = 30
 
 tags_override = {}
