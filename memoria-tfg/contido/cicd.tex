@@ -38,6 +38,7 @@ Se han definido dos workflows manuales:
 \begin{itemize}
   \item \path{terraform-dev.yml}: inicializa Terraform, valida formato y configuración, genera plan y permite aplicar manualmente.
   \item \path{deploy-dev.yml}: ejecuta build, tests, construcción de imagen, publicación en ECR, Terraform, migraciones ECS, escalado del servicio, health check, bootstrap de administrador, login y verificaciones mínimas de observabilidad.
+  \item \path{rollback-dev.yml}: reaplica Terraform con un tag de imagen conocido, espera estabilidad de ECS, comprueba que la task definition apunta a esa imagen y ejecuta un smoke test de readiness.
 \end{itemize}
 
 GitHub Actions accede a AWS mediante OIDC y asume un rol IAM de despliegue específico para TransitOps:
@@ -52,6 +53,8 @@ En Sprint 6 se amplió el workflow de despliegue para consumir variables de ento
 
 Después de aplicar infraestructura, el workflow captura outputs relevantes del módulo de observabilidad y comprueba que existen el grupo de logs, el dashboard y las alarmas esperadas. También busca logs JSON con un identificador de correlación generado durante el smoke test. Estas comprobaciones convierten la observabilidad en un criterio de despliegue, no en una revisión manual posterior.
 
+En Sprint 7 se añadió un flujo de rollback explícito. La operación no reconstruye la aplicación ni cambia el contrato HTTP: recibe un \texttt{api\_image\_tag} ya publicado en ECR y lo convierte en el tag deseado de la task definition mediante Terraform. Esto deja el rollback trazable en el state, evita cambios manuales sobre ECS y permite comprobar que la imagen activa coincide con el tag esperado.
+
 \begin{figure}[htbp]
 \centering
 \fbox{\begin{minipage}{0.88\textwidth}
@@ -63,4 +66,17 @@ Ejecución del workflow \path{deploy-dev.yml} mostrando build/test, push a ECR, 
 \end{minipage}}
 \caption{Evidencia prevista del pipeline de despliegue completo.}
 \label{fig:placeholder-github-actions-deploy}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Ejecución del workflow \path{rollback-dev.yml} con un tag \path{sprint7-good-<sha>}, mostrando Terraform apply, espera de estabilidad ECS, comprobación de imagen y health check en verde.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia prevista del rollback manual a una imagen conocida.}
+\label{fig:placeholder-rollback-workflow}
 \end{figure}

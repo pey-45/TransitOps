@@ -20,6 +20,12 @@ variable "max_image_count" {
   default     = 20
 }
 
+variable "force_delete" {
+  description = "Whether Terraform may delete the ECR repository even when it still contains images."
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Tags applied to ECR resources."
   type        = map(string)

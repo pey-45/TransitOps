@@ -283,15 +283,17 @@ Close rollback, restore, runtime tuning, and platform reliability.
 
 **Artifacts That Must Exist By Sprint End**
 
-- Rollback runbook and verified rollback steps.
-- Backup/restore note with explicit recovery assumptions.
+- `docs/CloudReliability.md` with rollback, bad-image circuit-breaker test, RDS restore test, runtime tuning, and final destroy checks.
+- Manual rollback workflow `.github/workflows/rollback-dev.yml`.
+- RDS restore validation script `scripts/cloud/aws/Invoke-RdsRestoreTest.ps1`.
 - Hardened application container.
-- Runtime tuning note covering the most important deployment-era adjustments.
+- Runtime tuning note covering stop timeout, health grace period, deregistration delay, readiness path, ECR teardown behavior, and Npgsql connection settings.
 
 **Definition of Done**
 
 - The project has credible answers to rollback, restore, and runtime-failure questions.
 - The runtime image is leaner and the deployed behavior is more predictable than in the first release.
+- AWS `dev` is recreated, validated, and destroyed after evidence capture.
 
 **What Must Not Remain Open At Sprint End**
 

@@ -9,7 +9,7 @@ The deployment target is:
 - AWS account: `661000947340` (`Pablo`, alias `aws-pey-v1`)
 - Region: `eu-west-1`
 - Environment: `dev`
-- Hostname: `api.dev.transitops.net` when the Route53 hosted zone is available; otherwise the first AWS smoke run uses the ALB DNS name over HTTP.
+- Hostname: `api.dev.transitops.net` through Route53, ACM, ALB HTTPS, and HTTP-to-HTTPS redirect.
 - Terraform state bucket: `transitops-tfstate-661000947340-eu-west-1`
 - Terraform lock table: `transitops-tfstate-locks`
 - Terraform state key: `dev/foundation.tfstate`
@@ -18,7 +18,7 @@ The deployment target is:
 
 In account `661000947340`, run the remote-state bootstrap first so the S3 state bucket and DynamoDB lock table exist. Before GitHub Actions can deploy, the `dev` Terraform root must also create the GitHub OIDC deployment role.
 
-Run the first apply locally with the AWS SSO profile `aws-pey-v1` and keep ECS at desired count `0` so the platform can be created before ECR contains an image. If the `transitops.net` hosted zone is not present in this AWS account yet, keep HTTPS disabled for the first deployment:
+Run the first apply locally with the AWS SSO profile `aws-pey-v1` and keep ECS at desired count `0` so the platform can be created before ECR contains an image. The hosted zone now exists in this account, so Sprint 7 recreations should keep HTTPS enabled:
 
 ```powershell
 cd infra\terraform\environments\dev
@@ -26,19 +26,10 @@ terraform init -backend-config=backend.hcl
 terraform fmt -recursive ..\..
 terraform validate
 terraform apply `
-  -var="root_domain=" `
-  -var="hosted_zone_id=" `
-  -var="enable_https=false" `
-  -var="ecs_desired_count=0"
-```
-
-After the hosted zone is created or delegated into this account, rerun Terraform with:
-
-```powershell
-terraform apply `
   -var="root_domain=transitops.net" `
-  -var="hosted_zone_id=<hosted-zone-id>" `
-  -var="enable_https=true"
+  -var="hosted_zone_id=Z0844787W37HXN9FIJR" `
+  -var="enable_https=true" `
+  -var="ecs_desired_count=0"
 ```
 
 Expected result:
@@ -63,10 +54,10 @@ Required environment variables:
 | `TF_STATE_BUCKET` | `transitops-tfstate-661000947340-eu-west-1` |
 | `TF_LOCK_TABLE` | `transitops-tfstate-locks` |
 | `TF_STATE_KEY` | `dev/foundation.tfstate` |
-| `ROOT_DOMAIN` | Empty until the hosted zone exists in this account; then `transitops.net` |
-| `HOSTED_ZONE_ID` | Empty until the hosted zone exists in this account |
-| `ENABLE_HTTPS` | `false` until Route53 is available; then `true` |
-| `ALARM_EMAIL` | Optional email address for CloudWatch alarm notifications |
+| `ROOT_DOMAIN` | `transitops.net` |
+| `HOSTED_ZONE_ID` | `Z0844787W37HXN9FIJR` |
+| `ENABLE_HTTPS` | `true` |
+| `ALARM_EMAIL` | `pablomlopez03@gmail.com` for Sprint 7 alarm validation |
 | `DATABASE_USERNAME` | RDS master username used by Terraform |
 | `CLOUD_ADMIN_USERNAME` | first cloud admin username |
 | `CLOUD_ADMIN_EMAIL` | first cloud admin email |
@@ -123,6 +114,14 @@ This is the main Sprint 4 delivery path:
 12. Bootstrap the first admin, accepting `201 Created` or `409 first_admin_already_exists`.
 13. Verify admin login returns a JWT.
 
+### Rollback Dev
+
+Workflow: `.github/workflows/rollback-dev.yml`
+
+Use this workflow when a known-good image tag must be redeployed without rebuilding the application. It accepts `api_image_tag`, applies Terraform with `ecs_desired_count=1`, waits for ECS stability, verifies the task definition image tag, and runs the readiness smoke test.
+
+The detailed rollback and restore runbooks live in `docs/CloudReliability.md`.
+
 ## Migration Strategy
 
 AWS migrations must be explicit and must run inside the VPC because RDS is private. The API supports:
@@ -155,3 +154,27 @@ For Sprint 6 observability completion, also capture:
 - Alarm names from Terraform output `observability.alarm_names`.
 - SNS topic ARN from `observability.alarm_topic_arn` when `ALARM_EMAIL` is configured.
 - ECS service deployment evidence showing the service reached stable state after circuit-breaker-enabled deployment settings were applied.
+
+For Sprint 7 reliability completion, also capture:
+
+- known-good ECR image tag `sprint7-good-<sha>`;
+- rollback workflow or local rollback command output;
+- ECS events for the missing-image circuit-breaker test;
+- restored RDS snapshot/temporary DB evidence and `--migrate-only` exit code `0`;
+- Docker hardening evidence: `.dockerignore`, single exposed runtime port, non-root `id` output;
+- final `terraform destroy` and post-destroy absence checks.
+
+## Sprint 7 Evidence Captured
+
+Sprint 7 was validated in AWS account `661000947340` and the `dev` environment was destroyed afterwards.
+
+- Known-good image: `sprint7-good-3dca035`.
+- Migration ECS task: `1ec56ac77fbb4142a380b9e4881e3d24`, exit code `0`.
+- ECS service after rollout: desired/running `1/1`, task definition `transitops-dev-api:4`.
+- HTTPS smoke: `GET https://api.dev.transitops.net/api/v1/health/ready = 200`.
+- Bootstrap/login: bootstrap returned `201`; login returned `200`.
+- Correlation evidence: `sprint7-health-good`, `sprint7-bootstrap-good`, `sprint7-login-good`, and `sprint7-health-after-bad-image` appeared in CloudWatch JSON logs.
+- Observability: dashboard `transitops-dev-api`, log group `/aws/ecs/transitops/dev/api`, 9 alarms, SNS topic, and email subscription for `pablomlopez03@gmail.com` in `PendingConfirmation`.
+- Bad-image test: missing tag `sprint7-missing-3dca035` produced task `cc06e30b1b7e42eab5aaae55e4155427` with `CannotPullContainerError`; reapplying `sprint7-good-3dca035` recovered readiness to `200`.
+- Restore test: temporary restore task `7f53d7309acf42349137213deca05080` against `transitops-dev-db-restore-sprint7` exited with code `0`; temporary DB, secret, task definition, IAM policy, and snapshot were cleaned up.
+- Final destroy: Terraform destroyed 72 resources, state became empty, and absence checks confirmed no ALB, ECS, RDS, ECR, ACM certificate, `api.dev` records, log group, dashboard, alarms, runtime secrets, or temporary RDS snapshots remained.

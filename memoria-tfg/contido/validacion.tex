@@ -6,12 +6,12 @@
 
 La validación se ha organizado en tres niveles: pruebas de backend, validación de infraestructura y pruebas de operación sobre el entorno desplegado. Esta estrategia evita depender de una sola evidencia y permite demostrar tanto comportamiento funcional como capacidad real de despliegue.
 
-En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una API viva. En infraestructura se usan \texttt{terraform fmt}, \texttt{terraform validate}, \texttt{terraform plan}, \texttt{terraform apply} y \texttt{terraform destroy}. En AWS se comprueba el estado de ECS, la migración puntual, la salud del endpoint, el bootstrap de administrador, el login y la existencia de recursos de observabilidad.
+En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una API viva. En infraestructura se usan \texttt{terraform fmt}, \texttt{terraform validate}, \texttt{terraform plan}, \texttt{terraform apply} y \texttt{terraform destroy}. En AWS se comprueba el estado de ECS, la migración puntual, la salud del endpoint, el bootstrap de administrador, el login, la existencia de recursos de observabilidad, el rollback de despliegue y el restore temporal de RDS.
 
 \section{Pruebas funcionales}
 \label{sec:pruebas-funcionales}
 
-La suite principal de pruebas automatizadas contiene 87 pruebas superadas tras Sprint 6. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y el contrato de correlación de peticiones. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
+La suite principal de pruebas automatizadas contiene 87 pruebas superadas tras Sprint 7. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y el contrato de correlación de peticiones. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
 
 Además, se verificaron manualmente el bootstrap del primer administrador y el login en el entorno cloud.
 
@@ -29,6 +29,9 @@ La infraestructura se validó con Terraform antes y después del despliegue. Las
   \item Escalado del servicio ECS a una tarea.
   \item Activación del camino DNS/HTTPS con Route 53 y ACM.
   \item Creación de dashboard, alarmas y filtro métrico de errores.
+  \item Prueba de rollback mediante tag de imagen conocido.
+  \item Prueba de fallo controlado con tag inexistente y recuperación al tag bueno.
+  \item Prueba de restore RDS desde snapshot manual y migración contra base restaurada.
   \item \texttt{terraform plan} con \path{-detailed-exitcode} sin cambios pendientes antes del cierre de coste.
   \item \texttt{terraform destroy} para eliminar recursos costosos del entorno \texttt{dev}.
 \end{itemize}
@@ -58,17 +61,52 @@ Los resultados técnicos obtenidos en la validación cloud son:
 
 Estos resultados demuestran que el sistema no solo compila, sino que se ejecuta sobre infraestructura cloud real y verificable, y que también puede destruirse de forma controlada para evitar gasto residual.
 
+\section{Validación Sprint 7}
+\label{sec:validacion-sprint7}
+
+Sprint 7 añadió una validación real de fiabilidad sobre la cuenta AWS \texttt{661000947340}, en la región \texttt{eu-west-1}. La imagen buena publicada en ECR fue \path{sprint7-good-3dca035}, con digest \path{sha256:be2cf29b22971853c5dd003912d954aa09daea5094481ce5aa29b06039ec4bbb}. La tarea ECS de migración \path{1ec56ac77fbb4142a380b9e4881e3d24} terminó con exit code \texttt{0}, el servicio quedó en \texttt{desired = 1} y \texttt{running = 1}, y la task definition activa fue \path{transitops-dev-api:4}.
+
+Las comprobaciones principales fueron:
+
+\begin{itemize}
+  \item Readiness HTTPS: \texttt{GET} \url{https://api.dev.transitops.net/api/v1/health/ready} con respuesta \texttt{200} y correlation id \path{sprint7-health-good}.
+  \item Bootstrap de administrador: respuesta \texttt{201} con correlation id \path{sprint7-bootstrap-good}.
+  \item Login administrador: respuesta \texttt{200} con correlation id \path{sprint7-login-good}.
+  \item Observabilidad: log group \path{/aws/ecs/transitops/dev/api}, dashboard \path{transitops-dev-api}, 9 alarmas CloudWatch y logs JSON filtrables por \path{State.CorrelationId}.
+  \item SNS: topic y suscripción para \path{pablomlopez03@gmail.com}; la suscripción quedó en \texttt{PendingConfirmation}, estado esperado hasta confirmar el correo.
+  \item Validación Docker local: build correcto y usuario no root en runtime, verificado con \texttt{id} devolviendo \path{uid=1654(app)}.
+\end{itemize}
+
+La prueba de rollback usó el tag inexistente \path{sprint7-missing-3dca035}. ECS creó la tarea \path{cc06e30b1b7e42eab5aaae55e4155427}, que falló con \texttt{CannotPullContainerError} al no existir el manifiesto de imagen en ECR. Después se reaplicó Terraform con \path{sprint7-good-3dca035} y el endpoint de readiness volvió a responder \texttt{200}, con correlation id \path{sprint7-health-after-bad-image}.
+
+La prueba de restore de RDS creó un snapshot manual \path{transitops-dev-db-sprint7-restore-test}, restauró la instancia temporal \path{transitops-dev-db-restore-sprint7}, creó un secreto temporal de conexión y ejecutó una tarea ECS \path{--migrate-only} contra la base restaurada. La tarea \path{7f53d7309acf42349137213deca05080}, basada en la task definition temporal \path{transitops-dev-api-restore-sprint7:2}, terminó con exit code \texttt{0}. Durante esta validación se detectó una mejora real: el secreto temporal también necesita permiso \path{secretsmanager:GetSecretValue} en el execution role de ECS. El script fue corregido para añadir y eliminar una política IAM temporal como parte de la prueba.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Smoke test HTTPS de Sprint 7 mostrando \path{/api/v1/health/ready = 200}, bootstrap \texttt{201}, login administrador \texttt{200} y cabeceras \texttt{X-Correlation-ID} con los valores \path{sprint7-health-good}, \path{sprint7-bootstrap-good} y \path{sprint7-login-good}.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de smoke test cloud Sprint 7.}
+\label{fig:placeholder-sprint7-smoke}
+\end{figure}
+
 \section{Evidencia de cierre de coste}
 \label{sec:evidencia-cierre-coste}
 
-Tras la validación de Sprint 6 se ejecutó \texttt{terraform destroy}. El primer intento eliminó la mayoría de recursos y falló al borrar ECR porque el repositorio contenía imágenes. Se vació el repositorio con \texttt{aws ecr batch-delete-image} y se repitió el destroy, que finalizó correctamente. Después se verificó que:
+Tras la validación de Sprint 6 se ejecutó \texttt{terraform destroy}. El primer intento eliminó la mayoría de recursos y falló al borrar ECR porque el repositorio contenía imágenes. Se vació el repositorio con \texttt{aws ecr batch-delete-image} y se repitió el destroy, que finalizó correctamente.
+
+Tras Sprint 7 se repitió el cierre con la mejora \texttt{ecr\_force\_delete = true}. El destroy final eliminó \texttt{72} recursos y \texttt{terraform state list} no devolvió ningún recurso. Después se verificó que:
 
 \begin{itemize}
   \item \texttt{terraform state list} no devolvía recursos.
   \item No quedaban ALB, RDS, ECS ni ECR asociados a \path{transitops-dev}.
   \item El NAT Gateway aparecía en estado \texttt{deleted}.
   \item No quedaban certificados ACM ni registros Route 53 de \path{api.dev.transitops.net}.
-  \item No quedaban log groups, dashboard, alarmas ni secretos del entorno \texttt{dev}.
+  \item No quedaban log groups, dashboard, alarmas, snapshots temporales ni secretos del entorno \texttt{dev}.
 \end{itemize}
 
 Permanecen fuera de este destroy el dominio registrado \path{transitops.net}, su hosted zone pública y el backend remoto de Terraform, ya que son recursos de base necesarios para recreaciones posteriores y no forman parte del stack efímero de aplicación.

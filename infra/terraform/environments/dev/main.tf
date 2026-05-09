@@ -18,6 +18,7 @@ module "container_registry" {
 
   project_slug = var.project_slug
   service_slug = var.service_slug
+  force_delete = var.ecr_force_delete
   tags         = module.platform_foundation.api_service_tags
 }
 
@@ -102,6 +103,7 @@ module "container_runtime" {
   cpu                                       = var.ecs_cpu
   memory                                    = var.ecs_memory
   desired_count                             = var.ecs_desired_count
+  container_stop_timeout_seconds            = var.ecs_container_stop_timeout_seconds
   health_check_grace_period_seconds         = var.ecs_health_check_grace_period_seconds
   target_group_deregistration_delay_seconds = var.target_group_deregistration_delay_seconds
   enable_https                              = var.enable_https

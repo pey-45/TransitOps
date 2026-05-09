@@ -223,9 +223,10 @@ resource "aws_ecs_task_definition" "api" {
 
   container_definitions = jsonencode([
     {
-      name      = local.container_name
-      image     = var.image_uri
-      essential = true
+      name        = local.container_name
+      image       = var.image_uri
+      essential   = true
+      stopTimeout = var.container_stop_timeout_seconds
 
       portMappings = [
         {

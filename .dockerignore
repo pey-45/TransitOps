@@ -9,6 +9,10 @@
 **/.terraform
 **/.vs
 **/.vscode
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfvars
+**/backend.hcl
 **/*.tfplan
 **/*.*proj.user
 **/*.dbmdl
@@ -21,8 +25,12 @@
 **/node_modules
 **/npm-debug.log
 **/obj
+**/TestResults
+**/coverage
 **/secrets.dev.yaml
 **/values.dev.yaml
+docs/
+memoria-tfg/
 LICENSE
 README.md
 !**/.gitignore

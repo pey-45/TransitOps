@@ -1,0 +1,111 @@
+name: rollback-dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_image_tag:
+        description: "Known-good ECR image tag to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_terraform_state_bucket_name: ${{ vars.TF_STATE_BUCKET }}
+      TF_VAR_terraform_lock_table_name: ${{ vars.TF_LOCK_TABLE }}
+      TF_VAR_root_domain: ${{ vars.ROOT_DOMAIN }}
+      TF_VAR_hosted_zone_id: ${{ vars.HOSTED_ZONE_ID }}
+      TF_VAR_enable_https: ${{ vars.ENABLE_HTTPS || 'false' }}
+      TF_VAR_alarm_email: ${{ vars.ALARM_EMAIL || '' }}
+      TF_VAR_database_username: ${{ vars.DATABASE_USERNAME }}
+      TF_VAR_database_password: ${{ secrets.DATABASE_PASSWORD }}
+      TF_VAR_api_image_tag: ${{ inputs.api_image_tag }}
+      TF_VAR_ecs_desired_count: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/transitops-dev-github-actions-deploy-role
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Write Terraform backend config
+        working-directory: infra/terraform/environments/dev
+        run: |
+          cat > backend.ci.hcl <<EOF
+          bucket         = "${{ vars.TF_STATE_BUCKET }}"
+          key            = "${{ vars.TF_STATE_KEY }}"
+          region         = "${{ vars.AWS_REGION }}"
+          dynamodb_table = "${{ vars.TF_LOCK_TABLE }}"
+          encrypt        = true
+          EOF
+
+      - name: Terraform init
+        working-directory: infra/terraform/environments/dev
+        run: terraform init -backend-config=backend.ci.hcl
+
+      - name: Terraform apply known-good image
+        working-directory: infra/terraform/environments/dev
+        run: terraform apply -auto-approve
+
+      - name: Read Terraform outputs
+        id: tfout
+        working-directory: infra/terraform/environments/dev
+        run: |
+          terraform output -json > tf-output.json
+          echo "cluster_name=$(jq -r '.container_runtime.value.cluster_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "service_name=$(jq -r '.container_runtime.value.service_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "task_definition_arn=$(jq -r '.container_runtime.value.task_definition_arn' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "alb_dns_name=$(jq -r '.container_runtime.value.alb_dns_name' tf-output.json)" >> "$GITHUB_OUTPUT"
+          echo "api_dns_record_fqdn=$(jq -r '.container_runtime.value.api_dns_record_fqdn // empty' tf-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for ECS service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ steps.tfout.outputs.cluster_name }}" \
+            --services "${{ steps.tfout.outputs.service_name }}"
+
+      - name: Verify task definition image tag
+        env:
+          TASK_DEFINITION_ARN: ${{ steps.tfout.outputs.task_definition_arn }}
+          EXPECTED_TAG: ${{ inputs.api_image_tag }}
+        run: |
+          IMAGE=$(aws ecs describe-task-definition \
+            --task-definition "${TASK_DEFINITION_ARN}" \
+            --query 'taskDefinition.containerDefinitions[?name==`api`].image | [0]' \
+            --output text)
+
+          echo "${IMAGE}" | grep -F ":${EXPECTED_TAG}"
+
+      - name: Smoke test health endpoint
+        env:
+          ALB_DNS_NAME: ${{ steps.tfout.outputs.alb_dns_name }}
+          API_DNS_RECORD_FQDN: ${{ steps.tfout.outputs.api_dns_record_fqdn }}
+        run: |
+          if [ -n "${API_DNS_RECORD_FQDN}" ]; then
+            API_BASE_URL="https://${API_DNS_RECORD_FQDN%.}"
+          else
+            API_BASE_URL="http://${ALB_DNS_NAME}"
+          fi
+
+          curl -fsS "${API_BASE_URL}/api/v1/health/ready"

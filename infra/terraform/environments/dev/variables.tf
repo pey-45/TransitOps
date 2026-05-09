@@ -105,6 +105,12 @@ variable "api_image_tag" {
   default     = "latest"
 }
 
+variable "ecr_force_delete" {
+  description = "Whether the dev ECR repository can be deleted while images remain during teardown."
+  type        = bool
+  default     = true
+}
+
 variable "enable_https" {
   description = "Whether to create ACM/Route53 validation and an HTTPS ALB listener."
   type        = bool
@@ -223,6 +229,12 @@ variable "ecs_desired_count" {
   description = "Desired ECS task count."
   type        = number
   default     = 1
+}
+
+variable "ecs_container_stop_timeout_seconds" {
+  description = "Seconds ECS waits before force-stopping the API container during task shutdown."
+  type        = number
+  default     = 30
 }
 
 variable "ecs_health_check_grace_period_seconds" {

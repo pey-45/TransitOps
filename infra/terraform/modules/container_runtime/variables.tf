@@ -82,6 +82,12 @@ variable "desired_count" {
   default     = 1
 }
 
+variable "container_stop_timeout_seconds" {
+  description = "Seconds ECS waits before force-stopping the API container during task shutdown."
+  type        = number
+  default     = 30
+}
+
 variable "health_check_path" {
   description = "HTTP health check path used by ALB target group."
   type        = string

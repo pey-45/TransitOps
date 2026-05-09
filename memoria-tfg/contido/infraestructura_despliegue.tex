@@ -4,7 +4,9 @@
 \section{Contenerización}
 \label{sec:contenerizacion}
 
-La API se empaqueta en una imagen Docker construida a partir de su \texttt{Dockerfile}. El contenedor expone el puerto \texttt{8080}, instala las dependencias necesarias para el runtime .NET y se configura mediante variables de entorno. La imagen se utiliza tanto para despliegue cloud como para validar el comportamiento de empaquetado.
+La API se empaqueta en una imagen Docker construida a partir de su \texttt{Dockerfile}. El contenedor expone únicamente el puerto \texttt{8080}, instala las dependencias necesarias para el runtime .NET y se configura mediante variables de entorno. La imagen se utiliza tanto para despliegue cloud como para validar el comportamiento de empaquetado.
+
+En Sprint 7 se añadió un fichero \path{.dockerignore} para reducir el contexto de construcción. Se excluyen artefactos de compilación \path{bin/} y \path{obj/}, metadatos \path{.git/}, directorios \path{.terraform/}, ficheros locales con secretos, documentación y artefactos pesados de la memoria. Esto acelera la construcción, evita transferir material innecesario al daemon Docker y reduce el riesgo de empaquetar accidentalmente información que no forma parte del runtime.
 
 El entorno local se reproduce con Docker Compose, levantando la API y PostgreSQL. La configuración sensible se proporciona mediante un fichero \texttt{.env} no versionado. Esto permite ejecutar el sistema local sin instalar PostgreSQL de forma manual y mantiene una ruta de validación cercana al despliegue real.
 
@@ -67,6 +69,43 @@ En Sprint 6 se repitió la recreación del entorno en la cuenta AWS actual \text
 
 El módulo de runtime incluye además el deployment circuit breaker de ECS con rollback, periodo de gracia para health checks y parámetros explícitos para la comprobación del target group: ruta \path{/api/v1/health/ready}, intervalo, timeout y umbrales de healthy/unhealthy. Esto reduce el riesgo de dejar una versión fallida recibiendo tráfico.
 
+Sprint 7 completó este hardening con un \texttt{stopTimeout} explícito de \texttt{30} segundos en la task definition, un \texttt{deregistration\_delay} corto en \texttt{dev}, y cadenas de conexión cloud con timeouts y pooling configurados de forma explícita. El objetivo no es optimizar rendimiento en abstracto, sino hacer más predecible el arranque, la parada y la ejecución puntual de migraciones en ECS. La validación real usó la imagen \path{sprint7-good-3dca035}, ejecutó migraciones mediante la tarea \path{1ec56ac77fbb4142a380b9e4881e3d24} con exit code \texttt{0} y dejó temporalmente el servicio en \texttt{desired = 1} y \texttt{running = 1} antes del cierre de coste.
+
+\section{Rollback y restore}
+\label{sec:rollback-restore}
+
+La recuperación ante despliegues fallidos se resolvió de forma coherente con el resto del proyecto: Terraform sigue siendo la fuente de verdad. El rollback manual se ejecuta reaplicando el entorno con un tag de imagen conocido, por ejemplo \path{sprint7-good-3dca035}, y manteniendo \texttt{ecs\_desired\_count = 1}. El workflow \path{rollback-dev.yml} automatiza esta operación y comprueba después que ECS queda estable y que el health check responde correctamente.
+
+También se ejecutó una prueba controlada de fallo usando el tag inexistente \path{sprint7-missing-3dca035}. Este escenario forzó un error de despliegue por imagen no disponible, permitió observar los eventos de ECS y demostró el comportamiento del deployment circuit breaker. La tarea \path{cc06e30b1b7e42eab5aaae55e4155427} falló con \texttt{CannotPullContainerError}. Tras la prueba se reaplicó el tag bueno \path{sprint7-good-3dca035} para que el estado de Terraform y la task definition volvieran a quedar alineados, y el readiness respondió de nuevo \texttt{200}.
+
+Para la base de datos, \texttt{dev} mantiene \texttt{database\_backup\_retention\_days = 0} y no genera snapshots finales al destruirse. La fiabilidad se valida mediante snapshot manual: el script \path{scripts/cloud/aws/Invoke-RdsRestoreTest.ps1} crea un snapshot de \path{transitops-dev-db}, restaura una instancia temporal \path{transitops-dev-db-restore-sprint7}, crea un secreto temporal con la cadena de conexión restaurada, registra una task definition temporal y ejecuta \path{--migrate-only} contra esa base. El criterio de éxito es código de salida \texttt{0}. En la ejecución real, la tarea \path{7f53d7309acf42349137213deca05080} terminó correctamente. Salvo que se active una opción para conservar evidencia, el propio script elimina la base restaurada, el secreto, la task definition temporal, la política IAM temporal y el snapshot manual.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Eventos de ECS mostrando fallo de despliegue con \path{sprint7-missing-3dca035}, error \texttt{CannotPullContainerError} y posterior recuperación con \path{sprint7-good-3dca035}.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de rollback automático y recuperación manual.}
+\label{fig:placeholder-ecs-rollback-events}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Snapshot manual de RDS, instancia restaurada temporal \path{transitops-dev-db-restore-sprint7} y tarea ECS \path{--migrate-only} \path{7f53d7309acf42349137213deca05080} finalizada con exit code \texttt{0}.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de restore real de RDS.}
+\label{fig:placeholder-rds-restore}
+\end{figure}
+
 \section{DNS, certificados y HTTPS}
 \label{sec:dns-certificados-https}
 
@@ -92,7 +131,9 @@ Captura de ACM con el certificado de \path{api.dev.transitops.net} en estado \te
 
 Después de capturar la evidencia de Sprint 6, el entorno \texttt{dev} se destruyó con \texttt{terraform destroy} para evitar gasto evitable. La destrucción eliminó ALB, listeners, certificado ACM, registros DNS de \path{api.dev.transitops.net}, ECS, ECR, RDS, NAT Gateway, VPC, subredes, grupos de seguridad, CloudWatch logs, dashboard, alarmas y secretos del entorno. El repositorio ECR necesitó una limpieza previa de imágenes, ya que AWS no permite eliminar un repositorio no vacío.
 
-Tras el destroy se verificó que el state de Terraform quedaba vacío y que no existían recursos costosos asociados al stack \path{transitops-dev}: ALB, RDS, ECS, ECR, certificado ACM, registros DNS del subdominio, log groups, dashboards, alarmas ni secretos. Permanecen fuera del destroy el dominio registrado \path{transitops.net}, la hosted zone pública y los recursos de backend remoto de Terraform, que son recursos base de bajo coste y necesarios para recrear el entorno.
+En Sprint 7 se ajustó el módulo de ECR para permitir \texttt{force\_delete} en \texttt{dev}. Esta decisión evita que una imagen publicada para validar rollback bloquee el destroy final. El ajuste es deliberadamente parametrizable para que un entorno productivo pueda conservar una política más restrictiva.
+
+Tras el destroy de Sprint 7, Terraform informó \texttt{72 destroyed}. Se verificó que el state quedaba vacío y que no existían recursos costosos asociados al stack \path{transitops-dev}: ALB, RDS, ECS, ECR, certificado ACM, registros DNS del subdominio, log groups, dashboards, alarmas, snapshots temporales ni secretos. El NAT Gateway quedó en estado \texttt{deleted}. Permanecen fuera del destroy el dominio registrado \path{transitops.net}, la hosted zone pública y los recursos de backend remoto de Terraform, que son recursos base de bajo coste y necesarios para recrear el entorno.
 
 \section{Gestión de configuración y secretos}
 \label{sec:configuracion-secretos}

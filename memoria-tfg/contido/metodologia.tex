@@ -36,6 +36,8 @@ La planificación del tramo cloud se organizó en sprints semanales. Esta estruc
 
 Sprint 6 se centró en observabilidad y hardening de despliegue. Su objetivo no fue añadir nuevos casos de uso de negocio, sino convertir el entorno \texttt{dev} en un sistema más diagnosticable y operable. El trabajo incluyó correlación de peticiones, logging JSON, dashboard CloudWatch, alarmas, verificación de observabilidad en el workflow de despliegue, circuit breaker de ECS, parametrización de health checks y ajuste del camino DNS/HTTPS en la cuenta AWS actual. El sprint terminó con una validación real en AWS y con el destroy del entorno para controlar costes.
 
+Sprint 7 se planteó como cierre de fiabilidad operativa. Tampoco añadió funcionalidad de negocio; se centró en demostrar que el entorno puede recuperarse de un despliegue fallido, volver a una imagen conocida, validar un restore real de RDS desde snapshot manual y destruir todos los recursos efímeros al finalizar. Este sprint incorporó un workflow manual de rollback, un script PowerShell de restore contra una base de datos temporal, endurecimiento de la imagen Docker, ajustes explícitos de runtime y una nueva ronda de validación real en AWS \texttt{dev}.
+
 \section{Herramientas utilizadas}
 \label{sec:herramientas}
 

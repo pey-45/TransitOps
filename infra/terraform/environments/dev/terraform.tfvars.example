@@ -25,6 +25,7 @@ availability_zones = [
 
 api_container_port = 8080
 api_image_tag      = "latest"
+ecr_force_delete   = true
 
 enable_https   = false
 hosted_zone_id = ""
@@ -51,6 +52,7 @@ database_skip_final_snapshot      = true
 ecs_cpu           = 512
 ecs_memory        = 1024
 ecs_desired_count = 0
+ecs_container_stop_timeout_seconds           = 30
 ecs_health_check_grace_period_seconds        = 60
 target_group_deregistration_delay_seconds    = 30
 

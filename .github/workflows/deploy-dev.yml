@@ -125,7 +125,7 @@ jobs:
         run: |
           DB_HOST="${DB_ENDPOINT%:*}"
           DB_PORT="${DB_ENDPOINT##*:}"
-          CONNECTION_STRING="Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DATABASE_USERNAME};Password=${DATABASE_PASSWORD}"
+          CONNECTION_STRING="Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DATABASE_USERNAME};Password=${DATABASE_PASSWORD};Timeout=15;Command Timeout=30;Pooling=true;Maximum Pool Size=20"
 
           aws secretsmanager put-secret-value \
             --secret-id "transitops/dev/app/db-connection-string" \

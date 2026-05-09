@@ -192,6 +192,7 @@ The `dev` environment wires these modules to the Sprint 2 foundation outputs:
 The API container contract is:
 
 - container port: `8080`;
+- container shutdown timeout: `30` seconds in ECS task definition;
 - readiness path: `/api/v1/health/ready`;
 - launch type: ECS Fargate with `awsvpc` networking;
 - logs: JSON console output shipped to CloudWatch through the `awslogs` driver;
@@ -222,6 +223,19 @@ Deployment hardening:
 - ECS deployment circuit breaker rollback is enabled.
 - ALB target health-check settings and ECS health-check grace period are explicit Terraform variables.
 - `dev` keeps a short target deregistration delay to speed up deployment replacement while still allowing request draining.
+- ECR uses `force_delete = true` in `dev` so final Terraform destroy can remove the repository even after Sprint evidence images were pushed.
+- Cloud connection strings use explicit Npgsql timeout and pooling values to make startup and migration behavior more predictable under ECS.
+
+## Reliability Baseline
+
+Sprint 7 adds operational proof points rather than new API functionality.
+
+- Rollback is performed by redeploying a known-good ECR image tag through Terraform and waiting for ECS stability.
+- Controlled failure is tested with a missing image tag so ECS deployment circuit breaker rollback can be observed and documented.
+- RDS restore is validated from a manual snapshot into a temporary DB instance. A temporary ECS task definition points only the connection-string secret to that restored database and runs `--migrate-only`; success requires exit code `0`.
+- The restore test cleans up the temporary DB, secret, task definition revision, and manual snapshot unless evidence is intentionally kept.
+
+The detailed procedures are documented in `docs/CloudReliability.md`.
 
 ## Terraform Remote State
 
