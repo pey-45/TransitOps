@@ -111,6 +111,43 @@ Tras Sprint 7 se repitió el cierre con la mejora \texttt{ecr\_force\_delete = t
 
 Permanecen fuera de este destroy el dominio registrado \path{transitops.net}, su hosted zone pública y el backend remoto de Terraform, ya que son recursos de base necesarios para recreaciones posteriores y no forman parte del stack efímero de aplicación.
 
+\section{Validación Sprint 8}
+\label{sec:validacion-sprint8}
+
+Sprint 8 completa la validación operativa con dos scripts de auditoría y un conjunto de runbooks. La recreación real partió de un state vacío, creó \texttt{72} recursos con ECS a cero tareas, publicó la imagen \path{sprint8-good-fdf98b9} con digest \path{sha256:39fb9a78726912414acbdb1af2f27e59c4ea8552b0a023a4ceab51ef74fdd6bd}, cargó secretos runtime y ejecutó la tarea ECS de migración \path{cc374ade9c144745bd7566fb9289ffe3} con exit code \texttt{0}. Después se escaló el servicio a \texttt{desired = 1} y \texttt{running = 1}, usando la task definition \path{transitops-dev-api:9}.
+
+La validación funcional confirmó readiness HTTPS \texttt{200} con correlation id \path{sprint8-health}, bootstrap de administrador \texttt{201} con \path{sprint8-bootstrap} y login \texttt{200} con \path{sprint8-login}. CloudWatch contenía logs JSON filtrables por ese identificador, el dashboard \path{transitops-dev-api}, 9 alarmas, topic SNS y suscripción de email en estado \texttt{PendingConfirmation}. Antes de destruir, \texttt{terraform plan -detailed-exitcode} no mostró cambios pendientes.
+
+La auditoría de seguridad verificó que RDS no era público, ECS no tenía IP pública, los grupos de seguridad mantenían el flujo Internet--ALB--ECS--RDS, los secretos runtime existían en Secrets Manager y el rol de aplicación no contenía políticas inline. El rol OIDC de despliegue conserva permisos amplios para ejecutar Terraform en \texttt{dev}; se documenta como riesgo aceptado porque la trust policy queda limitada al repositorio y rama configurados.
+
+También se revisa el coste del entorno. Los recursos que generan coste mientras \texttt{dev} está activo son principalmente NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager y ECR. El cierre obligatorio del sprint volvió a ejecutar \texttt{terraform destroy}, eliminó \texttt{72} recursos y después comprobó la ausencia de ALB, ECS, RDS, ECR, certificado ACM, registros \path{api.dev}, logs, dashboard, alarmas, secretos y snapshots temporales. Los secretos runtime se borraron de forma forzada tras quedar inicialmente programados para eliminación por Secrets Manager.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Cost Explorer o vista de recursos AWS mostrando los servicios con coste temporal durante Sprint 8: NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager y ECR.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de revisión de coste Sprint 8.}
+\label{fig:placeholder-sprint8-cost-review}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Ejecución de \path{Test-Sprint8DestroyAudit.ps1} después del destroy mostrando state vacío y ausencia de ECS, RDS, ECR, ALB, ACM, registros \path{api.dev}, CloudWatch, secretos runtime y snapshots manuales del stack \path{transitops-dev}.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de auditoría post-destroy Sprint 8.}
+\label{fig:placeholder-sprint8-destroy-audit}
+\end{figure}
+
 \section{Análisis de limitaciones}
 \label{sec:analisis-limitaciones}
 

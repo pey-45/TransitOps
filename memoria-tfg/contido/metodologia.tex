@@ -38,6 +38,8 @@ Sprint 6 se centró en observabilidad y hardening de despliegue. Su objetivo no 
 
 Sprint 7 se planteó como cierre de fiabilidad operativa. Tampoco añadió funcionalidad de negocio; se centró en demostrar que el entorno puede recuperarse de un despliegue fallido, volver a una imagen conocida, validar un restore real de RDS desde snapshot manual y destruir todos los recursos efímeros al finalizar. Este sprint incorporó un workflow manual de rollback, un script PowerShell de restore contra una base de datos temporal, endurecimiento de la imagen Docker, ajustes explícitos de runtime y una nueva ronda de validación real en AWS \texttt{dev}.
 
+Sprint 8 se orientó a cerrar la parte defendible de seguridad, coste y operación. El trabajo consistió en revisar IAM, grupos de seguridad, exposición TLS, secretos y postura de red; documentar qué recursos generan coste y cuáles sobreviven intencionadamente a un destroy; definir un procedimiento completo para recrear \texttt{dev} desde cero; y consolidar runbooks para despliegue, rollback, reinicio, bootstrap, restore, búsqueda por correlation id, respuesta a alarmas y cierre de coste.
+
 \section{Herramientas utilizadas}
 \label{sec:herramientas}
 

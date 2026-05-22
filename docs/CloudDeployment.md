@@ -120,7 +120,7 @@ Workflow: `.github/workflows/rollback-dev.yml`
 
 Use this workflow when a known-good image tag must be redeployed without rebuilding the application. It accepts `api_image_tag`, applies Terraform with `ecs_desired_count=1`, waits for ECS stability, verifies the task definition image tag, and runs the readiness smoke test.
 
-The detailed rollback and restore runbooks live in `docs/CloudReliability.md`.
+The detailed rollback and restore runbooks live in `docs/CloudReliability.md`. Sprint 8 operational runbooks and recreate-from-scratch steps live in `docs/CloudOperations.md`.
 
 ## Migration Strategy
 
@@ -178,3 +178,32 @@ Sprint 7 was validated in AWS account `661000947340` and the `dev` environment w
 - Bad-image test: missing tag `sprint7-missing-3dca035` produced task `cc06e30b1b7e42eab5aaae55e4155427` with `CannotPullContainerError`; reapplying `sprint7-good-3dca035` recovered readiness to `200`.
 - Restore test: temporary restore task `7f53d7309acf42349137213deca05080` against `transitops-dev-db-restore-sprint7` exited with code `0`; temporary DB, secret, task definition, IAM policy, and snapshot were cleaned up.
 - Final destroy: Terraform destroyed 72 resources, state became empty, and absence checks confirmed no ALB, ECS, RDS, ECR, ACM certificate, `api.dev` records, log group, dashboard, alarms, runtime secrets, or temporary RDS snapshots remained.
+
+## Sprint 8 Recreate And Operations Closure
+
+Sprint 8 treats the Sprint 7 destroyed environment as the starting point. The recreate-from-scratch path is:
+
+1. confirm AWS identity with profile `aws-pey-v1`;
+2. initialize the remote Terraform backend;
+3. apply the platform with `ecs_desired_count=0`;
+4. publish a known-good image tag `sprint8-good-<sha>`;
+5. update runtime Secrets Manager values;
+6. run the ECS `--migrate-only` task and require exit code `0`;
+7. apply Terraform with `ecs_desired_count=1`;
+8. verify HTTPS readiness, bootstrap/login, CloudWatch dashboard, 9 alarms, SNS topic/subscription, and correlated JSON logs;
+9. run `scripts/cloud/aws/Test-Sprint8AwsPosture.ps1`;
+10. destroy `dev` and run `scripts/cloud/aws/Test-Sprint8DestroyAudit.ps1`.
+
+The detailed command-level runbooks for normal deploy, rollback, restart, bootstrap-admin, correlation-id log lookup, CloudWatch alarm response, restore, and destroy/audit are in `docs/CloudOperations.md`.
+
+Sprint 8 validation record:
+
+- Image tag: `sprint8-good-fdf98b9`.
+- Image digest: `sha256:39fb9a78726912414acbdb1af2f27e59c4ea8552b0a023a4ceab51ef74fdd6bd`.
+- Migration ECS task: `cc374ade9c144745bd7566fb9289ffe3`, exit code `0`.
+- ECS after rollout: desired/running `1/1`, task definition `transitops-dev-api:9`.
+- HTTPS readiness: `200` with `X-Correlation-ID: sprint8-health`.
+- Bootstrap/login: `201` and `200` with correlation ids `sprint8-bootstrap` and `sprint8-login`.
+- Observability: dashboard, 9 alarms, log group, SNS topic, and email subscription in `PendingConfirmation`.
+- Security posture script: passed.
+- Final destroy: 72 resources destroyed, state empty, secrets force-deleted, destroy audit passed.

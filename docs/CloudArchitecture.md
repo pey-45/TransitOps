@@ -237,6 +237,29 @@ Sprint 7 adds operational proof points rather than new API functionality.
 
 The detailed procedures are documented in `docs/CloudReliability.md`.
 
+## Sprint 8 Security And Cost Review
+
+Sprint 8 closes the basic security, cost, and operations review for the disposable `dev` environment.
+
+Security posture:
+
+- ALB is the only public ingress and HTTPS is the intended public contract.
+- HTTP remains open only so the ALB can redirect `80` to `443` when HTTPS is enabled.
+- ECS tasks stay private with `assign_public_ip = false`.
+- RDS stays private with `publicly_accessible = false`.
+- The ECS execution role can read only the runtime secret ARNs passed to the task definition.
+- The ECS task role has no AWS API permissions while the application does not need them.
+- The GitHub OIDC role is restricted by repository and branch in its trust policy, but its deployment policy intentionally remains broad enough to run Terraform apply/destroy for the `dev` stack. This is accepted for the project scope and documented as a future production hardening area.
+
+Cost posture:
+
+- `dev` is recreated only for evidence capture and then destroyed.
+- The main temporary cost drivers are NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager, and ECR storage.
+- RDS automated backup retention remains `0`, final snapshots are skipped, and ECR force delete is enabled for `dev`.
+- The registered domain, public hosted zone, and Terraform remote-state backend intentionally survive application destroys.
+
+Operational procedures and Sprint 8 runbooks are documented in `docs/CloudOperations.md`.
+
 ## Terraform Remote State
 
 Terraform environment roots use an S3 backend with DynamoDB locking.

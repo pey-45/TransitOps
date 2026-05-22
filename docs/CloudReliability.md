@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document captures the Sprint 7 operational procedures for rollback, RDS restore validation, runtime tuning, and cost-safe teardown of the AWS `dev` environment.
+This document captures the Sprint 7 operational procedures for rollback, RDS restore validation, runtime tuning, and cost-safe teardown of the AWS `dev` environment. Sprint 8 keeps these procedures and adds the broader operations runbooks in `docs/CloudOperations.md`.
 
 The procedures target:
 

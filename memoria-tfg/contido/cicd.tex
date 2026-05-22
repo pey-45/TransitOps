@@ -55,6 +55,8 @@ Después de aplicar infraestructura, el workflow captura outputs relevantes del 
 
 En Sprint 7 se añadió un flujo de rollback explícito. La operación no reconstruye la aplicación ni cambia el contrato HTTP: recibe un \texttt{api\_image\_tag} ya publicado en ECR y lo convierte en el tag deseado de la task definition mediante Terraform. Esto deja el rollback trazable en el state, evita cambios manuales sobre ECS y permite comprobar que la imagen activa coincide con el tag esperado.
 
+En Sprint 8 se cerró el camino de recreación completa del entorno \texttt{dev}. El procedimiento parte de un state vacío tras \texttt{terraform destroy}, aplica la plataforma con ECS a cero tareas, publica una imagen \path{sprint8-good-<sha>}, carga secretos de runtime, ejecuta migraciones con \path{--migrate-only}, escala ECS a una tarea y valida HTTPS, login y observabilidad. La ejecución real usó el tag \path{sprint8-good-fdf98b9} y la tarea de migración \path{cc374ade9c144745bd7566fb9289ffe3}, finalizada con exit code \texttt{0}. Este flujo convierte la reconstrucción del entorno en una operación documentada, no en una secuencia de pasos recordados de forma informal.
+
 \begin{figure}[htbp]
 \centering
 \fbox{\begin{minipage}{0.88\textwidth}
@@ -79,4 +81,17 @@ Ejecución del workflow \path{rollback-dev.yml} con un tag \path{sprint7-good-<s
 \end{minipage}}
 \caption{Evidencia prevista del rollback manual a una imagen conocida.}
 \label{fig:placeholder-rollback-workflow}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Recreación Sprint 8 de \texttt{dev}: Terraform apply con \texttt{ecs\_desired\_count = 0}, push de imagen \path{sprint8-good-<sha>}, tarea ECS \path{--migrate-only}, escalado a \texttt{1/1} y smoke test HTTPS.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de recreate-from-scratch Sprint 8.}
+\label{fig:placeholder-sprint8-recreate}
 \end{figure}

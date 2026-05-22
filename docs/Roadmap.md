@@ -317,11 +317,11 @@ Close security, cost, recreate-from-scratch, and runbooks.
 
 **Artifacts That Must Exist By Sprint End**
 
-- Security review note and fixes for the highest-value issues found.
-- Cost review note.
-- Recreate-from-scratch procedure.
-- Final operational runbooks.
-- Updated architecture, deployment, and CI/CD diagrams.
+- `docs/CloudOperations.md` with security review, cost review, recreate-from-scratch procedure, and operational runbooks.
+- AWS posture audit script for the running `dev` stack.
+- Post-destroy audit script for cost cleanup verification.
+- Updated architecture, deployment, reliability, CI/CD, and memory text matching the real platform.
+- Sprint 8 validation record from local checks, AWS recreate, smoke test, posture audit, and final destroy.
 
 **Definition of Done**
 

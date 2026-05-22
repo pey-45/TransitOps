@@ -98,3 +98,23 @@ Las medidas de seguridad aplicadas son:
 El sistema no pretende cubrir todos los controles exigibles a un producto crítico en producción. Quedan fuera del alcance actual la rotación automática de secretos, WAF, protección avanzada contra abuso, auditoría detallada de acciones administrativas, cifrado con claves KMS propias, políticas IAM de mínimo privilegio refinadas al extremo, pruebas de penetración, OpenTelemetry/X-Ray y hardening exhaustivo de cabeceras HTTP.
 
 Estas limitaciones no invalidan el objetivo del trabajo, ya que se ha priorizado una línea base realista y demostrable: autenticación, autorización, red privada, secretos externos, HTTPS e infraestructura reproducible.
+
+\section{Revisión de seguridad Sprint 8}
+\label{sec:revision-seguridad-sprint8}
+
+Sprint 8 añadió una revisión explícita de seguridad sobre la arquitectura desplegable. La conclusión principal es que la aplicación mantiene una frontera pública pequeña: el ALB es el único punto de entrada, HTTP se usa únicamente para redirección a HTTPS, ECS no recibe IP pública y RDS no es accesible desde Internet.
+
+En IAM se diferencian tres casos. El execution role de ECS puede leer únicamente los secretos referenciados por la task definition. El task role de la aplicación no tiene permisos AWS porque la API no llama a servicios AWS en ejecución. El rol OIDC de GitHub conserva permisos amplios sobre los servicios gestionados por Terraform para poder aplicar y destruir el entorno \texttt{dev}; se acepta como riesgo controlado porque la trust policy queda limitada al repositorio y rama configurados, y porque el entorno se destruye tras capturar evidencia.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\vspace{1.2cm}
+\textbf{Placeholder de captura}\\
+Ejecución del script \path{Test-Sprint8AwsPosture.ps1} mostrando RDS privado, ECS sin IP pública, grupos de seguridad esperados, secretos en Secrets Manager y advertencia documentada sobre el rol OIDC de Terraform.
+\vspace{1.2cm}
+\end{minipage}}
+\caption{Evidencia de revisión de seguridad Sprint 8.}
+\label{fig:placeholder-sprint8-security-review}
+\end{figure}

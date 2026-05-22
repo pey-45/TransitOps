@@ -16,7 +16,7 @@ terraform_lock_table_name   = "transitops-tfstate-locks"
 create_github_oidc_provider       = true
 existing_github_oidc_provider_arn = ""
 
-root_domain = ""
+root_domain = "transitops.net"
 
 availability_zones = [
   "eu-west-1a",
@@ -27,11 +27,11 @@ api_container_port = 8080
 api_image_tag      = "latest"
 ecr_force_delete   = true
 
-enable_https   = false
-hosted_zone_id = ""
+enable_https   = true
+hosted_zone_id = "Z0844787W37HXN9FIJR"
 
 log_retention_days     = 30
-alarm_email            = ""
+alarm_email            = "pablomlopez03@gmail.com"
 enable_alarm_actions   = true
 jwt_issuer             = "TransitOps.Api"
 jwt_audience           = "TransitOps.Client"
