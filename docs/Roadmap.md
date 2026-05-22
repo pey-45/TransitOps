@@ -350,15 +350,18 @@ Close evidence, traceability, rehearsal, and final hardening.
 
 **Artifacts That Must Exist By Sprint End**
 
-- Requirements traceability note.
-- Organized evidence set for demo or defense.
-- Final verification and rehearsal record.
-- Final hardening pass on the remaining highest-risk issues.
+- `docs/RequirementsTraceability.md` mapping FR/NFR to implementation, verification, and evidence.
+- `docs/FinalEvidence.md` organizing captured evidence and exact screenshot placeholders for demo or defense.
+- `docs/FinalVerification.md` with local checks, optional AWS recreate/destroy path, and technical rehearsal order.
+- Updated requirements, README, context, and TFG memory text reflecting the final project state.
+- Final hardening pass on stale statuses, old account/hosted-zone references, secret hygiene, and post-destroy assumptions.
 
 **Definition of Done**
 
 - The repository is ready for review, demo, or defense without major undocumented gaps.
 - The cloud platform, CI/CD path, observability, rollback, restore, and operational model are explainable with evidence.
+- The current canonical requirements no longer show obsolete `Partial` or `Pending` statuses for delivered Sprint 6-8 work.
+- `dev` remains destroyed unless a short final AWS evidence run is explicitly executed, in which case destroy and audit are mandatory before closing.
 
 **What Must Not Remain Open At Sprint End**
 
@@ -366,6 +369,7 @@ Close evidence, traceability, rehearsal, and final hardening.
 - No evidence package.
 - No final rehearsal record.
 - No final hardening pass on the remaining highest-risk issues.
+- No README or memory text that still presents the cloud platform as only planned.
 
 ## Sprint Review Checklist
 

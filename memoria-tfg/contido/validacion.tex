@@ -11,7 +11,7 @@ En local se ejecutan pruebas automatizadas y flujos Postman/Newman contra una AP
 \section{Pruebas funcionales}
 \label{sec:pruebas-funcionales}
 
-La suite principal de pruebas automatizadas contiene 87 pruebas superadas tras Sprint 7. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y el contrato de correlación de peticiones. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
+La suite principal de pruebas automatizadas contiene 87 pruebas superadas durante la fase de cierre. Estas pruebas cubren endpoints de salud, transportes, vehículos, conductores, autenticación, usuarios, reglas de estado y el contrato de correlación de peticiones. La validación automatizada se complementa con un flujo de smoke local basado en Postman/Newman, que arranca Docker Compose, prepara datos deterministas, ejecuta peticiones y limpia los datos generados.
 
 Además, se verificaron manualmente el bootstrap del primer administrador y el login en el entorno cloud.
 
@@ -55,7 +55,7 @@ Los resultados técnicos obtenidos en la validación cloud son:
   \item Header de correlación: \texttt{X-Correlation-ID} presente en health, errores y login.
   \item CloudWatch Logs: entradas JSON filtrables por \texttt{State.CorrelationId}, incluyendo \path{sprint6-login-final}.
   \item Observabilidad: dashboard CloudWatch, log group de la API y 9 alarmas creadas por Terraform.
-  \item SNS: topic no creado porque \texttt{alarm\_email} no se configuró.
+  \item SNS: en Sprint 6 no se creó topic al no estar configurado \texttt{alarm\_email}; en las recreaciones posteriores se configuró \path{pablomlopez03@gmail.com} y la suscripción quedó en \texttt{PendingConfirmation}, estado esperado hasta confirmar el correo.
   \item Cierre de coste: \texttt{terraform destroy} eliminó los recursos del entorno \texttt{dev}; el state quedó vacío.
 \end{itemize}
 
@@ -158,6 +158,21 @@ Las principales limitaciones son:
   \item El entorno desplegado es \texttt{dev}, no una arquitectura productiva multi-entorno completa.
   \item No se han implementado políticas de autoscaling ni pruebas de carga.
   \item La observabilidad cubre logs JSON, correlación, dashboard y alarmas básicas, pero no incluye trazas distribuidas ni APM completo.
-  \item El pipeline de GitHub Actions está preparado y ampliado, pero todavía debe archivarse una ejecución completa desde GitHub como evidencia final de CI/CD.
+  \item La memoria utiliza placeholders descriptivos para varias capturas; las evidencias técnicas están registradas en documentación, pero las imágenes finales deben incorporarse si se desea una entrega visual completa.
   \item Algunas políticas IAM son prácticas para el sprint actual y pueden afinarse más en fases posteriores.
 \end{itemize}
+
+\section{Cierre Sprint 9}
+\label{sec:cierre-sprint9}
+
+El cierre final del proyecto organiza la evidencia y la trazabilidad de forma explícita. Se añade una matriz que relaciona requisitos funcionales y no funcionales con implementación, pruebas y evidencia documental. También se prepara un índice final de evidencias y un guion de verificación para poder repetir localmente las comprobaciones principales o, si se necesitan capturas frescas, recrear brevemente el entorno \texttt{dev}, validar HTTPS, login, observabilidad y destruirlo de nuevo.
+
+Los documentos principales de cierre son:
+
+\begin{itemize}
+  \item \path{docs/RequirementsTraceability.md}: matriz FR/NFR frente a implementación, verificación y evidencia.
+  \item \path{docs/FinalEvidence.md}: índice de evidencias reales y placeholders exactos de capturas.
+  \item \path{docs/FinalVerification.md}: checklist local, ruta opcional de recreación AWS y guion de defensa técnica.
+\end{itemize}
+
+Este cierre evita que la defensa dependa de memoria de sesión o de una explicación oral improvisada. La relación entre alcance, implementación, operación y evidencias queda registrada en el repositorio.

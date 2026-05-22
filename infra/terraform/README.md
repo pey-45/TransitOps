@@ -9,7 +9,7 @@ The cloud architecture, naming/tagging rules, environment conventions, and remot
 - `bootstrap/remote_state/`: one-time local-state bootstrap root that creates the shared S3 bucket and DynamoDB lock table for Terraform remote state.
 - `modules/platform_foundation/`: VPC, subnet, routing, NAT, and security-group foundation with shared naming/tagging conventions.
 - `modules/container_registry/`: ECR repository, scanning, and image lifecycle policy.
-- `modules/observability/`: CloudWatch log group baseline.
+- `modules/observability/`: CloudWatch log group, dashboard, alarms, metric filter, and optional SNS email notification.
 - `modules/runtime_config/`: Secrets Manager and SSM runtime configuration contract.
 - `modules/github_oidc/`: IAM OIDC trust and deployment role for GitHub Actions.
 - `modules/database/`: RDS PostgreSQL baseline.
@@ -24,7 +24,7 @@ The current Terraform baseline is split into two responsibilities:
 - `bootstrap/remote_state/` creates the remote-state backend resources with local state.
 - `environments/dev` and `environments/prod` consume shared modules and are prepared to use that remote backend.
 
-The `dev` environment now defines the full foundation and runtime path as code, but it is still intended to be validated before the first real AWS apply.
+The `dev` environment defines the full foundation and runtime path as code and has been validated through real create/deploy/destroy cycles in AWS account `661000947340`.
 
 It now establishes:
 
@@ -34,17 +34,20 @@ It now establishes:
 - environment layout for `dev` and `prod`
 - remote Terraform state strategy with S3 backend configuration shape, encryption, versioning, and DynamoDB locking bootstrap
 - VPC, subnets, routing, NAT, and least-privilege security groups
-- ECR, CloudWatch logs, RDS PostgreSQL, ECS Fargate, ALB, target group, and runtime config/secrets contract
+- ECR, CloudWatch logs/dashboard/alarms, RDS PostgreSQL, ECS Fargate, ALB, target group, Route53/ACM HTTPS, and runtime config/secrets contract
 - GitHub OIDC deployment role for keyless CI/CD access to AWS
 
-## Expected Next Steps
+## Current Operational Shape
 
-The next slices will add:
+The current cloud workflow is:
 
-- first real `dev` apply with `ecs_desired_count=0`
-- GitHub Actions image publication and deployment through OIDC
-- cloud-safe EF Core migration execution as a one-off ECS task
-- cloud-safe first-admin bootstrap and smoke verification
+- create the `dev` platform with `ecs_desired_count=0`;
+- publish the API image to ECR;
+- load runtime secrets into Secrets Manager;
+- run EF Core migrations as a one-off ECS task with `--migrate-only`;
+- scale ECS to `ecs_desired_count=1`;
+- validate HTTPS readiness, bootstrap/login, CloudWatch observability, and posture checks;
+- run `terraform destroy` and post-destroy audit after evidence capture.
 
 ## Basic Commands
 
@@ -67,20 +70,20 @@ terraform validate
 terraform plan
 ```
 
-As of April 26, 2026, the Terraform target account has moved to AWS account `661000947340` (`Pablo`, alias `aws-pey-v1`). The `dev` backend configuration now points at `transitops-tfstate-661000947340-eu-west-1`, which must be bootstrapped in that account before the environment root is initialized. The previous cost-bearing `dev` runtime in account `142966787103` was destroyed for cost control.
+As of Sprint 9, the Terraform target account is AWS account `661000947340` (`Pablo`, alias `aws-pey-v1`). The `dev` backend configuration points at `transitops-tfstate-661000947340-eu-west-1`, which must be bootstrapped in that account before the environment root is initialized. The previous account `142966787103` appears only in historical documentation.
 
 ## Dev Apply Shape
 
-The first `dev` apply should create the cloud platform without starting API tasks, because ECR is initially empty:
+The first `dev` apply in a recreate cycle should create the cloud platform without starting API tasks, because ECR is initially empty:
 
 ```powershell
 terraform apply `
-  -var="root_domain=" `
-  -var="hosted_zone_id=" `
-  -var="enable_https=false" `
+  -var="root_domain=transitops.net" `
+  -var="hosted_zone_id=Z0844787W37HXN9FIJR" `
+  -var="enable_https=true" `
   -var="ecs_desired_count=0"
 ```
 
-After the first image is pushed to ECR, the GitHub Actions deployment workflow updates `api_image_tag`, runs the EF Core migration task, and applies `ecs_desired_count=1`. Once the `transitops.net` hosted zone is available in account `661000947340`, set `root_domain`, `hosted_zone_id`, and `enable_https=true` to move from the ALB DNS fallback to `api.dev.transitops.net`.
+After the image is pushed to ECR, the GitHub Actions deployment workflow or local runbook updates `api_image_tag`, runs the EF Core migration task, and applies `ecs_desired_count=1`. The current hosted zone for `transitops.net` in account `661000947340` is `Z0844787W37HXN9FIJR`, so HTTPS should remain enabled for normal `dev` recreations.
 
 Terraform-managed resources carry the cleanup tags `TerraformStack` and `ResourceGroup`. Filter by `tag:TerraformStack = transitops-dev` in AWS Resource Explorer or Resource Groups to audit environment resources before and after `terraform destroy`; filter by `tag:TerraformStack = transitops-bootstrap-remote-state` for the remote-state bootstrap resources that intentionally survive environment destroys.

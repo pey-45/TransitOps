@@ -6,10 +6,10 @@ Define the current functional and non-functional requirements for TransitOps. Th
 
 ## Planning Context
 
-- Reference date: March 28, 2026.
+- Reference date: May 31, 2026.
 - Product type: backend-only transport management API.
 - Primary objective: deliver a small but credible backend that can reach AWS without inflating functional scope.
-- Current baseline already completed: solution bootstrap, PostgreSQL schema, EF Core wiring, health endpoints, initial documentation, and baseline transport state rules.
+- Current baseline completed: local MVP, PostgreSQL persistence, Docker reproducibility, CI baseline, Terraform-managed AWS `dev`, HTTPS deployment, observability, rollback, restore, security/cost review, operations runbooks, and final evidence/traceability documentation.
 
 ## Product Goal
 
@@ -27,7 +27,7 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 - JWT-based authentication and role-based authorization.
 - PostgreSQL persistence through EF Core.
 - Docker-based local reproducibility.
-- Minimal CI and a first AWS deployment path.
+- CI/CD workflows and a repeatable AWS `dev` deployment path.
 
 ### Out of Scope for the Current Phase
 
@@ -35,7 +35,7 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 - Self-service registration, forgot-password, or password reset flows.
 - Route optimization, billing, invoicing, or advanced fleet management.
 - Multi-region deployment, autoscaling policy tuning, or microservice decomposition.
-- Advanced observability beyond the minimum needed to operate and defend the project.
+- Advanced observability beyond the minimum needed to operate and defend the project, such as distributed tracing, APM, or business metrics.
 
 ## Actors
 
@@ -79,8 +79,8 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 
 | ID | Requirement | Priority | Current Status |
 | --- | --- | --- | --- |
-| FR-01 | Health and platform endpoints | Must | Completed baseline |
-| FR-02 | First admin bootstrap | Must | Partial |
+| FR-01 | Health and platform endpoints | Must | Completed |
+| FR-02 | First admin bootstrap | Must | Completed |
 | FR-03 | User administration | Must | Completed |
 | FR-04 | Authentication | Must | Completed |
 | FR-05 | Authorization | Must | Completed |
@@ -91,8 +91,8 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 | FR-10 | Transport lifecycle | Must | Completed |
 | FR-11 | Shipment events | Must | Completed |
 | FR-12 | Listings and filters | Should | Completed |
-| FR-13 | Validation, response contract, and conflicts | Must | Partial |
-| FR-14 | Audit trail and logical deletion | Must | Partial |
+| FR-13 | Validation, response contract, and conflicts | Must | Completed |
+| FR-14 | Audit trail and logical deletion | Must | Completed |
 
 ## Detailed Functional Specification
 
@@ -382,17 +382,17 @@ Acceptance criteria:
 
 | ID | Requirement | Priority | Current Status | Acceptance Summary |
 | --- | --- | --- | --- | --- |
-| NFR-01 | Scope discipline and simplicity | Must | Completed baseline | The solution remains a small modular monolith with only justified projects, folders, and abstractions. |
-| NFR-02 | PostgreSQL as system of record | Must | Partial | PostgreSQL remains the single persistent store, and persistence behavior is consistent between schema, EF Core, and runtime configuration. |
+| NFR-01 | Scope discipline and simplicity | Must | Completed | The solution remains a small modular monolith with only justified projects, folders, and abstractions. |
+| NFR-02 | PostgreSQL as system of record | Must | Completed | PostgreSQL remains the single persistent store locally and in AWS RDS, with EF Core migrations as the canonical schema. |
 | NFR-03 | Reproducible local execution | Must | Completed | Another developer can start the API and PostgreSQL locally with documented commands and without hidden manual steps. |
-| NFR-04 | Cloud deployability | Must | Partial | The API is stateless, containerized, externally configurable, and compatible with ECS, ALB, and RDS. |
-| NFR-05 | Security baseline | Must | Partial | Passwords are stored hashed, JWT secrets are externalized, roles are enforced, and no secrets are committed to the repository. |
-| NFR-06 | Reliability and controlled failure | Must | Completed | The service fails clearly when dependencies are unavailable, and the database migration/bootstrap strategy is explicit before cloud rollout. |
-| NFR-07 | Maintainability and documentation | Must | Partial | Folder responsibilities stay clear, docs remain aligned with reality, and planning artifacts stay up to date. |
+| NFR-04 | Cloud deployability | Must | Completed | The API is stateless, containerized, externally configurable, and validated on ECS, ALB, Route53/ACM, RDS, ECR, Secrets Manager, and CloudWatch. |
+| NFR-05 | Security baseline | Must | Completed | Passwords are hashed, JWT secrets are externalized, roles are enforced, runtime secrets stay outside Git, ECS/RDS run privately, and HTTPS is enabled. |
+| NFR-06 | Reliability and controlled failure | Must | Completed | Readiness checks, ECS circuit breaker, rollback workflow, migration task, and RDS restore validation are documented and tested. |
+| NFR-07 | Maintainability and documentation | Must | Completed | Folder responsibilities stay clear, docs are aligned with reality, and Sprint 9 adds traceability/evidence/final verification documents. |
 | NFR-08 | Testability and CI | Must | Completed | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI. |
-| NFR-09 | Observability | Should | Pending | Logs are structured, request correlation is available, and runtime output is usable from CloudWatch. |
-| NFR-10 | Small-scale performance | Should | Partial | Core list/detail flows are supported by appropriate indexes, pagination, and reasonable query patterns for an academic workload. |
-| NFR-11 | Infrastructure as code and controlled delivery | Must | Pending | AWS infrastructure is versioned in Terraform, and the delivery path is repeatable and reviewable through CI/CD. |
+| NFR-09 | Observability | Should | Completed | Logs are structured, request correlation is available through `X-Correlation-ID`, and CloudWatch has logs, dashboard, metric filter, alarms, and optional SNS email. |
+| NFR-10 | Small-scale performance | Should | Completed | Core list/detail flows use filtering, pagination, relational constraints/indexes, and bounded cloud connection-pool settings suitable for the academic workload. |
+| NFR-11 | Infrastructure as code and controlled delivery | Must | Completed | AWS infrastructure is versioned in Terraform, remote state uses S3/DynamoDB, and delivery/rollback paths are repeatable through GitHub Actions and local runbooks. |
 
 ## Delivery Gates
 

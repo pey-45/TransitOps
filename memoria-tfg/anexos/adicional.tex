@@ -28,8 +28,12 @@ Las siguientes evidencias deberían incorporarse como capturas o anexos finales 
 \path{imaxes/health-ready-sprint6.png} & Salida de terminal o navegador mostrando \path{/api/v1/health/ready} con respuesta \texttt{200} y header \texttt{X-Correlation-ID}. \\
 \path{imaxes/login-admin-sprint6.png} & Respuesta \texttt{200} de login administrador en cloud con JWT y correlación de petición. \\
 \path{imaxes/github-actions-deploy.png} & Ejecución verde del workflow \path{deploy-dev.yml}, cuando se ejecute desde GitHub Actions. \\
+\path{imaxes/github-actions-rollback.png} & Ejecución del workflow \path{rollback-dev.yml} con un tag conocido y readiness \texttt{200}. \\
 \path{imaxes/terraform-no-changes.png} & Salida de \texttt{terraform plan} indicando que la infraestructura no tiene cambios pendientes antes del cierre de coste. \\
+\path{imaxes/security-posture-audit.png} & Ejecución de \path{Test-Sprint8AwsPosture.ps1} validando RDS privado, ECS sin IP pública, security groups esperados y permisos principales. \\
+\path{imaxes/rds-restore-test.png} & Snapshot manual, base temporal restaurada y task ECS \path{--migrate-only} con exit code \texttt{0}. \\
+\path{imaxes/aws-cost-review.png} & Vista de coste por servicio durante una recreación temporal del entorno \texttt{dev}. \\
 \path{imaxes/terraform-destroy-empty-state.png} & Evidencia posterior a \texttt{terraform destroy}: state vacío y ausencia de ALB, RDS, ECS, ECR, ACM, registros DNS del subdominio, logs, dashboard, alarmas y secretos del entorno \texttt{dev}. \\
 \end{longtable}
 
-Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. La memoria contiene placeholders descriptivos en las secciones donde esas evidencias aportan más valor; cuando se incorporen las imágenes reales, deberán sustituirse los placeholders por \texttt{\textbackslash includegraphics} o mantenerse como anexo de evidencias.
+Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. La memoria contiene placeholders descriptivos en las secciones donde esas evidencias aportan más valor; cuando se incorporen las imágenes reales, deberán sustituirse los placeholders por \texttt{\textbackslash includegraphics} o mantenerse como anexo de evidencias. El índice operativo de evidencias queda además documentado en \path{docs/FinalEvidence.md}.

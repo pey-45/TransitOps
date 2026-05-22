@@ -4,7 +4,7 @@ Transport management backend as a personal project focused on cloud architecture
 
 ## Current Status
 
-Reference date: April 19, 2026.
+Reference date: May 31, 2026.
 
 The repository contains an ASP.NET Core solution with the local backend baseline already in place:
 
@@ -13,7 +13,11 @@ The repository contains an ASP.NET Core solution with the local backend baseline
 
 The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
 
-The code is still intentionally small in functional scope, but the local MVP surface is now coherent. PostgreSQL-backed CRUD exists for transports, vehicles, and drivers, including soft delete on those three main operational entities. Transport list filters and basic pagination are also in place for demo use, explicit vehicle+driver assignment plus lifecycle transitions are implemented on transports, shipment events support creation plus chronological history with actor traceability, the API exposes first-admin bootstrap, password hashing, login, JWT issuance, and protected business endpoints, and admin-only user-management flows cover list, detail, create, role change, and activate/deactivate with last-active-admin protection. The local Docker path is documented through `.env.example` and a dedicated verification guide, a first GitHub Actions build/test workflow exists, the AWS architecture/conventions/remote-state strategy are consolidated in one cloud document, and the Terraform codebase now includes both the Sprint 2 network foundation and the Sprint 3 AWS runtime layer for `dev` as validable code. Enum-like state fields are persisted as `smallint` plus explicit database check constraints instead of native PostgreSQL enums, which keeps EF Core persistence simpler and more stable for the current project scope.
+The code is intentionally small in functional scope, but the project is now complete enough to defend as a cloud-operable backend. PostgreSQL-backed CRUD exists for transports, vehicles, and drivers, including soft delete on the main operational entities. Transport filters and pagination support demo use, explicit vehicle+driver assignment and lifecycle transitions are implemented, shipment events provide chronological traceability, first-admin bootstrap/login/JWT protection are in place, and admin-only user management covers list, detail, create, role changes, activation/deactivation, and last-active-admin protection.
+
+The operational layer is also implemented and documented: Docker local reproducibility, xUnit integration tests, Postman/Newman smoke flow, GitHub Actions CI/deploy/rollback workflows, Terraform remote state, ECS Fargate, ECR, RDS PostgreSQL, ALB, Route53/ACM HTTPS, Secrets Manager/SSM runtime configuration, JSON CloudWatch logs, `X-Correlation-ID`, dashboard, alarms, SNS email support, rollback, RDS restore validation, security/cost reviews, runbooks, final evidence index, and requirements traceability.
+
+The AWS `dev` environment is intentionally disposable. Sprint validations recreated it, ran migrations and smoke checks, verified observability/security/reliability, and destroyed it afterwards to avoid avoidable cost. The domain, hosted zone, and Terraform remote-state backend are the intentionally retained foundation resources.
 
 Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
 
@@ -43,7 +47,7 @@ The MVP covers a functional backend that can run locally with:
 - initial tests;
 - local packaging with Docker.
 
-Advanced cloud work is outside the MVP: Terraform, ECS, ECR, RDS on AWS, CloudWatch, alarms, and full automated deployment.
+Advanced cloud work is outside the functional MVP, but it is included in the project delivery scope and has been implemented for the disposable AWS `dev` environment: Terraform, ECS, ECR, RDS, ALB, Route53/ACM, CloudWatch, alarms, OIDC-based GitHub Actions, rollback, restore, and cost-safe teardown.
 
 The detailed requirements baseline is in [docs/Requirements.md](docs/Requirements.md), and the current sprint plan is in [docs/Roadmap.md](docs/Roadmap.md).
 
@@ -137,6 +141,12 @@ The exact folder distribution may evolve. What matters at this stage is that the
 - Sprint delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
 - Local verification guide: [docs/LocalVerification.md](docs/LocalVerification.md)
 - Cloud architecture, conventions, and Terraform remote-state bootstrap: [docs/CloudArchitecture.md](docs/CloudArchitecture.md)
+- Cloud deployment path: [docs/CloudDeployment.md](docs/CloudDeployment.md)
+- Cloud reliability and restore runbooks: [docs/CloudReliability.md](docs/CloudReliability.md)
+- Cloud operations, security, cost, and recreate-from-scratch: [docs/CloudOperations.md](docs/CloudOperations.md)
+- Requirements traceability: [docs/RequirementsTraceability.md](docs/RequirementsTraceability.md)
+- Final evidence index: [docs/FinalEvidence.md](docs/FinalEvidence.md)
+- Final verification and rehearsal guide: [docs/FinalVerification.md](docs/FinalVerification.md)
 
 ## Local Requirements
 
@@ -167,7 +177,9 @@ The repository already includes:
 - optional manual sample-data scripts under `scripts/database/postgres/seed/`, aligned with the current numeric enum mapping, plus `.bat` wrappers that execute them against the local Docker PostgreSQL service;
 - `smallint`-backed enum storage with check constraints for transport status, shipment event type, and user role;
 - a real readiness check at `GET /api/v1/health/ready` that verifies PostgreSQL connectivity;
-- Terraform modules for the AWS runtime path: ECR, CloudWatch logs, RDS PostgreSQL, Secrets Manager/SSM runtime configuration, ECS Fargate, ALB, target group, listener, and ECS task/service definition.
+- Terraform modules for the AWS runtime path: ECR, CloudWatch logs/dashboard/alarms, RDS PostgreSQL, Secrets Manager/SSM runtime configuration, ECS Fargate, ALB, target group, listener, Route53/ACM HTTPS, GitHub OIDC, and ECS task/service definition;
+- operational scripts for RDS restore validation, AWS posture audit, and post-destroy audit under `scripts/cloud/aws/`;
+- final Sprint 9 documentation for traceability, evidence, and verification/rehearsal.
 
 The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Middleware`, `Application`, and `Infrastructure`.
 
@@ -295,9 +307,9 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Next Milestones
 
-1. Apply the `dev` foundation/runtime stack after reviewing cost impact and replacing temporary local planning values with deployment-ready values.
-2. Populate runtime secrets and define the cloud-safe EF Core migration/bootstrap path before exposing the API as an operational environment.
-3. Add the deployment path for Docker image build/push, EF Core migration execution, ECS rollout, and rollback verification.
+1. Add real screenshots to the placeholders listed in [docs/FinalEvidence.md](docs/FinalEvidence.md) and the TFG memory if fresh visual evidence is needed.
+2. Optionally run one short final AWS recreate using [docs/FinalVerification.md](docs/FinalVerification.md), then destroy and audit immediately.
+3. For work beyond the TFG scope, add a separate `prod` environment, tighter IAM deployment policy, WAF/autoscaling, distributed tracing, and a frontend.
 
 ## Roadmap Quality Criteria
 
@@ -309,4 +321,4 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Verification Note
 
-As of April 26, 2026, the API project builds, EF Core persistence is configured, the migrations-managed PostgreSQL schema is operational, health endpoints work, transport/vehicle/driver CRUD are backed by PostgreSQL, transport list filters and pagination are available for demo use, explicit transport assignment and lifecycle transitions are implemented, shipment events support creation and chronological history with authenticated actor traceability, first-admin bootstrap plus JWT login are implemented, protected endpoints enforce bearer authentication, admin-only user-management is implemented with last-active-admin protection, transport status and related enum-like fields are stored through `smallint` plus check constraints, a documented local Docker verification path exists, a runner-safe smoke path exists, a manual Postman environment exists, and a GitHub Actions restore/build/test baseline is present. The intended AWS topology, cloud conventions, remote-state bootstrap, network foundation, and runtime Terraform path are encoded under `infra/terraform/`. The previous cost-bearing `dev` AWS runtime was destroyed for cost control, and the Terraform target account has moved to AWS account `661000947340` (`Pablo`, alias `aws-pey-v1`). Terraform-managed resources now carry stable `TerraformStack` and `ResourceGroup` tags so the environment can be audited in AWS Resource Explorer/Resource Groups before and after `terraform destroy`.
+As of May 31, 2026, the API project builds, the functional MVP is implemented, tests cover the critical API behavior, local Docker verification is documented, and the AWS `dev` platform has been recreated and validated repeatedly in account `661000947340` (`Pablo`, alias `aws-pey-v1`). The cloud path includes Terraform remote state, private RDS, private ECS tasks, ALB HTTPS through Route53/ACM, Secrets Manager/SSM runtime configuration, ECR image publication, ECS `--migrate-only` migrations, JSON logs with `X-Correlation-ID`, CloudWatch dashboard and alarms, rollback workflow, RDS restore validation, security/cost reviews, runbooks, final evidence index, and requirements traceability. The latest validated `dev` stack was destroyed after evidence capture; retained resources are the registered domain, public hosted zone, and Terraform remote-state backend.
