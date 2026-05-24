@@ -82,16 +82,25 @@
 \fi
 
 \ifthenelse{\equal{\titulacion}{gei}}{
-  \def\nometitulacion{GRAO EN ENXEÑARÍA INFORMÁTICA}
-  \def\nomemencion{MENCIÓN EN \mencion}
-  \def\carimbo{\includegraphics[scale=0.08]{imaxes/euro_inf_seal_bachelor_light background}}
+  \ifthenelse{\equal{\lingua}{esp}}{
+    \def\nometitulacion{GRADO EN INGENIERÍA INFORMÁTICA}
+    \def\nomemencion{MENCIÓN EN \mencion}
+  }{
+    \def\nometitulacion{GRAO EN ENXEÑARÍA INFORMÁTICA}
+    \def\nomemencion{MENCIÓN EN \mencion}
+  }
+  \def\carimbo{\includegraphics[scale=0.08]{imaxes/euro-inf-seal-bachelor-light-background}}
   \ifdefined\mencion
     \message{Estilo TFG: elixiuse como mención: \mencion}
   \else
     \message{Estilo TFG warning: non se elixiu mención, a compilación fallará}
   \fi
 }{
-  \def\nometitulacion{GRAO EN CIENCIA E ENXEÑARÍA DE DATOS}
+  \ifthenelse{\equal{\lingua}{esp}}{
+    \def\nometitulacion{GRADO EN CIENCIA E INGENIERÍA DE DATOS}
+  }{
+    \def\nometitulacion{GRAO EN CIENCIA E ENXEÑARÍA DE DATOS}
+  }
   \def\nomemencion{\mbox{}}
   \def\carimbo{\vspace*{125pt}\mbox{}}
 }
@@ -130,7 +139,7 @@
 \definecolor{ficblue}{RGB}{50,110,118}
 
 \newcommand{\paxinaenbranco}{\mbox{}\thispagestyle{empty}\clearpage}
-\newcommand{\dedicatoria}[1]{\thispagestyle{empty}\mbox{}\vfill\hfill\emph{#1}\vfill}
+\newcommand{\dedicatoria}[1]{\thispagestyle{empty}\mbox{}\vfill\hfill\emph{#1}\vfill\clearpage}
 \newenvironment{agradecementos}
                {\thispagestyle{empty}
                  \vspace*{175pt}

@@ -1,0 +1,96 @@
+\chapter{Operación y runbooks}
+\label{chap:operacion-runbooks}
+
+\section{Objetivo operativo}
+\label{sec:objetivo-operativo}
+
+El objetivo operativo de TransitOps es que el entorno \texttt{dev} pueda recrearse, validarse, diagnosticarse y destruirse sin depender de conocimiento tácito. Esta idea se incorporó especialmente en los sprints finales, cuando el proyecto dejó de centrarse únicamente en construir recursos y pasó a demostrar que esos recursos podían operarse con procedimientos claros.
+
+Un runbook no es solo una lista de comandos. En el contexto de este trabajo, cada runbook debe indicar qué problema resuelve, qué pasos principales se ejecutan, qué señales confirman el éxito y qué limpieza debe realizarse. Esta estructura reduce ambigüedad y facilita explicar el proyecto durante la defensa.
+
+La operación se documenta para un entorno efímero. Esto condiciona los procedimientos: muchas acciones terminan con \texttt{terraform destroy}; las alarmas no deben generar ruido cuando \texttt{dev} está apagado; los recursos persistentes intencionales se separan de los recursos del stack de aplicación; y el coste se trata como una variable de diseño, no como una consecuencia posterior.
+
+\section{Runbook de despliegue normal}
+\label{sec:runbook-deploy-normal}
+
+El despliegue normal parte de un estado local validado y de un backend Terraform inicializado. El primer paso es aplicar infraestructura con ECS a cero tareas. Esto crea red, balanceador, RDS, ECR, secretos, roles y observabilidad sin arrancar todavía la API. A continuación se construye la imagen Docker, se etiqueta con un identificador operativo y se publica en ECR.
+
+Después de publicar la imagen, se cargan o restauran los secretos de runtime. La API necesita cadena de conexión, clave JWT y token de bootstrap. Sin estos valores, la task definition puede existir, pero la tarea fallará al arrancar. Por ello, la carga de secretos se trata como paso explícito y verificable.
+
+La migración de base de datos se ejecuta como tarea ECS puntual con \path{--migrate-only}. El criterio de éxito es código de salida \texttt{0}. Solo después de ese resultado se escala el servicio ECS a \texttt{desired\_count = 1}. Finalmente se espera estabilidad, se comprueba readiness por HTTPS y se valida login.
+
+Las señales de éxito son: task de migración finalizada, servicio ECS con \texttt{desired = 1} y \texttt{running = 1}, target group sano, \path{/api/v1/health/ready} con \texttt{200}, login administrador con \texttt{200}, logs JSON en CloudWatch y header \httpheader{X-Correlation-ID} presente. Si cualquiera de estos pasos falla, el runbook dirige la investigación hacia la capa correspondiente: imagen, secretos, base de datos, ECS, ALB o DNS.
+
+\section{Runbook de rollback}
+\label{sec:runbook-rollback}
+
+El rollback manual se basa en volver a un tag de imagen conocido. No se modifica ECS desde consola ni se registra una task definition manual. En su lugar, se actualiza la variable de imagen y se reaplica Terraform. Esta decisión mantiene la infraestructura alineada con el estado versionado y evita que el entorno quede en una configuración difícil de reproducir.
+
+El procedimiento comienza identificando el tag bueno. En Sprint 7, el tag de referencia fue \tech{sprint7-good-3dca035}. El workflow \path{rollback-dev.yml} acepta el tag, aplica Terraform con \texttt{ecs\_desired\_count = 1}, espera estabilidad de ECS y valida readiness. El resultado esperado es que la task definition activa apunte a la imagen indicada y que el endpoint vuelva a responder \texttt{200}.
+
+La prueba controlada con un tag inexistente demuestra por qué este runbook es necesario. ECS intentó crear una tarea, la imagen no existía en ECR y la tarea falló con \texttt{CannotPullContainerError}. El deployment circuit breaker evitó estabilizar un despliegue incorrecto. La recuperación consistió en reaplicar el tag bueno y comprobar health. Esta evidencia conecta configuración Terraform, comportamiento ECS y operación real.
+
+El cleanup de rollback consiste en dejar el tag bueno como valor deseado y confirmar que no quedan tareas fallidas activas ni cambios pendientes en Terraform. Si el entorno se creó únicamente para la prueba, se ejecuta destroy al terminar la validación.
+
+\section{Runbook de reinicio o redeploy}
+\label{sec:runbook-redeploy}
+
+Un reinicio controlado puede ser necesario si se desea forzar a ECS a reemplazar la tarea actual sin cambiar imagen ni infraestructura. El procedimiento operativo consiste en usar el servicio ECS o el workflow de despliegue para forzar una nueva deployment. La señal de éxito es que ECS cree una nueva tarea, el target group la marque como sana y la anterior se drene sin cortar tráfico.
+
+El diseño del target group ayuda a este proceso. La ruta de readiness evita enviar tráfico a una tarea que aún no puede conectar con PostgreSQL. El \texttt{deregistration\_delay} corto en \texttt{dev} reduce el tiempo necesario para retirar una tarea antigua durante validaciones. El \texttt{stopTimeout} da margen al contenedor para finalizar de forma ordenada.
+
+Si el reinicio falla, las primeras comprobaciones son logs de CloudWatch, eventos del servicio ECS y estado del target group. Un error de secretos suele aparecer como fallo de arranque; un error de base de datos suele reflejarse en readiness; un problema de imagen aparece en eventos de ECS o ECR. El runbook separa estas causas para evitar revisar componentes al azar.
+
+\section{Runbook de bootstrap de administrador}
+\label{sec:runbook-bootstrap}
+
+El bootstrap crea el primer administrador cuando el sistema no tiene ninguno activo. El token de bootstrap se configura fuera del repositorio y se envía en la petición inicial. Si no existe administrador, la respuesta esperada es \texttt{201}. Si ya existe, la respuesta esperada es \texttt{409}. Ambos resultados son aceptables según el estado previo de la base de datos.
+
+Este comportamiento es importante para recreaciones. Tras un despliegue desde base nueva, el bootstrap debe permitir crear el primer usuario. Tras una recreación sobre una base con datos ya migrados o restaurados, puede devolver conflicto porque el administrador ya existe. El runbook no trata \texttt{409} como fallo automático; lo interpreta como señal de que el sistema ya está inicializado.
+
+Después del bootstrap, el login debe devolver \texttt{200} y un JWT. Esta prueba confirma que el usuario existe, que el hash de contraseña se valida correctamente, que la configuración JWT es válida y que la API puede responder peticiones de autenticación en cloud.
+
+\section{Runbook de restore RDS}
+\label{sec:runbook-restore-rds}
+
+El restore de RDS se validó mediante un procedimiento temporal. El objetivo no era conservar una nueva base, sino demostrar que un snapshot manual puede restaurarse y que la aplicación puede ejecutar migraciones contra esa base restaurada. Esta diferencia es relevante: una restauración que solo crea una instancia no prueba que el backend pueda usarla.
+
+El script \path{Invoke-RdsRestoreTest.ps1} crea un snapshot manual de la base principal, restaura una instancia temporal, crea un secreto temporal con la cadena de conexión, registra una task definition temporal que apunta a ese secreto y ejecuta \path{--migrate-only}. El criterio de éxito es exit code \texttt{0}. La prueba detectó que el execution role de ECS necesitaba permiso temporal para leer el nuevo secreto, y el script se corrigió para añadir y retirar esa política durante la prueba.
+
+El cleanup es obligatorio: eliminar la base restaurada, el secreto temporal, la task definition temporal, la política IAM temporal y el snapshot manual salvo que se pida conservar evidencia. Esta limpieza evita coste residual, especialmente porque una instancia RDS restaurada y un snapshot manual pueden seguir generando gasto.
+
+\section{Runbook de logs por correlation id}
+\label{sec:runbook-correlation}
+
+La investigación de una petición concreta parte del header \httpheader{X-Correlation-ID}. El cliente puede proporcionar un valor conocido o leer el valor devuelto por la API. Ese identificador se usa para filtrar en CloudWatch Logs. El objetivo es encontrar todas las entradas asociadas a una petición sin depender de hora aproximada o de texto del mensaje.
+
+El middleware de correlación alinea el header con \texttt{HttpContext.TraceIdentifier} y abre un scope de logging. Como los logs se emiten en JSON con scopes incluidos, CloudWatch puede filtrar campos como \tech{State.CorrelationId}. Esto convierte la correlación en una herramienta práctica durante smoke tests y errores.
+
+El procedimiento de diagnóstico consiste en reproducir la petición con un correlation id controlado, comprobar el código HTTP, abrir CloudWatch Logs Insights, filtrar por ese identificador y revisar método, ruta, estado, duración y nivel de log. Si el error es interno, el cliente recibe una respuesta controlada con request id y el servidor conserva el detalle en logs.
+
+\section{Runbook de alarmas}
+\label{sec:runbook-alarmas}
+
+Las alarmas creadas por Terraform cubren señales básicas de ALB, ECS, RDS y errores de aplicación. Cuando una alarma se dispara, el primer paso es identificar la capa afectada. Una alarma de 5xx del ALB puede indicar errores de aplicación o problemas de target. Una alarma de response time puede apuntar a lentitud en API o base de datos. Una alarma de hosts no sanos apunta a ECS, target group o readiness. Las alarmas de CPU/memoria se relacionan con capacidad de contenedor o base de datos.
+
+El runbook recomienda revisar primero el dashboard CloudWatch para obtener contexto general. Después se consultan logs por rango temporal y, si existe una petición concreta, por correlation id. Para problemas de ECS se revisan eventos del servicio y estado de tasks. Para problemas de RDS se revisan conexiones, CPU y almacenamiento libre.
+
+En \texttt{dev}, las alarmas se configuran con tratamiento conservador de datos ausentes. Esto evita alertas falsas cuando el entorno está destruido o con ECS a cero tareas. Si se configura \texttt{alarm\_email}, Terraform crea topic SNS y suscripción; la suscripción puede quedar en \texttt{PendingConfirmation} hasta aceptar el correo. Este estado se documenta como esperado.
+
+\section{Runbook de destroy y auditoría}
+\label{sec:runbook-destroy}
+
+El cierre de coste es una operación obligatoria tras validaciones cloud. El procedimiento principal es ejecutar \texttt{terraform destroy} desde la raíz del entorno \texttt{dev}. Antes del destroy puede ejecutarse \texttt{terraform plan -detailed-exitcode} para confirmar si existen cambios pendientes. Después del destroy, el state debe quedar vacío.
+
+La auditoría post-destroy comprueba que no quedan recursos efímeros del stack: ALB, target groups, ECS, ECR, RDS, NAT Gateway, certificados ACM, registros Route 53 del subdominio, log groups, dashboards, alarmas, secretos runtime y snapshots temporales. Sprint 8 añadió un script específico para esta verificación.
+
+No todos los recursos desaparecen. Permanecen intencionadamente el dominio registrado, la hosted zone pública y el backend remoto Terraform en S3/DynamoDB. Estos recursos son base para poder recrear el entorno y se documentan como persistentes. La separación entre persistente y efímero evita confundir un destroy correcto con la eliminación total de la cuenta AWS.
+
+\section{Aprendizajes operativos}
+\label{sec:aprendizajes-operativos}
+
+Los sprints finales mostraron que muchas dificultades reales no aparecen en una arquitectura dibujada. ACM puede quedar en validación pendiente si el dominio no delega en la hosted zone correcta. Secrets Manager puede bloquear la recreación inmediata de un secreto si quedó programado para eliminación. ECR puede impedir un destroy si el repositorio contiene imágenes, salvo que se configure force delete. Una tarea ECS puede fallar por permisos de lectura de un secreto temporal aunque la infraestructura principal funcione.
+
+Estos casos son valiosos porque convierten la memoria en una descripción de comportamiento real, no solo en una intención de diseño. Documentar incidencias y correcciones aporta más valor que presentar un flujo idealizado. El proyecto demuestra que operar cloud implica entender estados intermedios, permisos, propagación DNS, recursos residuales y coste.
+
+Por ello, los runbooks forman parte del resultado del TFG. No son documentación secundaria, sino una forma de cerrar el ciclo entre código, infraestructura y operación. En una defensa técnica, permiten explicar no solo qué se construyó, sino cómo se recupera, cómo se diagnostica y cómo se evita dejar gasto activo.

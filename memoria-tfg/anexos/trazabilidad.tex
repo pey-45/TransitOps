@@ -1,0 +1,106 @@
+\chapter{Trazabilidad de requisitos y evidencias}
+\label{chap:anexo-trazabilidad}
+
+\section{Propósito del anexo}
+\label{sec:anexo-proposito-trazabilidad}
+
+Este anexo resume la relación entre requisitos, implementación, validación y evidencia. Su objetivo es facilitar la defensa del proyecto y evitar que la evaluación dependa únicamente de una explicación oral. Cada requisito importante puede relacionarse con una parte del código, un mecanismo de prueba y una evidencia documental o cloud.
+
+La trazabilidad no sustituye a los documentos completos del repositorio. La matriz operativa principal se mantiene en \path{docs/RequirementsTraceability.md}; este anexo recoge una versión integrada en la memoria para que el PDF sea autocontenido.
+
+\section{Requisitos funcionales}
+\label{sec:anexo-rf}
+
+{\setlength{\tabcolsep}{4pt}\footnotesize
+\begin{longtable}{@{}p{0.08\textwidth}p{0.28\textwidth}p{0.27\textwidth}p{0.25\textwidth}@{}}
+\caption{Trazabilidad de requisitos funcionales}
+\label{tab:trazabilidad-rf}\\
+\textbf{ID} & \textbf{Implementación} & \textbf{Validación} & \textbf{Evidencia} \\
+\hline
+RF-01 & Endpoints de salud \path{/api/v1/health/live} y \path{/api/v1/health/ready}. & Tests de health, smoke local y smoke cloud. & Health HTTPS \texttt{200}, target group sano y logs de readiness. \\
+RF-02 & Endpoint de bootstrap protegido por token externo. & Pruebas de creación inicial y conflicto si ya existe administrador. & Bootstrap cloud \texttt{201} o \texttt{409} documentado. \\
+RF-03 & Login con usuario y contraseña, emisión de JWT. & Tests de autenticación y smoke cloud de login. & Login administrador \texttt{200} con JWT. \\
+RF-04 & Autorización por roles \texttt{admin} y \texttt{operator}. & Tests de endpoints protegidos y acceso denegado. & Casos de prueba y documentación de roles. \\
+RF-05 & Endpoints de administración de usuarios. & Tests de creación, listado, cambio de rol y activación. & Suite automatizada de backend. \\
+RF-06 & Gestión de transportes con filtros, paginación y borrado lógico. & Tests de CRUD, validación y soft delete. & Pruebas de integración. \\
+RF-07 & Gestión de vehículos asignables. & Tests de validación de matrícula, unicidad y borrado lógico. & Pruebas de dominio y persistencia. \\
+RF-08 & Gestión de conductores asignables. & Tests de licencia, contacto, estado activo y unicidad. & Pruebas de integración. \\
+RF-09 & Asignación de vehículo y conductor a transporte. & Tests de asignación válida e inválida. & Validación de reglas de negocio. \\
+RF-10 & Transiciones de estado controladas. & Tests de estados terminales y precondiciones. & Suite de reglas de transporte. \\
+RF-11 & Registro y consulta de eventos logísticos. & Tests de creación y consulta cronológica. & Historial de eventos validado. \\
+RF-12 & Errores coherentes y contrato común. & Tests de validación, no encontrado, conflicto y autorización. & Respuestas HTTP y request id correlable. \\
+\end{longtable}
+}
+
+\section{Requisitos no funcionales}
+\label{sec:anexo-rnf}
+
+{\setlength{\tabcolsep}{4pt}\footnotesize
+\begin{longtable}{@{}p{0.14\textwidth}p{0.29\textwidth}p{0.24\textwidth}p{0.21\textwidth}@{}}
+\caption{Trazabilidad de requisitos no funcionales}
+\label{tab:trazabilidad-rnf}\\
+\textbf{Área} & \textbf{Implementación} & \textbf{Validación} & \textbf{Evidencia} \\
+\hline
+Reprod. local & Docker Compose con API y PostgreSQL. & Smoke local y pruebas automatizadas. & Comandos documentados en README y validación local. \\
+Mantenibilidad & Solución simple con proyectos \path{TransitOps.Api} y \path{TransitOps.Tests}. & Revisión de estructura y tests. & Capítulos de arquitectura e implementación. \\
+Persistencia & PostgreSQL y migraciones EF Core. & Migraciones locales y ECS \path{--migrate-only}. & Tareas ECS de migración con exit code \texttt{0}. \\
+Seguridad básica & Hash de contraseñas, JWT, roles, secretos externos y red privada. & Tests de auth, auditoría Sprint 8 y revisión de SG/IAM. & Script de posture audit y documentación de seguridad. \\
+IaC & Terraform con módulos y estado remoto. & \texttt{terraform fmt}, validate, apply y destroy. & Recreate-from-scratch y state vacío tras destroy. \\
+Observab. & Logs JSON, correlation id, dashboard, alarmas y filtro métrico. & Smoke con correlation id y verificación CloudWatch. & Dashboard, 9 alarmas y logs filtrables. \\
+CI/CD & Workflows manuales de Terraform, deploy y rollback. & Ejecución local, publicación de imagen y validación cloud. & Documentación de pipelines y capturas de ECR, ECS, readiness y task definition activa. \\
+Operación & Runbooks de deploy, rollback, restore, logs, alarmas y destroy. & Sprint 7 y Sprint 8 con AWS real. & \path{docs/CloudReliability.md}, \path{docs/CloudDeployment.md}. \\
+Coste & Entorno \texttt{dev} efímero, backups RDS a cero y destroy final. & Auditoría post-destroy. & Ausencia de recursos efímeros costosos. \\
+\end{longtable}
+}
+
+\section{Evidencias por sprint}
+\label{sec:anexo-evidencias-sprint}
+
+{\setlength{\tabcolsep}{4pt}\footnotesize
+\begin{longtable}{@{}p{0.11\textwidth}p{0.32\textwidth}p{0.45\textwidth}@{}}
+\caption{Resumen de evidencias por sprint}
+\label{tab:evidencias-sprint}\\
+\textbf{Sprint} & \textbf{Objetivo} & \textbf{Evidencia generada} \\
+\hline
+Sprint 1 & MVP local backend. & Endpoints funcionales, modelo de dominio, pruebas iniciales y ejecución local. \\
+Sprint 2 & Base Terraform y red AWS. & Estructura de módulos, remote state, VPC, subredes, NAT y grupos de seguridad. \\
+Sprint 3 & Runtime cloud planificado. & ECR, RDS, ECS, ALB, Route 53, ACM, Secrets Manager y CloudWatch definidos. \\
+Sprint 4 & Primer despliegue real. & Imagen en ECR, migraciones ECS, servicio estable, HTTPS y login admin. \\
+Sprint 5 & CI/CD con OIDC. & Workflows de validación y despliegue manual sin claves AWS persistentes. \\
+Sprint 6 & Observabilidad y hardening. & Logging JSON, correlation id, dashboard, alarmas, circuit breaker y DNS/HTTPS corregido. \\
+Sprint 7 & Rollback, restore y tuning. & Rollback a tag bueno, fallo con tag inexistente, restore RDS temporal y Docker hardening. \\
+Sprint 8 & Seguridad, coste y runbooks. & Auditoría de postura, recreate-from-scratch, coste documentado y destroy audit. \\
+Sprint 9 & Cierre documental. & Trazabilidad, índice final de evidencias, guion de demo y memoria final. \\
+\end{longtable}
+}
+
+\section{Relación entre evidencia y defensa}
+\label{sec:anexo-defensa}
+
+Las evidencias se agrupan en tres niveles. El primer nivel corresponde a evidencias locales: tests automatizados, build Docker, usuario no root y validación de Terraform. Estas pruebas demuestran que el repositorio es coherente y que el sistema puede construirse sin depender de AWS.
+
+El segundo nivel corresponde a evidencias cloud: Terraform apply, imagen ECR, migración ECS, servicio estable, health HTTPS, login, logs correlados, dashboard, alarmas, rollback y restore. Estas evidencias demuestran que el proyecto no se queda en diseño teórico y que se ejecutó sobre servicios reales.
+
+El tercer nivel corresponde a evidencias de cierre: destroy final, state vacío, ausencia de recursos costosos, coste revisado y recursos persistentes justificados. Este nivel es importante porque una arquitectura cloud académica no debe ignorar el gasto ni dejar recursos activos por descuido.
+
+Durante la defensa, estas evidencias permiten recorrer el proyecto desde requisitos hasta operación. Un posible guion consiste en explicar primero el problema y el alcance, después enseñar la arquitectura y el flujo de despliegue, luego validar una petición con correlation id y finalmente mostrar rollback, restore y destroy como pruebas de madurez operativa.
+
+\section{Capturas incorporadas}
+\label{sec:anexo-capturas-incorporadas}
+
+La memoria incorpora capturas reales de las validaciones cloud y de las auditorías finales. Las evidencias principales incluyen:
+
+\begin{itemize}
+  \item Servicio ECS estable con una tarea en ejecución.
+  \item Certificado ACM en estado \texttt{Issued}.
+  \item Route 53 con el registro del subdominio y validación ACM.
+  \item Dashboard CloudWatch.
+  \item Consulta de logs por \httpheader{X-Correlation-ID}.
+  \item Publicación en ECR, task definition activa y readiness HTTPS.
+  \item Prueba de restore RDS.
+  \item Auditoría de seguridad Sprint 8.
+  \item Cost Explorer durante recreación temporal.
+  \item Auditoría post-destroy.
+\end{itemize}
+
+Estas capturas permiten defender el recorrido completo: despliegue, operación, observabilidad, recuperación, coste y cierre del entorno.

@@ -9,31 +9,25 @@ El anteproyecto firmado se conserva en el repositorio de la memoria como referen
 \section{Evidencias técnicas}
 \label{sec:anexo-evidencias}
 
-Las siguientes evidencias deberían incorporarse como capturas o anexos finales antes de la entrega:
+Las siguientes evidencias quedan incorporadas en la memoria o documentadas como soporte operativo del repositorio:
 
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.40\textwidth}>{\raggedright\arraybackslash}p{0.50\textwidth}@{}}
-\caption{Capturas recomendadas para la memoria}
-\label{tab:capturas-recomendadas}\\
-\textbf{Archivo sugerido} & \textbf{Contenido recomendado} \\
+\begin{longtable}{@{}>{\raggedright\arraybackslash\footnotesize}p{0.46\textwidth}>{\raggedright\arraybackslash}p{0.44\textwidth}@{}}
+\caption{Capturas y evidencias incorporadas}
+\label{tab:capturas-incorporadas}\\
+\textbf{Archivo o evidencia} & \textbf{Contenido} \\
 \hline
-\path{imaxes/aws-ecs-service-sprint6.png} & Servicio ECS \path{transitops-dev-api-svc} mostrando estado \texttt{ACTIVE}, desired \texttt{1} y running \texttt{1} durante la validación de Sprint 6. \\
-\path{imaxes/aws-target-group-healthy.png} & Target group del ALB mostrando la tarea ECS como \texttt{healthy} usando \path{/api/v1/health/ready}. \\
-\path{imaxes/aws-alb-listeners-https.png} & Listeners del ALB con puerto \texttt{80} redirigiendo a HTTPS y puerto \texttt{443} usando el certificado ACM, en la recreación con \texttt{enable\_https = true}. \\
-\path{imaxes/aws-acm-issued.png} & Certificado ACM de \path{api.dev.transitops.net} en estado \texttt{Issued}. \\
-\path{imaxes/aws-route53-records.png} & Hosted zone \path{transitops.net} con registro \path{api.dev.transitops.net} y CNAME de validación ACM. \\
-\path{imaxes/aws-cloudwatch-dashboard.png} & Dashboard CloudWatch \path{transitops-dev-api} con widgets de ALB, ECS, RDS y logs recientes. \\
-\path{imaxes/aws-cloudwatch-alarms.png} & Lista de las 9 alarmas \path{transitops-dev-api-*} creadas por Terraform. \\
-\path{imaxes/aws-cloudwatch-correlation-log.png} & Consulta de CloudWatch Logs Insights filtrando por un \texttt{CorrelationId}, por ejemplo \path{sprint6-login-final}. \\
-\path{imaxes/aws-ecr-image-sprint6.png} & Repositorio ECR \path{transitops/api} mostrando la imagen \path{sprint6-local-6bb910c}. \\
-\path{imaxes/health-ready-sprint6.png} & Salida de terminal o navegador mostrando \path{/api/v1/health/ready} con respuesta \texttt{200} y header \texttt{X-Correlation-ID}. \\
-\path{imaxes/login-admin-sprint6.png} & Respuesta \texttt{200} de login administrador en cloud con JWT y correlación de petición. \\
-\path{imaxes/github-actions-deploy.png} & Ejecución verde del workflow \path{deploy-dev.yml}, cuando se ejecute desde GitHub Actions. \\
-\path{imaxes/github-actions-rollback.png} & Ejecución del workflow \path{rollback-dev.yml} con un tag conocido y readiness \texttt{200}. \\
-\path{imaxes/terraform-no-changes.png} & Salida de \texttt{terraform plan} indicando que la infraestructura no tiene cambios pendientes antes del cierre de coste. \\
-\path{imaxes/security-posture-audit.png} & Ejecución de \path{Test-Sprint8AwsPosture.ps1} validando RDS privado, ECS sin IP pública, security groups esperados y permisos principales. \\
-\path{imaxes/rds-restore-test.png} & Snapshot manual, base temporal restaurada y task ECS \path{--migrate-only} con exit code \texttt{0}. \\
-\path{imaxes/aws-cost-review.png} & Vista de coste por servicio durante una recreación temporal del entorno \texttt{dev}. \\
-\path{imaxes/terraform-destroy-empty-state.png} & Evidencia posterior a \texttt{terraform destroy}: state vacío y ausencia de ALB, RDS, ECS, ECR, ACM, registros DNS del subdominio, logs, dashboard, alarmas y secretos del entorno \texttt{dev}. \\
+\path{imaxes/route53-dns-evidence.png} & Hosted zone \path{transitops.net}, nameservers delegados y registro \endpoint{api.dev.transitops.net}. \\
+\path{imaxes/acm-issued.png} & Certificado ACM de \endpoint{api.dev.transitops.net} en estado \texttt{ISSUED}. \\
+\path{imaxes/deploy-cloud-evidence.png} & Imagen en ECR, servicio ECS estable y readiness HTTPS \texttt{200}. \\
+\path{imaxes/rollback-tag-evidence.png} & Task definition activa apuntando al tag operativo validado. \\
+\path{imaxes/recreate-terraform-outputs.png} & Outputs de Terraform tras recrear \texttt{dev}. \\
+\path{imaxes/rollback-restore-evidence.png} & Rollback automático y restore RDS con migración terminada correctamente. \\
+\path{imaxes/cloudwatch-logs-correlation.png} & Petición readiness y log JSON correlado en CloudWatch. \\
+\path{imaxes/cloudwatch-dashboard.png} & Dashboard CloudWatch \path{transitops-dev-api}. \\
+\path{imaxes/security-review.png} & Ejecución de \path{Test-Sprint8AwsPosture.ps1}. \\
+\path{imaxes/cloud-smoke-evidence.png} & ECS \texttt{1/1} y readiness HTTPS \texttt{200}. \\
+\path{imaxes/cost-review.png} & Vista de coste por servicio durante una recreación temporal del entorno \texttt{dev}. \\
+\path{imaxes/destroy-audit.png} & Auditoría posterior a \texttt{terraform destroy} con ausencia de recursos efímeros. \\
 \end{longtable}
 
-Estas capturas no se incluyen todavía para evitar referenciar ficheros inexistentes en LaTeX. La memoria contiene placeholders descriptivos en las secciones donde esas evidencias aportan más valor; cuando se incorporen las imágenes reales, deberán sustituirse los placeholders por \texttt{\textbackslash includegraphics} o mantenerse como anexo de evidencias. El índice operativo de evidencias queda además documentado en \path{docs/FinalEvidence.md}.
+El índice operativo de evidencias queda además documentado en \path{docs/FinalEvidence.md}, junto con las rutas y comandos que permiten reproducir las comprobaciones principales.

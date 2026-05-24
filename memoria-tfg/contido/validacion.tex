@@ -43,17 +43,17 @@ Los resultados técnicos obtenidos en la validación cloud son:
 
 \begin{itemize}
   \item Endpoint de validación Sprint 6: DNS público del ALB registrado como evidencia operativa.
-  \item Endpoint objetivo DNS/HTTPS: \url{https://api.dev.transitops.net}, gestionado por Route 53 y ACM cuando el entorno se recrea con \texttt{enable\_https = true}.
+  \item Endpoint objetivo DNS/HTTPS: \endpoint{https://api.dev.transitops.net}, gestionado por Route 53 y ACM cuando el entorno se recrea con HTTPS activo.
   \item Health check Sprint 6: \texttt{GET} \path{/api/v1/health/ready} devuelve \texttt{200}.
-  \item Certificado ACM: validación DNS corregida en la cuenta \texttt{661000947340}; el certificado para \path{api.dev.transitops.net} llegó a estado \texttt{ISSUED} antes del destroy.
+  \item Certificado ACM: validación DNS corregida en la cuenta \texttt{661000947340}; el certificado para \endpoint{api.dev.transitops.net} llegó a estado \texttt{ISSUED} antes del destroy.
   \item Servicio ECS: \texttt{ACTIVE}, \texttt{desired = 1}, \texttt{running = 1}.
-  \item Imagen ECR desplegada en Sprint 6: \path{sprint6-local-6bb910c}.
-  \item Task definition desplegada: \path{transitops-dev-api:3}.
-  \item Tarea ECS de migración: \path{345ae53d1340475aa94a826328404998}, finalizada con código \texttt{0}.
+  \item Imagen ECR desplegada en Sprint 6: tag operativo \tech{sprint6-local-6bb910c}.
+  \item Task definition desplegada: revisión \tech{transitops-dev-api:3}.
+  \item Tarea ECS de migración finalizada con código \texttt{0}.
   \item Bootstrap de administrador: respuesta \texttt{201}.
   \item Login administrador: respuesta \texttt{200} con \acrshort{jwt}.
-  \item Header de correlación: \texttt{X-Correlation-ID} presente en health, errores y login.
-  \item CloudWatch Logs: entradas JSON filtrables por \texttt{State.CorrelationId}, incluyendo \path{sprint6-login-final}.
+  \item Header de correlación: \httpheader{X-Correlation-ID} presente en health, errores y login.
+  \item CloudWatch Logs: entradas JSON filtrables por \tech{State.CorrelationId}, incluyendo la petición \tech{sprint6-login-final}.
   \item Observabilidad: dashboard CloudWatch, log group de la API y 9 alarmas creadas por Terraform.
   \item SNS: en Sprint 6 no se creó topic al no estar configurado \texttt{alarm\_email}; en las recreaciones posteriores se configuró \path{pablomlopez03@gmail.com} y la suscripción quedó en \texttt{PendingConfirmation}, estado esperado hasta confirmar el correo.
   \item Cierre de coste: \texttt{terraform destroy} eliminó los recursos del entorno \texttt{dev}; el state quedó vacío.
@@ -64,34 +64,28 @@ Estos resultados demuestran que el sistema no solo compila, sino que se ejecuta 
 \section{Validación Sprint 7}
 \label{sec:validacion-sprint7}
 
-Sprint 7 añadió una validación real de fiabilidad sobre la cuenta AWS \texttt{661000947340}, en la región \texttt{eu-west-1}. La imagen buena publicada en ECR fue \path{sprint7-good-3dca035}, con digest \path{sha256:be2cf29b22971853c5dd003912d954aa09daea5094481ce5aa29b06039ec4bbb}. La tarea ECS de migración \path{1ec56ac77fbb4142a380b9e4881e3d24} terminó con exit code \texttt{0}, el servicio quedó en \texttt{desired = 1} y \texttt{running = 1}, y la task definition activa fue \path{transitops-dev-api:4}.
+Sprint 7 añadió una validación real de fiabilidad sobre la cuenta AWS \texttt{661000947340}, en la región \texttt{eu-west-1}. La imagen buena publicada en ECR fue \tech{sprint7-good-3dca035}. La tarea ECS de migración terminó con exit code \texttt{0}, el servicio quedó en \texttt{desired = 1} y \texttt{running = 1}, y la task definition activa fue \tech{transitops-dev-api:4}. Los identificadores completos de tarea y digest quedan recogidos en la documentación operativa para no sobrecargar el cuerpo de la memoria.
 
 Las comprobaciones principales fueron:
 
 \begin{itemize}
-  \item Readiness HTTPS: \texttt{GET} \url{https://api.dev.transitops.net/api/v1/health/ready} con respuesta \texttt{200} y correlation id \path{sprint7-health-good}.
-  \item Bootstrap de administrador: respuesta \texttt{201} con correlation id \path{sprint7-bootstrap-good}.
-  \item Login administrador: respuesta \texttt{200} con correlation id \path{sprint7-login-good}.
-  \item Observabilidad: log group \path{/aws/ecs/transitops/dev/api}, dashboard \path{transitops-dev-api}, 9 alarmas CloudWatch y logs JSON filtrables por \path{State.CorrelationId}.
+  \item Readiness HTTPS: \texttt{GET} sobre la ruta de readiness con respuesta \texttt{200} y correlation id \tech{sprint7-health-good}.
+  \item Bootstrap de administrador: respuesta \texttt{201} con correlation id \tech{sprint7-bootstrap-good}.
+  \item Login administrador: respuesta \texttt{200} con correlation id \tech{sprint7-login-good}.
+  \item Observabilidad: log group de la API, dashboard \tech{transitops-dev-api}, 9 alarmas CloudWatch y logs JSON filtrables por \tech{State.CorrelationId}.
   \item SNS: topic y suscripción para \path{pablomlopez03@gmail.com}; la suscripción quedó en \texttt{PendingConfirmation}, estado esperado hasta confirmar el correo.
-  \item Validación Docker local: build correcto y usuario no root en runtime, verificado con \texttt{id} devolviendo \path{uid=1654(app)}.
+  \item Validación Docker local: build correcto y usuario no root en runtime, verificado con \texttt{id}.
 \end{itemize}
 
-La prueba de rollback usó el tag inexistente \path{sprint7-missing-3dca035}. ECS creó la tarea \path{cc06e30b1b7e42eab5aaae55e4155427}, que falló con \texttt{CannotPullContainerError} al no existir el manifiesto de imagen en ECR. Después se reaplicó Terraform con \path{sprint7-good-3dca035} y el endpoint de readiness volvió a responder \texttt{200}, con correlation id \path{sprint7-health-after-bad-image}.
+La prueba de rollback usó el tag inexistente \tech{sprint7-missing-3dca035}. ECS creó una tarea que falló con \texttt{CannotPullContainerError} al no existir el manifiesto de imagen en ECR. Después se reaplicó Terraform con \tech{sprint7-good-3dca035} y el endpoint de readiness volvió a responder \texttt{200}, con correlation id \tech{sprint7-health-after-bad-image}.
 
-La prueba de restore de RDS creó un snapshot manual \path{transitops-dev-db-sprint7-restore-test}, restauró la instancia temporal \path{transitops-dev-db-restore-sprint7}, creó un secreto temporal de conexión y ejecutó una tarea ECS \path{--migrate-only} contra la base restaurada. La tarea \path{7f53d7309acf42349137213deca05080}, basada en la task definition temporal \path{transitops-dev-api-restore-sprint7:2}, terminó con exit code \texttt{0}. Durante esta validación se detectó una mejora real: el secreto temporal también necesita permiso \path{secretsmanager:GetSecretValue} en el execution role de ECS. El script fue corregido para añadir y eliminar una política IAM temporal como parte de la prueba.
+La prueba de restore de RDS creó un snapshot manual, restauró una instancia temporal, creó un secreto temporal de conexión y ejecutó una tarea ECS \path{--migrate-only} contra la base restaurada. La task definition temporal \tech{transitops-dev-api-restore-sprint7:2} terminó con exit code \texttt{0}. Durante esta validación se detectó una mejora real: el secreto temporal también necesita permiso \tech{secretsmanager:GetSecretValue} en el execution role de ECS. El script fue corregido para añadir y eliminar una política IAM temporal como parte de la prueba.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Smoke test HTTPS de Sprint 7 mostrando \path{/api/v1/health/ready = 200}, bootstrap \texttt{201}, login administrador \texttt{200} y cabeceras \texttt{X-Correlation-ID} con los valores \path{sprint7-health-good}, \path{sprint7-bootstrap-good} y \path{sprint7-login-good}.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia de smoke test cloud Sprint 7.}
-\label{fig:placeholder-sprint7-smoke}
+\includegraphics[width=0.92\textwidth]{imaxes/cloud-smoke-evidence}
+\caption{Evidencia de servicio cloud operativo: ECS estable y readiness HTTPS con respuesta 200.}
+\label{fig:cloud-smoke-evidence}
 \end{figure}
 
 \section{Evidencia de cierre de coste}
@@ -105,7 +99,7 @@ Tras Sprint 7 se repitió el cierre con la mejora \texttt{ecr\_force\_delete = t
   \item \texttt{terraform state list} no devolvía recursos.
   \item No quedaban ALB, RDS, ECS ni ECR asociados a \path{transitops-dev}.
   \item El NAT Gateway aparecía en estado \texttt{deleted}.
-  \item No quedaban certificados ACM ni registros Route 53 de \path{api.dev.transitops.net}.
+  \item No quedaban certificados ACM ni registros Route 53 de \endpoint{api.dev.transitops.net}.
   \item No quedaban log groups, dashboard, alarmas, snapshots temporales ni secretos del entorno \texttt{dev}.
 \end{itemize}
 
@@ -114,9 +108,9 @@ Permanecen fuera de este destroy el dominio registrado \path{transitops.net}, su
 \section{Validación Sprint 8}
 \label{sec:validacion-sprint8}
 
-Sprint 8 completa la validación operativa con dos scripts de auditoría y un conjunto de runbooks. La recreación real partió de un state vacío, creó \texttt{72} recursos con ECS a cero tareas, publicó la imagen \path{sprint8-good-fdf98b9} con digest \path{sha256:39fb9a78726912414acbdb1af2f27e59c4ea8552b0a023a4ceab51ef74fdd6bd}, cargó secretos runtime y ejecutó la tarea ECS de migración \path{cc374ade9c144745bd7566fb9289ffe3} con exit code \texttt{0}. Después se escaló el servicio a \texttt{desired = 1} y \texttt{running = 1}, usando la task definition \path{transitops-dev-api:9}.
+Sprint 8 completa la validación operativa con dos scripts de auditoría y un conjunto de runbooks. La recreación real partió de un state vacío, creó \texttt{72} recursos con ECS a cero tareas, publicó la imagen \tech{sprint8-good-fdf98b9}, cargó secretos runtime y ejecutó la tarea ECS de migración con exit code \texttt{0}. Después se escaló el servicio a \texttt{desired = 1} y \texttt{running = 1}, usando la task definition \tech{transitops-dev-api:9}.
 
-La validación funcional confirmó readiness HTTPS \texttt{200} con correlation id \path{sprint8-health}, bootstrap de administrador \texttt{201} con \path{sprint8-bootstrap} y login \texttt{200} con \path{sprint8-login}. CloudWatch contenía logs JSON filtrables por ese identificador, el dashboard \path{transitops-dev-api}, 9 alarmas, topic SNS y suscripción de email en estado \texttt{PendingConfirmation}. Antes de destruir, \texttt{terraform plan -detailed-exitcode} no mostró cambios pendientes.
+La validación funcional confirmó readiness HTTPS \texttt{200} con correlation id \tech{sprint8-health}, bootstrap de administrador \texttt{201} con \tech{sprint8-bootstrap} y login \texttt{200} con \tech{sprint8-login}. CloudWatch contenía logs JSON filtrables por ese identificador, el dashboard \tech{transitops-dev-api}, 9 alarmas, topic SNS y suscripción de email en estado \texttt{PendingConfirmation}. Antes de destruir, \texttt{terraform plan -detailed-exitcode} no mostró cambios pendientes.
 
 La auditoría de seguridad verificó que RDS no era público, ECS no tenía IP pública, los grupos de seguridad mantenían el flujo Internet--ALB--ECS--RDS, los secretos runtime existían en Secrets Manager y el rol de aplicación no contenía políticas inline. El rol OIDC de despliegue conserva permisos amplios para ejecutar Terraform en \texttt{dev}; se documenta como riesgo aceptado porque la trust policy queda limitada al repositorio y rama configurados.
 
@@ -124,28 +118,16 @@ También se revisa el coste del entorno. Los recursos que generan coste mientras
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Cost Explorer o vista de recursos AWS mostrando los servicios con coste temporal durante Sprint 8: NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager y ECR.
-\vspace{1.2cm}
-\end{minipage}}
+\includegraphics[width=0.92\textwidth]{imaxes/cost-review}
 \caption{Evidencia de revisión de coste Sprint 8.}
-\label{fig:placeholder-sprint8-cost-review}
+\label{fig:sprint8-cost-review}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Ejecución de \path{Test-Sprint8DestroyAudit.ps1} después del destroy mostrando state vacío y ausencia de ECS, RDS, ECR, ALB, ACM, registros \path{api.dev}, CloudWatch, secretos runtime y snapshots manuales del stack \path{transitops-dev}.
-\vspace{1.2cm}
-\end{minipage}}
+\includegraphics[width=0.92\textwidth]{imaxes/destroy-audit}
 \caption{Evidencia de auditoría post-destroy Sprint 8.}
-\label{fig:placeholder-sprint8-destroy-audit}
+\label{fig:sprint8-destroy-audit}
 \end{figure}
 
 \section{Análisis de limitaciones}
@@ -158,7 +140,7 @@ Las principales limitaciones son:
   \item El entorno desplegado es \texttt{dev}, no una arquitectura productiva multi-entorno completa.
   \item No se han implementado políticas de autoscaling ni pruebas de carga.
   \item La observabilidad cubre logs JSON, correlación, dashboard y alarmas básicas, pero no incluye trazas distribuidas ni APM completo.
-  \item La memoria utiliza placeholders descriptivos para varias capturas; las evidencias técnicas están registradas en documentación, pero las imágenes finales deben incorporarse si se desea una entrega visual completa.
+  \item La evidencia visual incorporada cubre despliegue, DNS/HTTPS, observabilidad, rollback, restore, coste y auditoría post-destroy.
   \item Algunas políticas IAM son prácticas para el sprint actual y pueden afinarse más en fases posteriores.
 \end{itemize}
 
@@ -171,7 +153,7 @@ Los documentos principales de cierre son:
 
 \begin{itemize}
   \item \path{docs/RequirementsTraceability.md}: matriz FR/NFR frente a implementación, verificación y evidencia.
-  \item \path{docs/FinalEvidence.md}: índice de evidencias reales y placeholders exactos de capturas.
+  \item \path{docs/FinalEvidence.md}: índice de evidencias reales y capturas incorporadas.
   \item \path{docs/FinalVerification.md}: checklist local, ruta opcional de recreación AWS y guion de defensa técnica.
 \end{itemize}
 

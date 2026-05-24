@@ -1,0 +1,84 @@
+\chapter{Marco tecnológico}
+\label{chap:marco-tecnologico}
+
+\section{Backend API y arquitectura de servicios}
+\label{sec:marco-backend-api}
+
+El proyecto se apoya en una arquitectura backend centrada en una API REST. Esta elección encaja con el objetivo del trabajo por varias razones. En primer lugar, una API HTTP permite separar claramente el contrato público del sistema de su implementación interna. En segundo lugar, facilita la validación mediante herramientas estándar como Postman, Newman, \texttt{curl} o pruebas de integración. Por último, permite desplegar el servicio detrás de un balanceador de carga y tratar la aplicación como una unidad \gls{stateless}, lo que simplifica el despliegue sobre contenedores.
+
+ASP.NET Core proporciona el modelo de ejecución HTTP, el sistema de inyección de dependencias, la configuración por entornos, el soporte para middlewares y la integración con autenticación JWT. En TransitOps se usa de forma deliberadamente contenida: la solución no introduce una arquitectura distribuida ni varios microservicios porque el dominio funcional no lo requiere. El interés principal está en demostrar que un backend monolítico, bien estructurado y desplegado correctamente, puede alcanzar una calidad operativa suficiente para un entorno cloud real.
+
+El diseño de la API sigue una separación por responsabilidades: controladores para recibir peticiones, contratos para definir entradas y salidas, servicios de aplicación para coordinar casos de uso, entidades de dominio para representar reglas centrales e infraestructura para persistencia. Esta estructura permite razonar sobre el sistema sin imponer capas artificiales. En un proyecto académico de alcance acotado, una división excesiva en proyectos o servicios habría añadido coste de mantenimiento sin aportar evidencia técnica relevante.
+
+El uso de HTTP también facilita definir criterios de aceptación observables. Un endpoint de salud debe responder con un código concreto; un login válido debe devolver un token; una operación protegida debe rechazar al usuario no autorizado; un error de validación debe devolver un estado coherente. Estos comportamientos se pueden automatizar en pruebas y repetir tanto en local como en AWS.
+
+\section{Persistencia relacional y migraciones}
+\label{sec:marco-persistencia}
+
+TransitOps utiliza PostgreSQL como base de datos relacional~\cite{PostgreSqlDocs}. El dominio del proyecto incluye usuarios, transportes, vehículos, conductores, asignaciones y eventos. Estas entidades presentan relaciones claras y restricciones de consistencia que encajan bien con un modelo relacional. Por ejemplo, un evento logístico pertenece a un transporte, un transporte puede tener asignados un vehículo y un conductor, y determinadas referencias deben ser únicas entre registros activos.
+
+El uso de Entity Framework Core permite modelar estas entidades desde el código .NET y mantener el esquema mediante migraciones versionadas. La migración no se trata como un paso manual improvisado, sino como parte del ciclo de vida del sistema. En local puede ejecutarse de forma automática al arrancar el entorno de desarrollo, mientras que en AWS se ejecuta como tarea ECS puntual mediante el modo \path{--migrate-only}. Esta separación evita mezclar el arranque del servicio web con cambios de esquema en producción o en entornos compartidos.
+
+La decisión de usar migraciones también aporta trazabilidad. Cada cambio de esquema queda registrado en el repositorio y puede revisarse junto al código que lo necesita. Esto reduce el riesgo de que el estado de la base de datos dependa de instrucciones manuales no documentadas. Además, permite validar que una base restaurada desde snapshot puede aceptar las migraciones pendientes, como se comprobó en Sprint 7 con la prueba de restore sobre una instancia temporal.
+
+PostgreSQL aporta restricciones a nivel de base de datos que complementan la validación de aplicación. En TransitOps se usan índices únicos condicionados por borrado lógico, tipos enteros para estados controlados y relaciones entre tablas. La aplicación sigue siendo responsable de expresar reglas de negocio y devolver errores comprensibles, pero la base de datos actúa como última línea de defensa para la integridad persistente.
+
+\section{Contenedores y reproducibilidad}
+\label{sec:marco-contenedores}
+
+Docker se utiliza para empaquetar la API y para reproducir el entorno local~\cite{DockerDocs}. Esta decisión responde a una necesidad práctica: reducir diferencias entre la máquina de desarrollo, el pipeline de integración y el entorno cloud. La imagen Docker define el runtime necesario para ejecutar la aplicación, instala únicamente dependencias imprescindibles y configura el proceso para escuchar en el puerto esperado por ECS.
+
+En local, Docker Compose levanta la API y PostgreSQL con una configuración controlada. Esto permite ejecutar pruebas de humo contra una API viva sin instalar manualmente la base de datos ni depender de servicios externos. Para el proyecto, esta capacidad es importante porque conecta el desarrollo backend con la ejecución cloud: se valida el comportamiento dentro de contenedor antes de publicar una imagen en ECR.
+
+La imagen de la API se endureció durante Sprint 7. El contenedor se ejecuta con usuario no root, expone únicamente el puerto necesario y usa una imagen base de runtime en lugar de una imagen completa de SDK. También se añadió un fichero \path{.dockerignore} para evitar enviar al daemon de Docker carpetas de compilación, metadatos de Git, directorios de Terraform, ficheros locales y artefactos pesados de documentación. Esta mejora no cambia la funcionalidad, pero reduce superficie accidental y acelera el proceso de build.
+
+El etiquetado de imágenes es parte de la trazabilidad del despliegue. En los sprints cloud se usaron tags operativos como \tech{sprint6-local-6bb910c}, \tech{sprint7-good-3dca035} o \tech{sprint8-good-fdf98b9}. Estos tags permiten explicar qué versión de la API se ejecutó en cada validación y facilitan el rollback a una imagen conocida. La imagen no es solo un artefacto técnico, sino una pieza de evidencia del flujo de entrega.
+
+\section{Infraestructura como código}
+\label{sec:marco-iac}
+
+Terraform se utiliza para definir la infraestructura AWS. Frente a una configuración manual desde consola, la infraestructura como código ofrece varias ventajas: versionado, revisión de cambios, reproducibilidad, posibilidad de destrucción controlada y documentación ejecutable de la arquitectura. En TransitOps, esta decisión es central porque el objetivo no es únicamente tener una API funcionando, sino poder recrear el entorno \texttt{dev} desde cero con pasos defendibles.
+
+El proyecto separa módulos reutilizables y raíz de entorno. Los módulos encapsulan piezas como red, registro de contenedores, base de datos, runtime ECS, configuración, observabilidad y OIDC de GitHub. La raíz \path{environments/dev} decide qué módulos se usan y con qué variables. Esta estructura permite mantener el entorno de desarrollo concreto sin duplicar lógica de infraestructura.
+
+El estado remoto se almacena en S3 y se bloquea mediante DynamoDB. Este punto es importante porque Terraform necesita conocer qué recursos gestiona. Si el estado se quedase únicamente en local, sería fácil perderlo, divergir entre máquinas o aplicar cambios concurrentes. El backend remoto hace que la infraestructura sea más reproducible y reduce el riesgo de errores humanos durante los sprints de validación.
+
+El uso de Terraform también hace explícitos los tradeoffs del entorno \texttt{dev}. Por ejemplo, se mantiene \texttt{desired\_count = 0} cuando se desea crear infraestructura sin arrancar todavía la API, se desactivan backups automáticos de RDS para evitar coste recurrente, se permite borrar ECR con imágenes en desarrollo y se destruye el stack al terminar cada validación. Estas decisiones no serían tan visibles si los recursos se creasen manualmente.
+
+\section{AWS como plataforma de despliegue}
+\label{sec:marco-aws}
+
+AWS se utiliza como plataforma cloud porque ofrece servicios gestionados que cubren las necesidades del proyecto sin obligar a administrar servidores. ECS Fargate ejecuta contenedores sin gestionar instancias EC2; ECR almacena imágenes Docker; RDS PostgreSQL ofrece base de datos gestionada; \acrshort{alb} expone la API; Route 53 y ACM resuelven el dominio y el certificado \acrshort{tls}; CloudWatch centraliza logs, métricas y alarmas; Secrets Manager y \acrshort{ssm} Parameter Store almacenan configuración sensible y parámetros~\cite{AwsEcsDocs,AwsRdsDocs,AwsAlbDocs,AwsRoute53Docs,AwsAcmDocs,AwsCloudWatchDocs,AwsSecretsManagerDocs,AwsSystemsManagerDocs}.
+
+La arquitectura desplegada sigue un patrón habitual para APIs web: balanceador público en subredes públicas, servicio ECS en subredes privadas y base de datos en subredes privadas de datos. El tráfico permitido queda limitado a Internet hacia ALB, ALB hacia ECS y ECS hacia RDS. De este modo, la API se expone por HTTPS, pero la tarea de aplicación y la base de datos no quedan directamente accesibles desde Internet.
+
+ECS Fargate encaja con el alcance del trabajo porque evita gestionar clústeres de máquinas. La unidad operativa pasa a ser la task definition: qué imagen ejecutar, qué variables y secretos inyectar, qué recursos reservar, qué puerto exponer y cómo enviar logs. El servicio ECS mantiene el número deseado de tareas y se integra con el target group del ALB para recibir tráfico solo cuando la ruta de readiness responde correctamente.
+
+RDS aporta una base de datos gestionada que simplifica operación. Aun así, el proyecto no ignora la recuperación: Sprint 7 añadió una prueba real de snapshot manual, restauración temporal y migración contra la base restaurada. Esto demuestra que la decisión de desactivar backups recurrentes en \texttt{dev} es una optimización de coste para un entorno efímero, no una ausencia de criterio sobre protección de datos.
+
+\section{CI/CD y entrega controlada}
+\label{sec:marco-cicd}
+
+GitHub Actions se usa para validar y desplegar de forma manual~\cite{GithubActionsDocs}. La ejecución manual es intencionada: durante el desarrollo del TFG se prioriza capturar evidencias controladas y evitar despliegues accidentales. El pipeline automatiza pasos repetibles como restaurar dependencias, compilar, ejecutar tests, construir imagen Docker, publicar en ECR, aplicar Terraform, ejecutar migraciones, escalar ECS y validar health/login.
+
+El acceso a AWS desde GitHub se diseña mediante \acrshort{oidc}. Esto evita almacenar claves AWS permanentes como secretos de larga duración. El workflow obtiene un token federado y asume un rol \acrshort{iam} limitado por la trust policy al repositorio y rama configurados. En Sprint 8 se documentó que el rol mantiene permisos amplios sobre los servicios gestionados por Terraform para poder aplicar y destruir el entorno \texttt{dev}; se acepta como riesgo controlado para un entorno académico y efímero.
+
+El pipeline no sustituye a Terraform como fuente de verdad. Cuando se despliega o se hace rollback, el workflow modifica variables como el tag de imagen y reaplica infraestructura. Esto evita cambios manuales directos sobre ECS que quedarían fuera del estado. La operación queda trazada: la task definition activa se deriva de código, variables y estado Terraform.
+
+\section{Observabilidad mínima}
+\label{sec:marco-observabilidad}
+
+La observabilidad del proyecto se centra en tres elementos: salud, logs correlables y métricas/alarms gestionadas. La salud se expone mediante endpoints \path{/api/v1/health/live} y \path{/api/v1/health/ready}. El primero indica que el proceso responde; el segundo comprueba la conectividad con PostgreSQL. Esta distinción permite que el balanceador de carga tome decisiones más precisas sobre si una tarea está lista para recibir tráfico.
+
+Los logs se emiten en formato JSON y se envían a CloudWatch mediante el driver \texttt{awslogs}. El middleware de correlación añade o conserva el header \httpheader{X-Correlation-ID}, lo devuelve al cliente y lo usa como \texttt{TraceIdentifier}. De esta forma, un error observado desde una respuesta HTTP puede buscarse en CloudWatch con el mismo identificador. Para un entorno pequeño, esta capacidad aporta un valor operativo alto sin introducir una plataforma \acrshort{apm} completa.
+
+El módulo de observabilidad crea dashboard CloudWatch, alarmas sobre ALB/ECS/RDS y filtro métrico para errores de aplicación. Las alarmas usan tratamiento conservador de datos ausentes para reducir ruido cuando el entorno está destruido o con ECS a cero tareas. Esta decisión refleja el carácter efímero de \texttt{dev}: la observabilidad debe existir cuando el entorno está activo, pero no debe generar falsas incidencias cuando se ha destruido intencionadamente.
+
+\section{Seguridad y coste como restricciones de diseño}
+\label{sec:marco-seguridad-coste}
+
+La seguridad se aborda desde varias capas. A nivel de aplicación, se usan contraseñas con hash, autenticación JWT, autorización por roles y bootstrap protegido por token externo. A nivel de infraestructura, RDS no es público, ECS se ejecuta en subred privada, el ALB es el único punto de entrada y HTTPS se gestiona mediante ACM. A nivel de configuración, los secretos no se versionan y se consumen desde Secrets Manager o variables externas.
+
+El coste también condiciona la arquitectura. NAT Gateway, ALB, ECS Fargate, RDS y CloudWatch generan gasto mientras el entorno está activo. Por ello, el proyecto adopta una estrategia de entorno efímero: se recrea \texttt{dev} para validar, se captura evidencia y se destruye al cierre. Permanecen únicamente recursos base como dominio, hosted zone y backend remoto de Terraform. Esta forma de trabajar permite validar una arquitectura real sin dejar gasto innecesario durante semanas.
+
+La combinación de seguridad y coste produce decisiones concretas. Por ejemplo, se acepta no introducir WAF, autoscaling avanzado ni OpenTelemetry en los sprints finales porque ampliarían complejidad y coste sin ser necesarios para demostrar los objetivos. En cambio, sí se priorizan HTTPS, secretos externos, red privada, logs correlables, alarmas básicas, rollback, restore y runbooks, que aportan evidencia directa sobre la capacidad de operar el sistema.

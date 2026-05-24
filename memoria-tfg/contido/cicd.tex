@@ -47,7 +47,7 @@ GitHub Actions accede a AWS mediante OIDC y asume un rol IAM de despliegue espec
 {\small\path{transitops-dev-github-actions-deploy-role}}
 \end{center}
 
-No se utilizan claves AWS persistentes en GitHub. La reducción fina de permisos queda como mejora futura, pero el rol ya está limitado al repositorio y rama previstos.
+No se utilizan claves AWS persistentes en GitHub. El rol mantiene permisos amplios para operar Terraform sobre \texttt{dev}, pero su trust policy limita la asunción al repositorio y rama configurados.
 
 En Sprint 6 se amplió el workflow de despliegue para consumir variables de entorno relacionadas con observabilidad y DNS. La variable \texttt{ALARM\_EMAIL}, si existe en GitHub, se pasa a Terraform como \texttt{TF\_VAR\_alarm\_email} para crear una suscripción SNS de email. Cuando no se configura, Terraform crea las alarmas sin acciones de notificación, evitando depender de una dirección personal para que el entorno sea reproducible.
 
@@ -55,43 +55,25 @@ Después de aplicar infraestructura, el workflow captura outputs relevantes del 
 
 En Sprint 7 se añadió un flujo de rollback explícito. La operación no reconstruye la aplicación ni cambia el contrato HTTP: recibe un \texttt{api\_image\_tag} ya publicado en ECR y lo convierte en el tag deseado de la task definition mediante Terraform. Esto deja el rollback trazable en el state, evita cambios manuales sobre ECS y permite comprobar que la imagen activa coincide con el tag esperado.
 
-En Sprint 8 se cerró el camino de recreación completa del entorno \texttt{dev}. El procedimiento parte de un state vacío tras \texttt{terraform destroy}, aplica la plataforma con ECS a cero tareas, publica una imagen \path{sprint8-good-<sha>}, carga secretos de runtime, ejecuta migraciones con \path{--migrate-only}, escala ECS a una tarea y valida HTTPS, login y observabilidad. La ejecución real usó el tag \path{sprint8-good-fdf98b9} y la tarea de migración \path{cc374ade9c144745bd7566fb9289ffe3}, finalizada con exit code \texttt{0}. Este flujo convierte la reconstrucción del entorno en una operación documentada, no en una secuencia de pasos recordados de forma informal.
+En Sprint 8 se cerró el camino de recreación completa del entorno \texttt{dev}. El procedimiento parte de un state vacío tras \texttt{terraform destroy}, aplica la plataforma con ECS a cero tareas, publica una imagen con tag operativo, carga secretos de runtime, ejecuta migraciones con \path{--migrate-only}, escala ECS a una tarea y valida HTTPS, login y observabilidad. La ejecución real usó el tag \tech{sprint8-good-fdf98b9} y una tarea de migración finalizada con exit code \texttt{0}. Este flujo convierte la reconstrucción del entorno en una operación documentada, no en una secuencia de pasos recordados de forma informal.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Ejecución del workflow \path{deploy-dev.yml} mostrando build/test, push a ECR, Terraform, migración ECS, smoke test y verificación de observabilidad en verde.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia prevista del pipeline de despliegue completo.}
-\label{fig:placeholder-github-actions-deploy}
+\includegraphics[width=0.92\textwidth]{imaxes/deploy-cloud-evidence}
+\caption{Evidencia de despliegue cloud final: imagen publicada en ECR, servicio ECS estable y readiness HTTPS con respuesta 200.}
+\label{fig:deploy-cloud-evidence}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Ejecución del workflow \path{rollback-dev.yml} con un tag \path{sprint7-good-<sha>}, mostrando Terraform apply, espera de estabilidad ECS, comprobación de imagen y health check en verde.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia prevista del rollback manual a una imagen conocida.}
-\label{fig:placeholder-rollback-workflow}
+\includegraphics[width=0.92\textwidth]{imaxes/rollback-tag-evidence}
+\caption{Verificación de la task definition activa apuntando al tag operativo validado.}
+\label{fig:rollback-tag-evidence}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Recreación Sprint 8 de \texttt{dev}: Terraform apply con \texttt{ecs\_desired\_count = 0}, push de imagen \path{sprint8-good-<sha>}, tarea ECS \path{--migrate-only}, escalado a \texttt{1/1} y smoke test HTTPS.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia de recreate-from-scratch Sprint 8.}
-\label{fig:placeholder-sprint8-recreate}
+\includegraphics[width=0.92\textwidth]{imaxes/recreate-terraform-outputs}
+\caption{Outputs de Terraform tras la recreación del entorno dev, incluyendo ALB, DNS, ECS y task definition activa.}
+\label{fig:sprint8-recreate}
 \end{figure}

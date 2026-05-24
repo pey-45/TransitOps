@@ -16,11 +16,11 @@ Los logs del contenedor se envían a CloudWatch Logs mediante el driver \texttt{
 En Sprint 6 se sustituyó la salida de consola no estructurada por logging JSON mediante \texttt{AddJsonConsole}. La configuración incluye scopes, marcas temporales UTC y campos que CloudWatch puede filtrar. También se añadió un middleware de correlación de peticiones:
 
 \begin{itemize}
-  \item acepta \texttt{X-Correlation-ID} si el cliente lo proporciona;
+  \item acepta \httpheader{X-Correlation-ID} si el cliente lo proporciona;
   \item genera un identificador nuevo si el header no existe;
-  \item devuelve siempre \texttt{X-Correlation-ID} en la respuesta;
+  \item devuelve siempre \httpheader{X-Correlation-ID} en la respuesta;
   \item alinea \texttt{HttpContext.TraceIdentifier} con ese valor;
-  \item abre un scope de logging con \texttt{CorrelationId};
+  \item abre un scope de logging con \tech{CorrelationId};
   \item registra por petición método, ruta, código HTTP, duración, usuario y rol cuando existen.
 \end{itemize}
 
@@ -28,15 +28,9 @@ Esto permite seguir una petición concreta desde la respuesta HTTP hasta los log
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Consulta de CloudWatch Logs Insights filtrando por \texttt{State.CorrelationId = "sprint6-login-final"} y mostrando logs JSON de una petición de login.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia prevista de logs JSON correlables.}
-\label{fig:placeholder-cloudwatch-logs-correlation}
+\includegraphics[width=0.92\textwidth]{imaxes/cloudwatch-logs-correlation}
+\caption{Evidencia de petición readiness con identificador de correlación y log JSON correlable en CloudWatch.}
+\label{fig:cloudwatch-logs-correlation}
 \end{figure}
 
 Las métricas básicas de ECS, ALB y RDS quedan disponibles en CloudWatch como parte de los servicios gestionados. El módulo de observabilidad añade un dashboard \path{transitops-dev-api} con paneles para ALB, utilización de ECS, RDS y logs recientes. El dashboard no sustituye a una plataforma APM completa, pero ofrece una superficie operativa suficiente para un entorno \texttt{dev} defendible.
@@ -62,15 +56,9 @@ Las alarmas usan \texttt{treat\_missing\_data} conservador para reducir ruido cu
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Dashboard CloudWatch \path{transitops-dev-api} con widgets de ALB, ECS, RDS y logs recientes.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia prevista del dashboard operativo.}
-\label{fig:placeholder-cloudwatch-dashboard}
+\includegraphics[width=0.92\textwidth]{imaxes/cloudwatch-dashboard}
+\caption{Evidencia del dashboard operativo de TransitOps con métricas de ALB, ECS, RDS y logs recientes.}
+\label{fig:cloudwatch-dashboard}
 \end{figure}
 
 \section{Seguridad aplicada}
@@ -89,7 +77,7 @@ Las medidas de seguridad aplicadas son:
   \item ALB como único punto de entrada público.
   \item HTTPS mediante ACM y redirección HTTP a HTTPS.
   \item GitHub Actions con OIDC en lugar de claves AWS permanentes.
-  \item Correlación de errores y respuestas mediante \texttt{X-Correlation-ID}, evitando exponer trazas internas al cliente.
+  \item Correlación de errores y respuestas mediante \httpheader{X-Correlation-ID}, evitando exponer trazas internas al cliente.
 \end{itemize}
 
 \section{Limitaciones de seguridad}
@@ -108,13 +96,7 @@ En IAM se diferencian tres casos. El execution role de ECS puede leer únicament
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Ejecución del script \path{Test-Sprint8AwsPosture.ps1} mostrando RDS privado, ECS sin IP pública, grupos de seguridad esperados, secretos en Secrets Manager y advertencia documentada sobre el rol OIDC de Terraform.
-\vspace{1.2cm}
-\end{minipage}}
+\includegraphics[width=0.92\textwidth]{imaxes/security-review}
 \caption{Evidencia de revisión de seguridad Sprint 8.}
-\label{fig:placeholder-sprint8-security-review}
+\label{fig:sprint8-security-review}
 \end{figure}

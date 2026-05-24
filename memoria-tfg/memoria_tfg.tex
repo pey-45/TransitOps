@@ -28,6 +28,14 @@
 \usepackage{estilo_tfg}
 \setlength{\emergencystretch}{3em}
 
+% Keep inline URL/path text in the document's regular font family.
+\renewcommand{\UrlFont}{\rmfamily}
+\DeclareUrlCommand{\path}{\def\UrlFont{\rmfamily}}
+\DeclareRobustCommand{\tech}[1]{\textnormal{\textsf{\small #1}}}
+\DeclareRobustCommand{\endpoint}[1]{\begingroup\renewcommand{\UrlFont}{\rmfamily}\nolinkurl{#1}\endgroup}
+\DeclareRobustCommand{\httpheader}[1]{\textnormal{\textsf{\small #1}}}
+\renewcommand{\texttt}[1]{\textnormal{#1}}
+
 % Lista de paquetes potencialmente interesantes (uso baixo demanda)
 
 % \usepackage{alltt}       % proporciona o entorno alltt, semellante a verbatim pero que respecta comandos
@@ -56,17 +64,13 @@
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  \include{portada/portada}
- \dedicatoria{} % escribe neste comando o teu texto de dedicatoria
- \paxinaenbranco
  \begin{agradecementos}
- A mi familia, amistades y profesorado por el apoyo recibido durante el desarrollo de este trabajo. Este apartado se revisará antes de la entrega final para ajustar el tono personal de los agradecimientos.
+ A mi familia, amistades y profesorado por el apoyo recibido durante el desarrollo de este trabajo. Gracias por el apoyo, la paciencia y el acompañamiento durante todo el proceso.
  \end{agradecementos}
  \include{portada/resumo}
 
  \pagenumbering{roman}
  \setcounter{page}{1}
- \bstctlcite{IEEEexample:BSTcontrol}
-
  \tableofcontents
  \listoffigures
  \listoftables
@@ -81,13 +85,16 @@
 
  \include{contido/introduccion}
  \include{contido/contexto_objetivos}
+ \include{contido/marco_tecnologico}
  \include{contido/metodologia}
  \include{contido/requisitos}
  \include{contido/arquitectura}
+ \include{contido/diseno_detallado}
  \include{contido/implementacion_backend}
  \include{contido/infraestructura_despliegue}
  \include{contido/cicd}
  \include{contido/observabilidad_seguridad}
+ \include{contido/operacion_runbooks}
  \include{contido/validacion}
  \include{contido/conclusions}
 
@@ -98,6 +105,9 @@
  \appendix
  \appendixpage
  \include{anexos/adicional}
+ \include{anexos/trazabilidad}
+ \include{anexos/procedimientos}
+ \include{anexos/comparativa_referencias}
 %\include{anexos/...}
 
  \printglossary[type=\acronymtype,title=\nomeglosarioacronimos]

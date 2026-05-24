@@ -4,9 +4,9 @@
 \section{Visión general}
 \label{sec:vision-general-arquitectura}
 
-La arquitectura global se basa en una API REST monolítica, stateless y contenerizada. El cliente accede al sistema a través de un endpoint público gestionado por un Application Load Balancer, mientras que la ejecución de la aplicación y la base de datos permanecen en subredes privadas. Esta separación permite exponer únicamente el balanceador de carga y mantener PostgreSQL aislado de Internet.
+La arquitectura global se basa en una API REST monolítica, \gls{stateless} y contenerizada. El cliente accede al sistema a través de un endpoint público gestionado por un \acrshort{alb}, mientras que la ejecución de la aplicación y la base de datos permanecen en subredes privadas. Esta separación permite exponer únicamente el balanceador de carga y mantener PostgreSQL aislado de Internet.
 
-En local, el sistema se ejecuta con Docker Compose, levantando la API y PostgreSQL. En AWS, la API se publica como imagen Docker en ECR y se ejecuta en ECS Fargate. RDS PostgreSQL actúa como almacén persistente. Route 53 resuelve el dominio \path{api.dev.transitops.net}, ACM emite el certificado TLS y el Application Load Balancer centraliza el tráfico público. La validación cloud admite un fallback HTTP mediante el DNS técnico del ALB cuando se recrea el entorno antes de completar la delegación DNS, pero la configuración objetivo de Terraform activa HTTPS y redirección de HTTP a HTTPS.
+En local, el sistema se ejecuta con Docker Compose, levantando la API y PostgreSQL. En AWS, la API se publica como imagen Docker en ECR y se ejecuta en ECS Fargate. RDS PostgreSQL actúa como almacén persistente. Route 53 resuelve el dominio \endpoint{api.dev.transitops.net}, ACM emite el certificado \acrshort{tls} y el \acrshort{alb} centraliza el tráfico público. La validación cloud admite un fallback HTTP mediante el \acrshort{dns} técnico del \acrshort{alb} cuando se recrea el entorno antes de completar la delegación DNS, pero la configuración objetivo de Terraform activa \acrshort{https} y redirección de HTTP a \acrshort{https}.
 
 La infraestructura se define mediante Terraform, con módulos reutilizables para red, registro de contenedores, base de datos, configuración, observabilidad y runtime de contenedores. Esta decisión permite reproducir el entorno, revisar los cambios de infraestructura como parte del repositorio y destruir el entorno \texttt{dev} tras las validaciones para controlar el coste.
 
@@ -38,23 +38,17 @@ Los estados y tipos de evento se almacenan como \texttt{smallint} con restriccio
 \section{Arquitectura cloud en AWS}
 \label{sec:arquitectura-cloud}
 
-La arquitectura cloud desplegable en AWS incluye Route 53, ACM, Application Load Balancer, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, Systems Manager Parameter Store y CloudWatch~\cite{AwsEcsDocs,AwsRoute53Docs,AwsAcmDocs,AwsRdsDocs}.
+La arquitectura cloud desplegable en AWS incluye Route 53, ACM, \acrshort{alb}, \acrshort{ecs} Fargate, \acrshort{ecr}, \acrshort{rds} PostgreSQL, Secrets Manager, \acrshort{ssm} Parameter Store y CloudWatch~\cite{AwsEcsDocs,AwsAlbDocs,AwsRoute53Docs,AwsAcmDocs,AwsRdsDocs,AwsCloudWatchDocs,AwsSecretsManagerDocs,AwsSystemsManagerDocs}.
 
-El entorno \texttt{dev} se despliega en la cuenta AWS \texttt{661000947340}, región \texttt{eu-west-1}. La red está formada por una VPC con subredes públicas para ALB y NAT, subredes privadas de aplicación para ECS y subredes privadas de datos para RDS. Los grupos de seguridad restringen el flujo a: Internet hacia ALB, ALB hacia ECS y ECS hacia RDS.
+El entorno \texttt{dev} se despliega en la cuenta AWS \texttt{661000947340}, región \texttt{eu-west-1}. La red está formada por una \acrshort{vpc} con subredes públicas para \acrshort{alb} y NAT, subredes privadas de aplicación para ECS y subredes privadas de datos para RDS. Los grupos de seguridad restringen el flujo a: Internet hacia \acrshort{alb}, \acrshort{alb} hacia ECS y ECS hacia RDS.
 
-La API queda preparada para exponerse como \url{https://api.dev.transitops.net}. En la cuenta objetivo se dispone del dominio \path{transitops.net} y de una hosted zone pública de Route 53; durante Sprint 6 se corrigió la delegación de nameservers para que la validación DNS de ACM fuese visible públicamente. Terraform crea el certificado, los registros de validación, el alias \path{api.dev.transitops.net}, el listener HTTPS y la redirección HTTP a HTTPS cuando \texttt{enable\_https = true}. La base de datos RDS no es pública y solo acepta tráfico PostgreSQL desde el grupo de seguridad de ECS.
+La API queda preparada para exponerse como \endpoint{https://api.dev.transitops.net}. En la cuenta objetivo se dispone del dominio \path{transitops.net} y de una hosted zone pública de Route 53; durante Sprint 6 se corrigió la delegación de nameservers para que la validación \acrshort{dns} de ACM fuese visible públicamente. Terraform crea el certificado, los registros de validación, el alias \endpoint{api.dev.transitops.net}, el listener \acrshort{https} y la redirección HTTP a \acrshort{https} cuando \texttt{enable\_https = true}. La base de datos RDS no es pública y solo acepta tráfico PostgreSQL desde el grupo de seguridad de ECS.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\centering
-\vspace{1.2cm}
-\textbf{Placeholder de captura}\\
-Diagrama o captura de Route 53 mostrando la hosted zone \path{transitops.net}, los nameservers delegados y el registro \path{api.dev.transitops.net}.
-\vspace{1.2cm}
-\end{minipage}}
-\caption{Evidencia DNS prevista para el endpoint de desarrollo.}
-\label{fig:placeholder-route53-dns}
+\includegraphics[width=0.92\textwidth]{imaxes/route53-dns-evidence}
+\caption{Evidencia DNS para el endpoint de desarrollo.}
+\label{fig:route53-dns}
 \end{figure}
 
 \section{Decisiones arquitectónicas}

@@ -1,0 +1,97 @@
+\chapter{Diseño detallado del sistema}
+\label{chap:diseno-detallado}
+
+\section{Criterios de diseño}
+\label{sec:criterios-diseno}
+
+El diseño de TransitOps parte de una restricción deliberada: el sistema debe ser pequeño en funcionalidad, pero completo en su ciclo técnico. Esto implica priorizar decisiones que permitan explicar, validar y operar el proyecto de extremo a extremo. No se busca maximizar el número de entidades ni de pantallas, sino construir un backend cuya arquitectura sea comprensible y cuya infraestructura pueda reproducirse.
+
+Los criterios principales fueron simplicidad, trazabilidad, separación de responsabilidades y verificabilidad. La simplicidad evita añadir patrones innecesarios. La trazabilidad permite relacionar requisitos, código, pruebas, infraestructura y evidencias. La separación de responsabilidades reduce el acoplamiento entre entrada HTTP, lógica de aplicación, persistencia y operación. La verificabilidad obliga a que cada decisión pueda comprobarse con tests, comandos o evidencia cloud.
+
+Esta forma de diseñar se refleja en decisiones concretas: una única API monolítica, una base PostgreSQL, una imagen Docker, un entorno \texttt{dev} reproducible, Terraform como fuente de verdad y CloudWatch como punto mínimo de observabilidad. Cada pieza cumple una función clara y evita introducir componentes que no serían defendibles dentro del alcance del TFG.
+
+\section{Diseño del contrato HTTP}
+\label{sec:diseno-contrato-http}
+
+La API se organiza bajo la versión \path{/api/v1}. Versionar la ruta desde el inicio permite evolucionar el contrato sin romper clientes futuros, aunque el proyecto no implemente múltiples versiones. Los endpoints de negocio usan recursos claros: autenticación, usuarios, transportes, vehículos, conductores y eventos. Las operaciones siguen una semántica HTTP convencional: \texttt{GET} para consulta, \texttt{POST} para creación o acciones, \texttt{PUT} para actualización y \texttt{DELETE} para borrado lógico.
+
+El contrato de respuesta busca homogeneidad. Los errores se devuelven con códigos HTTP adecuados y un cuerpo común que evita exponer detalles internos. Esta decisión mejora la experiencia de consumo y facilita los tests. Por ejemplo, una petición no autenticada debe terminar en \texttt{401}; un usuario sin permisos, en \texttt{403}; un recurso inexistente, en \texttt{404}; y un conflicto de negocio, en \texttt{409}.
+
+La correlación de peticiones forma parte del contrato operativo. Todas las respuestas incluyen \httpheader{X-Correlation-ID}. Si el cliente envía ese header, la API conserva el valor; si no lo envía, genera uno. Este comportamiento permite que un cliente o una prueba de humo etiquete una petición concreta y la busque después en CloudWatch. Aunque no cambia la funcionalidad de negocio, sí mejora la capacidad de diagnóstico del sistema desplegado.
+
+Los endpoints de salud se diseñan con una finalidad operativa. \path{/api/v1/health/live} valida que el proceso responde, mientras que \path{/api/v1/health/ready} comprueba la conexión con base de datos. El ALB usa readiness porque una API viva pero sin PostgreSQL no debería recibir tráfico real. Esta distinción es sencilla, pero importante para evitar falsos positivos en despliegue.
+
+\section{Diseño del dominio}
+\label{sec:diseno-dominio-detallado}
+
+El dominio se centra en la operación básica de transportes. La entidad \texttt{Transport} representa el elemento principal y contiene referencia, origen, destino, fechas, estado y asignaciones opcionales. El vehículo y el conductor se modelan como recursos independientes porque pueden existir antes de estar asignados y porque sus datos deben gestionarse de forma separada. Los eventos logísticos proporcionan trazabilidad temporal.
+
+El ciclo de vida de un transporte se controla mediante estados. Un transporte comienza en estado planificado. Para pasar a en tránsito debe tener recursos asignados. Una vez entregado o cancelado, entra en un estado terminal. Esta regla evita secuencias incoherentes, como entregar un transporte no iniciado o modificar el estado después de una cancelación.
+
+El borrado lógico se usa para entidades operativas. En lugar de eliminar físicamente transportes, vehículos o conductores, se marca una fecha de borrado. Esto permite conservar histórico y evita romper relaciones pasadas. Al mismo tiempo, los índices únicos se diseñan para registros activos, de modo que una referencia o matrícula pueda reutilizarse si el registro anterior se ha retirado lógicamente.
+
+Los usuarios se separan por rol. El rol \texttt{admin} puede gestionar usuarios y configuración básica de acceso; el rol \texttt{operator} puede ejecutar operaciones logísticas. Esta división es suficiente para el alcance actual y permite demostrar autorización sin introducir una matriz de permisos compleja.
+
+\section{Diseño de persistencia}
+\label{sec:diseno-persistencia-detallado}
+
+El esquema relacional se deriva de las entidades principales. La tabla de usuarios almacena credenciales hash, rol y estado activo. La tabla de transportes mantiene la información operativa y claves foráneas opcionales hacia vehículo y conductor. Las tablas de vehículos y conductores mantienen sus identificadores propios. La tabla de eventos referencia transporte y usuario creador, preservando quién registró cada hito.
+
+Las migraciones de EF Core actúan como registro de evolución del esquema. Esta elección permite que el repositorio contenga no solo el modelo actual, sino también la historia de cambios. En un entorno cloud, las migraciones se ejecutan mediante una tarea ECS puntual para que el cambio de base de datos sea un paso visible del despliegue.
+
+La persistencia debe soportar dos escenarios: ejecución local y ejecución cloud. En local, la cadena de conexión apunta al servicio PostgreSQL definido en Docker Compose. En AWS, la cadena se obtiene desde Secrets Manager y apunta a RDS. La aplicación no necesita cambiar su código entre ambos escenarios; lo que cambia es la configuración externa.
+
+El diseño también considera restore. La prueba de Sprint 7 demostró que una base restaurada desde snapshot puede recibir la tarea de migración. Esto es relevante porque la restauración no se valida únicamente viendo que RDS crea una instancia, sino comprobando que la aplicación puede usarla para ejecutar su procedimiento operativo más delicado.
+
+\section{Diseño de autenticación y autorización}
+\label{sec:diseno-auth}
+
+El sistema necesita un primer administrador para empezar a operar, pero no puede depender de crear usuarios manualmente en base de datos. Por ello se implementa un endpoint de bootstrap protegido por token externo. El token se configura fuera del repositorio y el endpoint solo crea el primer administrador si no existe ya otro activo. Esta regla evita que el bootstrap se convierta en una puerta permanente para crear administradores arbitrarios.
+
+El login valida usuario y contraseña. Las contraseñas no se almacenan en claro; se guardan como hash. Si las credenciales son válidas, la API emite un JWT con identidad y rol. Los endpoints protegidos usan ese token para identificar al usuario y aplicar autorización. La duración, emisor, audiencia y clave de firma se configuran externamente.
+
+La autorización se implementa con roles simples. Esta elección evita un sistema de permisos sobredimensionado. En el alcance del TFG basta distinguir administración y operación. Si el proyecto evolucionase hacia producción, se podría añadir una matriz de permisos más fina, auditoría de acciones administrativas o integración con un proveedor externo de identidad.
+
+El diseño de errores evita revelar información sensible. Un login fallido no debe indicar si el usuario existe o si solo falló la contraseña. Los errores internos se registran con correlation id, pero al cliente se devuelve un mensaje controlado. Esta separación entre diagnóstico interno y respuesta externa es una medida básica de seguridad.
+
+\section{Diseño de configuración}
+\label{sec:diseno-configuracion}
+
+La configuración se organiza por niveles. Los valores no sensibles pueden estar en \texttt{appsettings}, variables de entorno o SSM Parameter Store. Los valores sensibles, como cadena de conexión, clave JWT y token de bootstrap, se almacenan fuera del repositorio. En local se pueden proporcionar mediante \texttt{.env} o secretos de desarrollo. En AWS se consumen desde Secrets Manager.
+
+Esta separación evita que el código fuente contenga credenciales. También permite recrear el entorno sin modificar la imagen Docker. La misma imagen puede ejecutarse en local o en cloud porque obtiene la configuración desde el entorno. Esto encaja con el principio de construir una vez y desplegar con configuración externa.
+
+Terraform crea los secretos como contenedores de configuración, pero no versiona sus valores reales. Esta diferencia es importante: el repositorio puede conocer el nombre del secreto que la task definition debe leer, pero no debe contener el password de base de datos ni la clave JWT. Los valores se cargan durante el despliegue o mediante scripts controlados.
+
+Durante los sprints se detectó un caso práctico relacionado con Secrets Manager: algunos secretos quedaron programados para eliminación tras un ciclo de destroy. La recuperación exigió restaurarlos o forzar su eliminación antes de recrearlos. Esta experiencia se documentó porque forma parte del comportamiento real de AWS y afecta a la operación del entorno \texttt{dev}.
+
+\section{Diseño de despliegue}
+\label{sec:diseno-despliegue-detallado}
+
+El despliegue se divide en fases. Primero se crea la infraestructura con ECS a cero tareas. Esto permite construir red, ALB, ECR, RDS, secretos y observabilidad sin intentar arrancar una imagen que todavía no existe. Después se publica la imagen en ECR, se cargan secretos de runtime, se ejecutan migraciones y se escala ECS a una tarea.
+
+Esta secuencia evita un problema habitual en despliegues iniciales: crear un servicio que intenta arrancar antes de tener imagen o configuración. Al separar infraestructura base, publicación de artefacto y activación de servicio, cada error se diagnostica de forma más clara. Si falla la migración, el problema está en base de datos o configuración; si falla ECS, puede revisarse task definition, imagen o secretos; si falla health, se revisan ALB, target group y readiness.
+
+El target group del ALB usa la ruta de readiness. El periodo de gracia de ECS evita sustituir tareas demasiado pronto durante el arranque. El deployment circuit breaker permite que ECS marque como fallido un despliegue que no consigue estabilizarse. En Sprint 7 se probó un tag inexistente para demostrar este comportamiento y luego se recuperó aplicando de nuevo una imagen buena.
+
+DNS y HTTPS se gestionan con Route 53 y ACM. Terraform solicita el certificado, crea registros de validación y configura listeners del ALB. La incidencia de Sprint 6 con nameservers permitió validar una parte importante del proceso: no basta con tener una hosted zone; el dominio registrado debe delegar en los nameservers correctos para que ACM pueda validar públicamente el CNAME.
+
+\section{Diseño de validación}
+\label{sec:diseno-validacion}
+
+La validación del proyecto se diseñó en capas. La primera capa son tests automatizados de backend, que comprueban reglas funcionales y contratos HTTP. La segunda capa son validaciones locales con Docker, que verifican que la aplicación puede ejecutarse con PostgreSQL en contenedor. La tercera capa es Terraform, que valida sintaxis, formato, plan y aplicación de infraestructura. La cuarta capa es AWS real, donde se comprueba que el sistema responde por HTTPS, ejecuta migraciones, registra logs y puede destruirse.
+
+Este enfoque evita depender de una única prueba final. Un despliegue cloud correcto no sustituye a los tests de dominio; un test local correcto no prueba Route 53 o ACM; un \texttt{terraform validate} correcto no demuestra que ECS arranque. Cada capa cubre un tipo de riesgo diferente.
+
+La validación cloud se orienta a evidencias observables: health \texttt{200}, login \texttt{200}, bootstrap \texttt{201} o \texttt{409}, logs JSON con correlation id, dashboard creado, alarmas presentes, task definition activa, RDS privado y destroy limpio. Estos resultados se registran en documentación para que la defensa no dependa de recordar comandos ejecutados.
+
+\section{Decisiones descartadas}
+\label{sec:decisiones-descartadas}
+
+Durante el diseño se descartaron varias alternativas. La primera fue construir un frontend completo. Aunque habría hecho el proyecto más visible, también habría desplazado tiempo desde cloud, Terraform, observabilidad y operación. Dado el objetivo del TFG, se consideró más valioso profundizar en backend y despliegue.
+
+También se descartó dividir el sistema en microservicios. El dominio no lo justifica y habría introducido complejidad en red, despliegue, observabilidad y consistencia de datos. Un monolito modular resulta más adecuado para demostrar ingeniería de extremo a extremo sin multiplicar componentes.
+
+No se introdujo Kubernetes. ECS Fargate cubre la necesidad de ejecutar contenedores gestionados con menor carga operativa. Kubernetes habría requerido justificar clúster, ingress, controladores, despliegues y observabilidad adicional. Para el alcance del proyecto, esa complejidad no aporta una ventaja proporcional.
+
+Tampoco se añadió OpenTelemetry/X-Ray en los sprints finales. La correlación mediante header y logs JSON ofrece un nivel suficiente para diagnosticar peticiones en un entorno pequeño. La trazabilidad distribuida queda como evolución natural si el sistema creciese o si apareciesen múltiples servicios.

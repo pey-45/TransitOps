@@ -1,0 +1,158 @@
+\chapter{Procedimientos operativos}
+\label{chap:anexo-procedimientos}
+
+\section{Recreación completa de dev}
+\label{sec:anexo-recreate-dev}
+
+La recreación completa del entorno \texttt{dev} parte de un estado destruido. El objetivo es demostrar que el proyecto no depende de recursos creados manualmente ni de una configuración conservada accidentalmente. El procedimiento comienza validando la cuenta AWS, la región y el perfil local. A continuación se inicializa Terraform con backend remoto y se aplica la infraestructura con ECS a cero tareas.
+
+El siguiente paso es construir y publicar una imagen Docker. El tag debe ser identificable, por ejemplo \tech{sprint9-final-<sha>} en una validación final. Después se cargan secretos runtime en Secrets Manager y se ejecuta una tarea ECS de migración mediante \path{--migrate-only}. Si la migración termina con exit code \texttt{0}, se escala el servicio a una tarea y se espera estabilidad.
+
+La validación final incluye readiness HTTPS, bootstrap o confirmación de administrador existente, login, logs con correlation id, dashboard, alarmas y postura de seguridad mínima. Si el objetivo era obtener evidencia, se capturan las pantallas necesarias y se ejecuta destroy al terminar.
+
+\section{Comprobaciones locales previas}
+\label{sec:anexo-local-checks}
+
+Antes de recrear AWS, el repositorio debe validarse localmente. Las comprobaciones recomendadas son:
+
+\begin{itemize}
+  \item Ejecutar \texttt{dotnet test} sobre el proyecto de pruebas.
+  \item Ejecutar \texttt{terraform fmt -check -recursive} en la carpeta de infraestructura.
+  \item Ejecutar \texttt{terraform validate} en el entorno \texttt{dev}.
+  \item Construir la imagen Docker de la API.
+  \item Verificar que el contenedor no se ejecuta como root.
+  \item Buscar patrones básicos de secretos en el repositorio.
+  \item Compilar la memoria con \texttt{latexmk}.
+\end{itemize}
+
+Estas comprobaciones reducen el riesgo de descubrir errores triviales durante el apply cloud, donde cada minuto puede generar coste. Además, separan fallos de código, fallos de infraestructura y fallos de AWS.
+
+\section{Carga de secretos runtime}
+\label{sec:anexo-secretos}
+
+Los secretos runtime no se versionan. Para que ECS arranque correctamente, Secrets Manager debe contener al menos la cadena de conexión de PostgreSQL, la clave de firma JWT y el token de bootstrap. Terraform conoce los nombres y permisos necesarios, pero no debe incluir los valores reales.
+
+Cuando un secreto queda programado para eliminación, AWS puede impedir recrearlo con el mismo nombre hasta que expire el periodo de recuperación. Durante los sprints se resolvió esta situación restaurando o eliminando de forma forzada los secretos según el caso. Esta incidencia queda documentada porque afecta directamente a ciclos de destroy y recreate.
+
+La señal de éxito de esta fase no es solo que el secreto exista, sino que la task definition pueda leerlo. Si ECS falla al arrancar con errores de acceso a secretos, se revisan permisos del execution role y ARN referenciados.
+
+\section{Migraciones ECS}
+\label{sec:anexo-migraciones}
+
+La migración cloud se ejecuta como tarea ECS puntual. Esta tarea usa la misma imagen de la API, pero cambia el modo de ejecución a \path{--migrate-only}. Así se reutiliza el artefacto desplegable y se evita mantener una imagen separada para migraciones.
+
+El criterio de éxito es que la tarea termine con código \texttt{0}. Si falla, no se escala el servicio web. Esta regla evita poner tráfico sobre una aplicación cuyo esquema de base de datos no está preparado. Los logs de la tarea se revisan en CloudWatch para diagnosticar problemas de conexión, permisos o migraciones.
+
+La misma estrategia se usa en la prueba de restore. En ese caso, la task definition temporal apunta a un secreto de conexión de la base restaurada. Si la migración termina correctamente, se demuestra que la base restaurada es utilizable por la aplicación.
+
+\section{Validación HTTPS y DNS}
+\label{sec:anexo-https-dns}
+
+El endpoint objetivo es \endpoint{https://api.dev.transitops.net}. Para que funcione, deben alinearse Route 53, ACM y ALB. La hosted zone debe estar delegada desde el dominio registrado; ACM debe poder validar el CNAME; el certificado debe estar en estado \texttt{ISSUED}; y el listener HTTPS del ALB debe usar ese certificado.
+
+La incidencia de Sprint 6 mostró que crear una hosted zone no basta. El dominio registrado tenía nameservers distintos de los de la hosted zone usada por Terraform, por lo que ACM no podía validar públicamente el CNAME. Al corregir la delegación, el certificado pasó a \texttt{ISSUED}. Esta experiencia se incorporó a la documentación de despliegue.
+
+La validación DNS/HTTPS se confirma con readiness HTTPS. Si HTTPS falla, se revisan por orden: resolución DNS, estado del certificado, listeners del ALB, target group y health de ECS.
+
+\section{Auditoría de seguridad}
+\label{sec:anexo-auditoria-seguridad}
+
+La auditoría mínima de seguridad revisa que RDS no sea público, ECS no tenga IP pública, los security groups sigan el flujo esperado, los secretos estén en Secrets Manager y el rol de aplicación no tenga permisos AWS innecesarios. También se revisa el rol OIDC de GitHub, aceptando que mantiene permisos amplios para aplicar y destruir \texttt{dev}, pero con trust policy limitada.
+
+El resultado esperado no es una certificación de seguridad completa. El objetivo es demostrar que el entorno no expone accidentalmente base de datos ni contenedores, que el único punto público es el ALB y que los secretos no están en el repositorio. Los riesgos aceptados se documentan: no hay WAF, no hay rotación automática de secretos y no se han refinado todos los permisos al mínimo absoluto.
+
+\section{Auditoría de coste}
+\label{sec:anexo-auditoria-coste}
+
+La auditoría de coste identifica recursos que generan gasto durante una recreación: NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager, ECR y Route 53. El proyecto acepta este coste de forma temporal durante validaciones, pero exige destruir el entorno al terminar.
+
+Después del destroy se comprueba ausencia de recursos efímeros. ECR se configura con force delete en \texttt{dev} para que imágenes de validación no bloqueen la destrucción. RDS usa \texttt{skip\_final\_snapshot} y backups automáticos en cero días para evitar coste residual. Los snapshots manuales de pruebas de restore se eliminan salvo que se conserve evidencia explícitamente.
+
+Permanecen intencionadamente el dominio, la hosted zone y el backend remoto. Estos recursos son necesarios para recrear el entorno y su coste es bajo en comparación con NAT, ALB o RDS.
+
+\section{Guion de defensa técnica}
+\label{sec:anexo-guion-defensa}
+
+Un guion razonable de defensa puede seguir este orden:
+
+\begin{enumerate}
+  \item Presentar problema, alcance y decisión de mantener funcionalidad pequeña.
+  \item Explicar el modelo de dominio y los casos de uso principales.
+  \item Mostrar la arquitectura cloud: ALB público, ECS privado y RDS privado.
+  \item Explicar Terraform, módulos y estado remoto.
+  \item Recorrer el flujo de despliegue: imagen, ECR, migración, ECS y health.
+  \item Mostrar observabilidad: correlation id, logs JSON, dashboard y alarmas.
+  \item Explicar rollback con tag bueno y fallo controlado.
+  \item Explicar restore RDS con snapshot temporal y migración.
+  \item Presentar seguridad y coste: secretos, red privada, HTTPS y destroy.
+  \item Cerrar con limitaciones y líneas futuras.
+\end{enumerate}
+
+Este guion permite defender el proyecto como una práctica completa de ingeniería cloud. La API no pretende ser un producto logístico completo, pero sí demuestra el ciclo de vida técnico de un backend moderno.
+
+\section{Checklist de cierre}
+\label{sec:anexo-checklist-cierre}
+
+La checklist final resume las condiciones que deben cumplirse antes de considerar cerrado el proyecto:
+
+\begin{itemize}
+  \item Tests de backend superados.
+  \item Terraform formateado y validado.
+  \item Imagen Docker construida correctamente.
+  \item Usuario no root verificado en contenedor.
+  \item Memoria compilada sin errores.
+  \item Requisitos y trazabilidad actualizados.
+  \item Evidencias visuales y documentales registradas.
+  \item Si se recrea AWS, health HTTPS y login validados.
+  \item Observabilidad comprobada.
+  \item Destroy ejecutado tras validación cloud.
+  \item Auditoría post-destroy sin recursos efímeros costosos.
+\end{itemize}
+
+Esta checklist conecta la parte académica y la parte operativa. No basta con que el código exista; debe poder probarse, explicarse, desplegarse y cerrarse sin dejar coste evitable.
+
+\section{Diagnóstico por capas}
+\label{sec:anexo-diagnostico-capas}
+
+Cuando una validación falla, el enfoque más útil es diagnosticar por capas. La primera capa es el código de aplicación. Si los tests automatizados fallan, no tiene sentido continuar hacia Docker o AWS. Se revisan controladores, servicios de aplicación, reglas de dominio, configuración de tests y migraciones. Esta capa permite aislar errores funcionales antes de que se mezclen con problemas de infraestructura.
+
+La segunda capa es el empaquetado. Si el código compila pero la imagen Docker no arranca, se revisa el Dockerfile, el usuario de ejecución, el puerto expuesto, las variables de entorno y las dependencias de runtime. En TransitOps, la eliminación del puerto innecesario y la ejecución como usuario no root reducen ambigüedad sobre cómo debe comportarse el contenedor.
+
+La tercera capa es la infraestructura base. Aquí se revisan Terraform, VPC, subredes, security groups, ECR, RDS, ALB y secretos. Un error de Terraform puede aparecer antes de crear recursos; un error de permisos puede aparecer al arrancar una task; un error de red puede verse como fallo de readiness; y un error de DNS puede impedir que ACM valide el certificado. Separar estas causas evita interpretar todo fallo cloud como un problema de código.
+
+La cuarta capa es la ejecución ECS. En esta capa se consultan eventos del servicio, estado de tasks, task definition activa, imagen referenciada, secretos inyectados y logs de arranque. Si aparece \texttt{CannotPullContainerError}, la causa probable está en ECR o en el tag de imagen. Si la tarea arranca y luego falla readiness, la causa puede estar en base de datos, configuración o health check. Si la tarea queda sana pero HTTPS falla, el foco se desplaza a ALB, DNS o certificado.
+
+La quinta capa es observabilidad. Una vez que el sistema responde, los logs JSON y el correlation id permiten investigar peticiones concretas. El dashboard aporta contexto de ALB, ECS y RDS. Las alarmas no sustituyen al análisis, pero señalan qué métrica se salió de los umbrales esperados. Este enfoque por capas convierte la operación en una secuencia razonada en lugar de una búsqueda desordenada.
+
+\section{Criterios de aceptación final}
+\label{sec:anexo-criterios-finales}
+
+El proyecto puede considerarse cerrado cuando cumple criterios funcionales, técnicos y documentales. En la parte funcional, la API debe permitir bootstrap, login, gestión básica de usuarios, transportes, vehículos, conductores, asignaciones, estados y eventos. Además, los endpoints protegidos deben respetar autenticación y roles, y los errores deben mantener códigos HTTP coherentes.
+
+En la parte técnica, el repositorio debe compilar, los tests deben pasar, la imagen Docker debe construirse y el contenedor debe ejecutarse con usuario no root. Terraform debe estar formateado y validar correctamente. La infraestructura debe poder aplicarse en \texttt{dev}, ejecutar migraciones, escalar ECS, responder por HTTPS y registrar logs correlables. Si se realiza una validación AWS final, debe terminar con destroy y auditoría de ausencia de recursos efímeros.
+
+En la parte operativa, deben existir runbooks de despliegue, rollback, restore, logs, alarmas y destroy. El rollback debe poder explicarse como retorno a un tag de imagen conocido. El restore debe estar validado mediante snapshot manual y tarea de migración. El coste debe estar identificado y separado entre recursos efímeros y persistentes.
+
+En la parte documental, la memoria debe describir el alcance real, no una intención futura. Los requisitos deben estar alineados con lo implementado, la arquitectura debe reflejar la cuenta y región usadas, y las evidencias deben estar listadas e incorporadas en las secciones correspondientes. Las limitaciones también forman parte del cierre: no hay frontend, no hay entorno productivo, no hay autoscaling, no hay WAF y no hay trazas distribuidas. Es preferible declarar estos límites con claridad que sugerir una madurez que no se ha implementado.
+
+\section{Uso de los TFG de referencia}
+\label{sec:anexo-referencias-tfg}
+
+Los TFG de referencia revisados muestran una estructura habitual en memorias técnicas: resumen, contexto, requisitos, diseño, implementación, validación, planificación, costes, conclusiones y anexos. También muestran que una memoria de entre 85 y 110 páginas no se consigue solo con describir código, sino desarrollando el razonamiento de diseño, las alternativas, la validación y el material complementario.
+
+La ampliación de esta memoria sigue esa línea, pero adaptada a TransitOps. El contenido añadido se centra en explicar por qué se eligieron ASP.NET Core, PostgreSQL, Docker, Terraform, ECS Fargate, RDS, ALB, CloudWatch y GitHub Actions; cómo se diseñó el contrato HTTP; cómo se gestiona configuración y secretos; cómo se opera un despliegue; y cómo se relacionan requisitos con evidencias.
+
+No se incorporan textos de los TFG de referencia. Su utilidad es estructural: ayudan a calibrar la densidad esperada de una memoria final y a detectar que la versión anterior de TransitOps era demasiado compacta para el nivel de detalle que suele verse en trabajos entregables. La nueva versión mantiene el mismo proyecto, pero explica con mayor profundidad las decisiones tomadas.
+
+\section{Mantenimiento posterior}
+\label{sec:anexo-mantenimiento-posterior}
+
+Aunque el TFG se cierra con un entorno \texttt{dev} efímero, el repositorio queda preparado para mantenimiento posterior. La primera tarea razonable sería repetir una validación AWS final si se necesitasen evidencias nuevas en una fecha posterior, siguiendo el mismo flujo de recreación, validación y destroy ya documentado.
+
+La segunda tarea sería ejecutar una validación AWS final si se necesitan evidencias recientes. Esa validación debe seguir el flujo ya documentado: recrear \texttt{dev}, publicar imagen, ejecutar migración, escalar ECS, validar HTTPS y login, revisar observabilidad y destruir. No conviene dejar el entorno vivo solo por comodidad, porque el diseño del proyecto asume coste temporal controlado.
+
+La tercera tarea sería revisar permisos IAM si el proyecto evolucionase más allá del TFG. El rol OIDC de GitHub es aceptable para un entorno académico y efímero, pero un entorno productivo debería restringir acciones, recursos y condiciones con mayor precisión. Del mismo modo, una evolución a producción exigiría backups RDS automáticos, retención de logs más definida, alarmas con notificación confirmada, WAF, rotación de secretos y posiblemente autoscaling.
+
+La cuarta tarea sería ampliar la observabilidad. El proyecto ya permite correlacionar peticiones, pero no incluye trazas distribuidas ni métricas de negocio. Si TransitOps creciese, sería útil medir número de transportes creados, errores por endpoint, duración de operaciones críticas y eventos de dominio relevantes. Estas métricas permitirían pasar de una observabilidad centrada en infraestructura a una observabilidad también orientada al producto.
+
+Finalmente, cualquier ampliación funcional debería respetar la orientación original del proyecto: mantener el dominio comprensible y no sacrificar calidad operativa por añadir casos de uso. La base actual permite crecer hacia frontend, producción o más automatización, pero el valor del TFG está precisamente en haber demostrado un camino completo y reproducible antes de ampliar alcance.
