@@ -5,25 +5,12 @@
 \documentclass[11pt,a4paper,titlepage,oneside]{report}
 
 %%% RELACIÓN DE VARIABLES A PERSONALIZAR %%%
-%\def\lingua{gal}
-\def\lingua{esp} % descomenta esta liña se redactarás a memoria en español
-%\def\lingua{eng} % descomenta esta liña se redactarás a memoria en inglés
-\def\nome{Pablo Manzanares López}                    % substitúe aquí o teu nome
-\def\nomedirectorA{Paula María Castro Castro}        % substitúe aquí o nome de quen dirixe
-%\def\nomedirectorB{Outro Nome Completo}             % duplica esta liña máis veces se o precisas, cambiando
-                                                     % a letra final (A, B, C, D...): úsanse na portada.tex
-\def\titulo{Diseño, despliegue y operación de una plataforma cloud para la gestión de transportes en AWS mediante infraestructura como código y prácticas DevOps} % substitúe aquí o título do teu TFG
-%\def\titulacion{gced}                               % descomenta esta liña e comenta a seguinte se es estudante do GCED
+\def\lingua{esp}
+\def\nome{Pablo Manzanares López}
+\def\nomedirectorA{Paula María Castro Castro}
+\def\titulo{Diseño, despliegue y operación de una plataforma cloud para la gestión de transportes en AWS mediante infraestructura como código y prácticas DevOps}
 \def\titulacion{gei}
-%\def\mencion{COMPUTACIÓN}                           % descomenta a mención que che corresponda se es estudante do GEI
 \def\mencion{INGENIERÍA DEL SOFTWARE}
-%\def\mencion{ENXEÑARÍA DE COMPUTADORES}
-%\def\mencion{SISTEMAS DE INFORMACIÓN}
-%\def\mencion{TECNOLOXÍAS DA INFORMACIÓN}
-
-%\def\renomearcadros{si} % descomenta esta liña se redactas a memoria en español e prefires que
-                         % os "cuadros" e o "índice de cuadros" se renomeen
-                         % a "tablas" e "índice de tablas" respectivamente
 
 \usepackage{estilo_tfg}
 \setlength{\emergencystretch}{3em}
@@ -36,22 +23,7 @@
 \DeclareRobustCommand{\httpheader}[1]{\textnormal{\textsf{\small #1}}}
 \renewcommand{\texttt}[1]{\textnormal{#1}}
 
-% Lista de paquetes potencialmente interesantes (uso baixo demanda)
-
-% \usepackage{alltt}       % proporciona o entorno alltt, semellante a verbatim pero que respecta comandos
-% \usepackage{enumitem}    % permite personalizar os entornos de lista
-% \usepackage{eurofont}    % proporciona o comando \euro
-% \usepackage{float}       % permite máis opcións para controlar obxectos flotantes (táboas, figuras)
-% \usepackage{hhline}      % permite personalizar as liñas horizontais en arrays e táboas
-  \usepackage{longtable}   % permite construir táboas que ocupan máis dunha páxina
-% \usepackage{lscape}      % permite colocar partes do documento en orientación apaisada
-% \usepackage{moreverb}    % permite personalizar o entorno verbatim
-% \usepackage{multirow}    % permite crear celdas que ocupan varias filas da mesma táboa
-% \usepackage{pdfpages}    % permite insertar ficheiros en PDF no documento
-% \usepackage{rotating}    % permite diferentes tipos de rotacións para figuras e táboas
-% \usepackage{subcaption}  % permite a inclusión de varias subfiguras nunha figura
-% \usepackage{tabu}        % permite táboas flexibles
-% \usepackage{tabularx}    % permite táboas con columnas de anchura determinada
+\usepackage{longtable}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Corpo                                                                        %
@@ -107,8 +79,6 @@
  \include{anexos/adicional}
  \include{anexos/trazabilidad}
  \include{anexos/procedimientos}
- \include{anexos/comparativa_referencias}
-%\include{anexos/...}
 
  \printglossary[type=\acronymtype,title=\nomeglosarioacronimos]
  \printglossary[title=\nomeglosariotermos]

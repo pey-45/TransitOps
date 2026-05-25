@@ -1,55 +1,31 @@
-# Modelo de memoria de Traballo Fin de Grao
+# Memoria TFG - TransitOps
 
-Este proxecto LaTeX constitúe un modelo de referencia para as memorias de Traballo Fin de Grao
-do **Grao en Enxeñaría Informática** e do **Grao en Ciencia e Enxeñaría de Datos**
-da Facultade de Informática da Universidade da Coruña.
+Esta carpeta contiene la memoria del Trabajo Fin de Grado de Pablo Manzanares López:
 
-Antes de usar este modelo, por favor, revisa con atención as [`FAQ (Frequently Asked Questions)`](https://gitlab.com/lauramcastro/modelo-tfg-gei-fic/-/wikis/Frequently-asked-questions-(faq)).
+`Diseño, despliegue y operación de una plataforma cloud para la gestión de transportes en AWS mediante infraestructura como código y prácticas DevOps`.
 
-## Estrutura
+El fichero principal es `memoria_tfg.tex` y el PDF de entrega generado es `memoria_tfg.pdf`.
 
-  1) Ficheiros de autoría, contribucións, licenza e atribución
+## Estructura
 
-     > `AUTHOR`
-     >
-     > `CONTRIBUTING.md`
-     >
-     > `COPYING`
-     >
-     > `CREDITS`
+1. `contido/`: capítulos principales de la memoria.
+2. `anexos/`: material complementario, trazabilidad y procedimientos operativos.
+3. `bibliografia/`: bibliografía, acrónimos y glosario.
+4. `imaxes/`: figuras, capturas y evidencias incorporadas.
+5. `portada/`: portada, resumen y palabras clave.
 
-  2) Ficheiro de estilo: `estilo_tfg.sty`
+## Generación del PDF
 
-  3) Ficheiro principal: `memoria_tfg.tex`
+La memoria se compila con XeLaTeX mediante `latexmk`:
 
-  4) Directorios:
+```powershell
+latexmk -xelatex memoria_tfg.tex
+```
 
-     > `anexos/`		Contén os capítulos con materiais adicionais.
-     >
-     > `bibliografia/`	Contén a bibliografía e outros posibles índices (termos, glosario).
-     >
-     > `contido/`		Contén os capítulos da memoria.
-     >
-     > `imaxes/`		Contén as imaxes da memoria.
-     >
-     > `portada/`		Contén a portada, resumo e palabras chave.
+Los ficheros auxiliares de compilación no forman parte de la entrega y pueden limpiarse con:
 
-## Xeración da versión PDF
+```powershell
+latexmk -xelatex -c
+```
 
-A versión PDF pódese xerar empregando a ferramenta `latexmk`, que asegura o correcto procesamento
-de índices, bibliografía e referencias:
-
-     latexmk -xelatex memoria_tfg.tex
-
-A ferramenta `latexmk` pódese empregar de xeito que monitorice o proxecto e recompile automaticamente
-a memoria en caso de producirse cambios nos diferentes ficheiros que a conforman:
-
-     latexmk -xelatex -pvc memoria_tfg.tex
-
-## Eliminación dos ficheiros auxiliares
-
-No momento no que a redacción da memoria do TFG se dea por finalizada, os ficheiros auxiliares xerados poden eliminarse doadamente con:
-
-     latexmk -xelatex -c
-
-Non se recomenda a eliminación dos ficheiros auxiliares durante o proceso de redacción, xa que a súa presenza contribúe a axilizar o proceso de compilación e xeración do PDF en construción.
+La plantilla base procede del modelo oficial de memoria de TFG de la Facultad de Informática de la Universidade da Coruña. Los créditos y la licencia original se conservan en `CREDITS` y `COPYING`.

@@ -135,24 +135,13 @@ En la parte operativa, deben existir runbooks de despliegue, rollback, restore, 
 
 En la parte documental, la memoria debe describir el alcance real, no una intención futura. Los requisitos deben estar alineados con lo implementado, la arquitectura debe reflejar la cuenta y región usadas, y las evidencias deben estar listadas e incorporadas en las secciones correspondientes. Las limitaciones también forman parte del cierre: no hay frontend, no hay entorno productivo, no hay autoscaling, no hay WAF y no hay trazas distribuidas. Es preferible declarar estos límites con claridad que sugerir una madurez que no se ha implementado.
 
-\section{Uso de los TFG de referencia}
-\label{sec:anexo-referencias-tfg}
-
-Los TFG de referencia revisados muestran una estructura habitual en memorias técnicas: resumen, contexto, requisitos, diseño, implementación, validación, planificación, costes, conclusiones y anexos. También muestran que una memoria de entre 85 y 110 páginas no se consigue solo con describir código, sino desarrollando el razonamiento de diseño, las alternativas, la validación y el material complementario.
-
-La ampliación de esta memoria sigue esa línea, pero adaptada a TransitOps. El contenido añadido se centra en explicar por qué se eligieron ASP.NET Core, PostgreSQL, Docker, Terraform, ECS Fargate, RDS, ALB, CloudWatch y GitHub Actions; cómo se diseñó el contrato HTTP; cómo se gestiona configuración y secretos; cómo se opera un despliegue; y cómo se relacionan requisitos con evidencias.
-
-No se incorporan textos de los TFG de referencia. Su utilidad es estructural: ayudan a calibrar la densidad esperada de una memoria final y a detectar que la versión anterior de TransitOps era demasiado compacta para el nivel de detalle que suele verse en trabajos entregables. La nueva versión mantiene el mismo proyecto, pero explica con mayor profundidad las decisiones tomadas.
-
 \section{Mantenimiento posterior}
 \label{sec:anexo-mantenimiento-posterior}
 
-Aunque el TFG se cierra con un entorno \texttt{dev} efímero, el repositorio queda preparado para mantenimiento posterior. La primera tarea razonable sería repetir una validación AWS final si se necesitasen evidencias nuevas en una fecha posterior, siguiendo el mismo flujo de recreación, validación y destroy ya documentado.
+Aunque el TFG se cierra con un entorno \texttt{dev} efímero, el repositorio queda preparado para mantenimiento posterior. Una nueva validación AWS puede repetirse en cualquier momento siguiendo el mismo flujo documentado: recrear \texttt{dev}, publicar imagen, ejecutar migración, escalar ECS, validar HTTPS y login, revisar observabilidad y destruir. No conviene dejar el entorno vivo solo por comodidad, porque el diseño del proyecto asume coste temporal controlado.
 
-La segunda tarea sería ejecutar una validación AWS final si se necesitan evidencias recientes. Esa validación debe seguir el flujo ya documentado: recrear \texttt{dev}, publicar imagen, ejecutar migración, escalar ECS, validar HTTPS y login, revisar observabilidad y destruir. No conviene dejar el entorno vivo solo por comodidad, porque el diseño del proyecto asume coste temporal controlado.
+Otra línea de mantenimiento sería revisar permisos IAM si el proyecto evolucionase más allá del TFG. El rol OIDC de GitHub es aceptable para un entorno académico y efímero, pero un entorno productivo debería restringir acciones, recursos y condiciones con mayor precisión. Del mismo modo, una evolución a producción exigiría backups RDS automáticos, retención de logs más definida, alarmas con notificación confirmada, WAF, rotación de secretos y posiblemente autoscaling.
 
-La tercera tarea sería revisar permisos IAM si el proyecto evolucionase más allá del TFG. El rol OIDC de GitHub es aceptable para un entorno académico y efímero, pero un entorno productivo debería restringir acciones, recursos y condiciones con mayor precisión. Del mismo modo, una evolución a producción exigiría backups RDS automáticos, retención de logs más definida, alarmas con notificación confirmada, WAF, rotación de secretos y posiblemente autoscaling.
-
-La cuarta tarea sería ampliar la observabilidad. El proyecto ya permite correlacionar peticiones, pero no incluye trazas distribuidas ni métricas de negocio. Si TransitOps creciese, sería útil medir número de transportes creados, errores por endpoint, duración de operaciones críticas y eventos de dominio relevantes. Estas métricas permitirían pasar de una observabilidad centrada en infraestructura a una observabilidad también orientada al producto.
+También podría ampliarse la observabilidad. El proyecto ya permite correlacionar peticiones, pero no incluye trazas distribuidas ni métricas de negocio. Si TransitOps creciese, sería útil medir número de transportes creados, errores por endpoint, duración de operaciones críticas y eventos de dominio relevantes. Estas métricas permitirían pasar de una observabilidad centrada en infraestructura a una observabilidad también orientada al producto.
 
 Finalmente, cualquier ampliación funcional debería respetar la orientación original del proyecto: mantener el dominio comprensible y no sacrificar calidad operativa por añadir casos de uso. La base actual permite crecer hacia frontend, producción o más automatización, pero el valor del TFG está precisamente en haber demostrado un camino completo y reproducible antes de ampliar alcance.
