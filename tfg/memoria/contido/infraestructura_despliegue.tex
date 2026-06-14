@@ -1,6 +1,8 @@
 \chapter{Infraestructura y despliegue}
 \label{chap:infraestructura-despliegue}
 
+Este capítulo cubre la infraestructura cloud definida para TransitOps y el proceso de despliegue de la aplicación en AWS. Se describe la contenerización de la API con Docker, la organización modular de Terraform, la arquitectura del entorno \texttt{dev}, el flujo de despliegue paso a paso, las estrategias de rollback y restore de base de datos, la configuración DNS/HTTPS y el control de costes mediante ciclos de creación y destrucción del entorno. Los procedimientos detallados de recreación y operación se recogen en el Anexo~\ref{chap:anexo-procedimientos}.
+
 \section{Contenerización}
 \label{sec:contenerizacion}
 
@@ -78,7 +80,7 @@ La recuperación ante despliegues fallidos se resolvió de forma coherente con e
 
 También se ejecutó una prueba controlada de fallo usando el tag inexistente \tech{sprint7-missing-3dca035}. Este escenario forzó un error de despliegue por imagen no disponible, permitió observar los eventos de ECS y demostró el comportamiento del deployment circuit breaker. La tarea falló con \texttt{CannotPullContainerError}. Tras la prueba se reaplicó el tag bueno \tech{sprint7-good-3dca035} para que el estado de Terraform y la task definition volvieran a quedar alineados, y el readiness respondió de nuevo \texttt{200}.
 
-Para la base de datos, \texttt{dev} mantiene \texttt{database\_backup\_retention\_days = 0} y no genera snapshots finales al destruirse. La fiabilidad se valida mediante snapshot manual: el script \path{scripts/cloud/aws/Invoke-RdsRestoreTest.ps1} crea un snapshot de la base principal, restaura una instancia temporal, crea un secreto temporal con la cadena de conexión restaurada, registra una task definition temporal y ejecuta \path{--migrate-only} contra esa base. El criterio de éxito es código de salida \texttt{0}. Salvo que se active una opción para conservar evidencia, el propio script elimina la base restaurada, el secreto, la task definition temporal, la política IAM temporal y el snapshot manual.
+Para la base de datos, \texttt{dev} mantiene \texttt{database\_backup\_retention\_days = 0} y no genera snapshots finales al destruirse. La fiabilidad se valida mediante snapshot manual: el script \path{scripts/cloud/aws/Invoke-RdsRestoreTest.ps1} crea un snapshot de la base principal, restaura una instancia temporal, crea un secreto temporal con la cadena de conexión restaurada, registra una task definition temporal y ejecuta \path{--migrate-only} contra esa base. El criterio de éxito es código de salida \texttt{0}. Salvo que se active una opción para conservar evidencia, el propio script elimina la base restaurada, el secreto, la task definition temporal, la política IAM temporal y el snapshot manual. La Figura~\ref{fig:rollback-restore} recoge la evidencia de ambas pruebas: el rollback automático con recuperación al tag correcto y la tarea de migración finalizada correctamente contra la base restaurada.
 
 \begin{figure}[htbp]
 \centering
@@ -92,7 +94,7 @@ Para la base de datos, \texttt{dev} mantiene \texttt{database\_backup\_retention
 
 El endpoint objetivo es \endpoint{https://api.dev.transitops.net}. Para lograrlo, Terraform solicita un certificado público en ACM para \endpoint{api.dev.transitops.net}, crea el CNAME de validación en Route 53, espera a que el certificado pase a estado \texttt{ISSUED}, crea el listener HTTPS \texttt{443} en el ALB y convierte el listener HTTP \texttt{80} en una redirección permanente hacia HTTPS.
 
-Durante la activación en la cuenta \texttt{661000947340} apareció una incidencia real de DNS: el dominio registrado \path{transitops.net} apuntaba a nameservers distintos de los de la hosted zone usada por Terraform. ACM permanecía en \texttt{PENDING\_VALIDATION} aunque el CNAME existía en Route 53, porque el DNS público no consultaba esa zona. La corrección consistió en actualizar los nameservers del dominio registrado para que coincidieran con la hosted zone \path{Z0844787W37HXN9FIJR}. Tras la propagación, el CNAME de validación fue visible desde DNS público y el certificado pasó a \texttt{ISSUED}.
+Durante la activación en la cuenta \texttt{661000947340} apareció una incidencia real de DNS: el dominio registrado \path{transitops.net} apuntaba a nameservers distintos de los de la hosted zone usada por Terraform. ACM permanecía en \texttt{PENDING\_VALIDATION} aunque el CNAME existía en Route 53, porque el DNS público no consultaba esa zona. La corrección consistió en actualizar los nameservers del dominio registrado para que coincidieran con la hosted zone \path{Z0844787W37HXN9FIJR}. Tras la propagación, el CNAME de validación fue visible desde DNS público y el certificado pasó a \texttt{ISSUED}, como se muestra en la Figura~\ref{fig:acm-issued}.
 
 \begin{figure}[htbp]
 \centering

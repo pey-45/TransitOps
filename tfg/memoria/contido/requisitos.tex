@@ -1,0 +1,100 @@
+\chapter{Análisis y requisitos}
+\label{chap:requisitos}
+
+Este capítulo define los actores del sistema, los requisitos funcionales y no funcionales, el modelo de dominio y los principales casos de uso. El análisis de requisitos constituye la base sobre la que se apoyan el diseño arquitectónico y la implementación descritos en capítulos posteriores. Las decisiones sobre alcance tomadas en este análisis fueron determinantes para mantener el proyecto dentro de límites manejables sin perder profundidad técnica.
+
+\section{Actores}
+\label{sec:actores}
+
+El sistema distingue los siguientes actores:
+
+\begin{itemize}
+  \item Usuario no autenticado: puede consultar los endpoints públicos de salud y realizar login, pero no acceder a operaciones de negocio.
+  \item Operador: usuario autenticado encargado de la operación diaria. Puede gestionar transportes, vehículos, conductores, asignaciones, transiciones de estado y eventos logísticos.
+  \item Administrador: usuario autenticado con permisos completos. Además de las operaciones del operador, puede gestionar usuarios, roles y activación de cuentas.
+  \item Plataforma: conjunto de componentes técnicos que interactúan con la API, como Docker, GitHub Actions, ECS, ALB y comprobaciones de salud.
+\end{itemize}
+
+\section{Requisitos funcionales}
+\label{sec:requisitos-funcionales}
+
+Los requisitos funcionales principales son:
+
+\begin{longtable}{@{}p{0.12\textwidth}p{0.76\textwidth}@{}}
+\caption{Requisitos funcionales principales}
+\label{tab:requisitos-funcionales}\\
+\textbf{ID} & \textbf{Descripción} \\
+\hline
+RF-01 & Exponer endpoints de salud de proceso y de preparación, diferenciando disponibilidad de la aplicación y conectividad con PostgreSQL. \\
+RF-02 & Permitir la creación controlada del primer administrador mediante un endpoint de bootstrap protegido por token externo. \\
+RF-03 & Autenticar usuarios mediante login con usuario y contraseña, devolviendo un \acrshort{jwt} válido. \\
+RF-04 & Autorizar endpoints protegidos mediante roles \texttt{admin} y \texttt{operator}. \\
+RF-05 & Gestionar usuarios desde endpoints exclusivos para administradores. \\
+RF-06 & Gestionar transportes con creación, consulta, actualización, listado filtrado, paginación y borrado lógico. \\
+RF-07 & Gestionar vehículos como recursos asignables, incluyendo validación de matrícula y código interno. \\
+RF-08 & Gestionar conductores como recursos asignables, incluyendo licencia, contacto y estado activo. \\
+RF-09 & Asignar vehículo y conductor a un transporte planificado mediante una acción explícita. \\
+RF-10 & Controlar el ciclo de vida de un transporte mediante transiciones de estado válidas. \\
+RF-11 & Registrar y consultar eventos logísticos asociados a un transporte, conservando el usuario que los creó. \\
+RF-12 & Devolver errores coherentes para validación, autenticación, autorización, recursos inexistentes y conflictos de negocio. \\
+\end{longtable}
+
+\section{Requisitos no funcionales}
+\label{sec:requisitos-no-funcionales}
+
+Los requisitos no funcionales se centran en la calidad operativa:
+
+\begin{itemize}
+  \item Reproducibilidad: el entorno local debe poder levantarse con Docker Compose y configuración externa.
+  \item Mantenibilidad: el código debe conservar una estructura simple, con responsabilidades claras y sin dividir el sistema en proyectos innecesarios.
+  \item Persistencia consistente: PostgreSQL y las migraciones de EF Core son la fuente de verdad del esquema.
+  \item Seguridad básica: contraseñas con hash, JWT externo, roles, secretos fuera del repositorio y red privada para ECS y RDS.
+  \item Despliegue reproducible: los recursos cloud deben definirse en Terraform y almacenarse con estado remoto.
+  \item Observabilidad mínima: la API debe exponer salud, emitir logs a CloudWatch y permitir diagnosticar estado del servicio.
+  \item Validación automática: la solución debe compilarse y probarse mediante comandos locales y flujos CI.
+  \item Operación cloud: el entorno \texttt{dev} debe ejecutarse en AWS con HTTPS y base de datos privada.
+\end{itemize}
+
+\section{Modelo de dominio}
+\label{sec:modelo-dominio}
+
+El modelo de dominio se articula alrededor de cinco entidades principales:
+
+\begin{itemize}
+  \item \texttt{AppUser}: representa usuarios autenticables, con nombre de usuario, correo, hash de contraseña, rol, estado activo y campos de auditoría.
+  \item \texttt{Transport}: entidad principal del sistema, con referencia, origen, destino, fechas planificadas y reales, estado y asignación opcional de vehículo y conductor.
+  \item \texttt{Vehicle}: recurso material asignable a transportes, identificado por matrícula y, opcionalmente, código interno.
+  \item \texttt{Driver}: recurso humano asignable, identificado por licencia y datos básicos de contacto.
+  \item \texttt{ShipmentEvent}: evento cronológico vinculado a un transporte y al usuario que lo registra.
+\end{itemize}
+
+Las reglas más relevantes son que un transporte nuevo comienza en estado \texttt{planned}, solo puede pasar a \texttt{in\_transit} si tiene vehículo y conductor asignados, y los estados \texttt{delivered} y \texttt{cancelled} son terminales. Las entidades operativas aplican borrado lógico, por lo que las restricciones de unicidad se definen sobre registros activos.
+
+\section{Casos de uso principales}
+\label{sec:casos-uso}
+
+A continuación se describen los casos de uso principales del sistema. Para cada uno se indica el actor que lo inicia, las precondiciones necesarias, el flujo principal de interacción y el resultado esperado.
+
+\textbf{CU-01: Bootstrap del primer administrador.}
+Actor: plataforma o administrador inicial. Precondición: no existe ningún administrador activo en el sistema. El actor llama al endpoint \texttt{POST /api/v1/auth/bootstrap-admin} incluyendo el token externo configurado en la plataforma. El sistema valida el token, comprueba que no existe un administrador activo y crea el primer usuario con rol \texttt{admin}. Resultado: respuesta \texttt{201} con los datos del usuario creado. Si ya existe un administrador, el sistema devuelve \texttt{409} sin crear ningún usuario.
+
+\textbf{CU-02: Autenticación de usuario.}
+Actor: operador o administrador. Precondición: el usuario existe y está activo en el sistema. El actor envía credenciales (usuario y contraseña) al endpoint \texttt{POST /api/v1/auth/login}. El sistema valida las credenciales comparando el hash almacenado, y si son correctas emite un JWT con la identidad y el rol del usuario. Resultado: respuesta \texttt{200} con el token JWT necesario para acceder a los endpoints protegidos.
+
+\textbf{CU-03: Administración de usuarios.}
+Actor: administrador. Precondición: el actor tiene un JWT válido con rol \texttt{admin}. El administrador puede listar usuarios, consultar el detalle de uno concreto, crear nuevos usuarios con rol \texttt{operator} o \texttt{admin}, cambiar el rol de un usuario existente, y activar o desactivar cuentas. El sistema valida que el administrador no pueda desactivar la última cuenta de administrador activa. Resultado: los cambios quedan persistidos y el sistema devuelve el estado actualizado del usuario.
+
+\textbf{CU-04: Gestión de recursos operativos.}
+Actor: operador. Precondición: el actor tiene un JWT válido con rol \texttt{operator}. El operador puede crear, consultar, listar y actualizar vehículos y conductores. El sistema valida restricciones de unicidad sobre matrículas y licencias entre registros activos. El borrado aplica borrado lógico, permitiendo reutilizar el identificador cuando el recurso anterior ha sido retirado. Resultado: los recursos quedan disponibles para ser asignados a transportes.
+
+\textbf{CU-05: Gestión de transportes.}
+Actor: operador. Precondición: el actor tiene un JWT válido con rol \texttt{operator}. El operador puede crear un transporte indicando referencia, origen, destino y fechas planificadas. El transporte se crea en estado \texttt{planned}. El sistema admite listado filtrado por estado o fecha, paginación, actualización de datos básicos y borrado lógico. Resultado: el transporte queda registrado en el sistema y disponible para asignación y ejecución.
+
+\textbf{CU-06: Asignación de recursos a transporte.}
+Actor: operador. Precondición: el transporte existe en estado \texttt{planned}; el vehículo y el conductor existen y están activos. El operador llama al endpoint de asignación indicando el identificador del transporte, el vehículo y el conductor. El sistema valida que ambos recursos existen, que están activos y los vincula al transporte. Resultado: el transporte queda con vehículo y conductor asignados y podrá transicionar a \texttt{in\_transit}.
+
+\textbf{CU-07: Ejecución y seguimiento del transporte.}
+Actor: operador. Precondición: el transporte tiene vehículo y conductor asignados (para pasar a \texttt{in\_transit}). El operador cambia el estado del transporte mediante el endpoint de transición, siguiendo la secuencia válida: \texttt{planned} $\to$ \texttt{in\_transit} $\to$ \texttt{delivered} (o \texttt{cancelled} desde cualquier estado no terminal). El sistema rechaza transiciones inválidas con \texttt{409}. En paralelo, el operador puede registrar eventos logísticos vinculados al transporte. Resultado: el estado del transporte queda actualizado y los eventos quedan registrados con el usuario y la marca temporal correspondientes.
+
+\textbf{CU-08: Consulta de trazabilidad.}
+Actor: operador o administrador. Precondición: el transporte existe. El actor solicita el historial de eventos de un transporte mediante \texttt{GET /api/v1/transports/\{id\}/events}. El sistema devuelve la lista ordenada cronológicamente de todos los eventos registrados, incluyendo el tipo, la descripción, el usuario que lo registró y la marca temporal. Resultado: el actor obtiene el histórico completo del transporte para diagnóstico o auditoría.

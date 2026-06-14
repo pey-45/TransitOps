@@ -1,0 +1,104 @@
+\chapter{Metodología y planificación}
+\label{chap:metodologia}
+
+Este capítulo describe el enfoque metodológico seguido en el proyecto, la planificación temporal, la gestión del alcance, el detalle de cada iteración de desarrollo y una estimación de los recursos y costes involucrados. La metodología adoptada ha condicionado directamente la forma en que se organizó el trabajo, se establecieron prioridades y se controlaron los riesgos a lo largo del desarrollo.
+
+\section{Metodología de trabajo}
+\label{sec:enfoque-trabajo}
+
+El proyecto se desarrolla con una metodología iterativa e incremental inspirada en los principios de Scrum, adaptada al contexto de un trabajo individual. Esta adaptación implica mantener la cadencia de sprints y la transparencia sobre el alcance de cada iteración, pero sin los roles de equipo propios del marco original.
+
+Cada sprint tiene una duración de aproximadamente una semana y un objetivo concreto y verificable. Al inicio de cada sprint se define el conjunto de tareas a abordar y los criterios que indicarán que el sprint ha concluido satisfactoriamente. Al final se revisa el trabajo realizado, se ajusta la planificación si es necesario y se captura evidencia del estado del sistema. Esta estructura evita acumular trabajo sin verificar y permite detectar problemas técnicos antes de que bloqueen fases posteriores.
+
+El backlog del proyecto se organizó en tres niveles: funcionalidad de negocio (API, dominio, persistencia), infraestructura y operación cloud (Terraform, ECS, RDS, DNS, HTTPS), y calidad técnica (pruebas, observabilidad, seguridad, documentación). Esta separación permite planificar iteraciones con objetivos claros y evitar que la complejidad operativa quede para el final del proyecto.
+
+Las fases principales del proyecto fueron:
+
+\begin{enumerate}
+  \item Análisis y diseño del alcance, requisitos, modelo de datos y arquitectura.
+  \item Desarrollo del backend y de los casos de uso principales.
+  \item Contenerización y preparación del entorno local reproducible.
+  \item Definición de la infraestructura cloud mediante Terraform.
+  \item Automatización de integración y despliegue continuo.
+  \item Incorporación de observabilidad y medidas básicas de seguridad.
+  \item Validación funcional y análisis del comportamiento en ejecución.
+  \item Redacción de memoria, conclusiones y líneas futuras.
+\end{enumerate}
+
+\section{Planificación temporal}
+\label{sec:planificacion-temporal}
+
+La planificación se organizó en iteraciones semanales agrupadas por fases. El cuadro~\ref{tab:planificacion-temporal} resume las fases principales, las actividades incluidas y la duración estimada. El trabajo comenzó en el segundo trimestre del curso académico 2025-2026 y se cerró en mayo de 2026.
+
+\begin{longtable}{@{}p{0.28\textwidth}p{0.50\textwidth}p{0.13\textwidth}@{}}
+\caption{Planificación temporal del proyecto}
+\label{tab:planificacion-temporal}\\
+\textbf{Fase} & \textbf{Actividades principales} & \textbf{Duración} \\
+\hline
+\endfirsthead
+\textbf{Fase} & \textbf{Actividades principales} & \textbf{Duración} \\
+\hline
+\endhead
+Análisis y diseño & Definición de actores, requisitos, modelo de dominio y decisiones arquitectónicas & 2 semanas \\
+Implementación backend & API REST, dominio, persistencia, autenticación y autorización & 3 semanas \\
+Pruebas automatizadas & Suite de integración con \texttt{WebApplicationFactory} y smoke tests locales & 1 semana \\
+Contenerización y CI/CD & Dockerfile, Docker Compose y workflows de GitHub Actions & 1 semana \\
+Infraestructura cloud (Sprint 4--6) & Módulos Terraform, primer despliegue real en AWS, DNS/HTTPS, observabilidad & 3 semanas \\
+Fiabilidad operativa (Sprint 7) & Rollback, restore de RDS, hardening de imagen y ajustes de runtime & 2 semanas \\
+Seguridad y coste (Sprint 8) & Revisión IAM/SG, auditoría de postura, runbooks y control de coste & 1 semana \\
+Cierre y documentación (Sprint 9) & Trazabilidad, evidencias, memoria y preparación de defensa & 2 semanas \\
+\textbf{Total} & & \textbf{$\sim$15 sem.} \\
+\end{longtable}
+
+La planificación sufrió ajustes durante la ejecución, principalmente en la fase de infraestructura cloud. La corrección de la delegación DNS, la gestión de secretos programados para eliminación en Secrets Manager y la parametrización del circuit breaker de ECS requirieron iteraciones adicionales que no estaban previstas inicialmente. Este tipo de ajustes es habitual en proyectos con componentes de infraestructura real y se incorporó a la planificación de forma natural dentro del enfoque iterativo.
+
+\section{Gestión del alcance}
+\label{sec:gestion-alcance}
+
+La gestión del alcance se ha basado en una decisión explícita: construir un producto funcionalmente pequeño, pero técnicamente completo. En vez de añadir módulos de negocio avanzados, como optimización de rutas, facturación, geolocalización en tiempo real o panel web, se priorizó que el backend mínimo pudiera desplegarse y operarse en AWS de forma creíble.
+
+Esta decisión reduce el riesgo de terminar con una aplicación amplia pero superficial. El valor del trabajo se concentra en demostrar el ciclo completo de ingeniería: modelado de dominio, API, persistencia, pruebas, contenedores, infraestructura cloud, seguridad básica, CI/CD, migraciones y validación operativa.
+
+El alcance funcional se fijó alrededor de transportes, vehículos, conductores, usuarios, asignaciones, estados y eventos logísticos. Cualquier funcionalidad fuera de ese flujo se trató como línea futura salvo que fuese necesaria para demostrar el despliegue o la operación.
+
+\section{Ejecución por sprints}
+\label{sec:ejecucion-sprints}
+
+La planificación del tramo cloud se organizó en sprints semanales. Esta estructura permitió separar claramente la construcción funcional del backend, la definición de infraestructura, el primer despliegue real y el endurecimiento operativo posterior.
+
+Sprint 6 se centró en observabilidad y hardening de despliegue. Su objetivo no fue añadir nuevos casos de uso de negocio, sino convertir el entorno \texttt{dev} en un sistema más diagnosticable y operable. El trabajo incluyó correlación de peticiones, logging JSON, dashboard CloudWatch, alarmas, verificación de observabilidad en el workflow de despliegue, circuit breaker de ECS, parametrización de health checks y ajuste del camino DNS/HTTPS en la cuenta AWS actual. El sprint terminó con una validación real en AWS y con el destroy del entorno para controlar costes.
+
+Sprint 7 se planteó como cierre de fiabilidad operativa. Tampoco añadió funcionalidad de negocio; se centró en demostrar que el entorno puede recuperarse de un despliegue fallido, volver a una imagen conocida, validar un restore real de RDS desde snapshot manual y destruir todos los recursos efímeros al finalizar. Este sprint incorporó un workflow manual de rollback, un script PowerShell de restore contra una base de datos temporal, endurecimiento de la imagen Docker, ajustes explícitos de runtime y una nueva ronda de validación real en AWS \texttt{dev}.
+
+Sprint 8 se orientó a cerrar la parte defendible de seguridad, coste y operación. El trabajo consistió en revisar IAM, grupos de seguridad, exposición TLS, secretos y postura de red; documentar qué recursos generan coste y cuáles sobreviven intencionadamente a un destroy; definir un procedimiento completo para recrear \texttt{dev} desde cero; y consolidar runbooks para despliegue, rollback, reinicio, bootstrap, restore, búsqueda por correlation id, respuesta a alarmas y cierre de coste.
+
+\section{Estimación de costes}
+\label{sec:estimacion-costes}
+
+El coste del proyecto tiene dos componentes: el coste de los recursos cloud mientras el entorno está activo, y el coste residual de los recursos base que permanecen tras los ciclos de destroy. La estrategia adoptada de entorno efímero minimiza el coste activo al limitarlo a los periodos de validación.
+
+El cuadro~\ref{tab:estimacion-costes} recoge una estimación aproximada del coste mensual de los recursos del entorno \texttt{dev} en la región \texttt{eu-west-1} de AWS cuando el entorno está completamente desplegado:
+
+\begin{longtable}{@{}p{0.38\textwidth}p{0.25\textwidth}p{0.25\textwidth}@{}}
+\caption{Estimación de coste mensual del entorno dev activo}
+\label{tab:estimacion-costes}\\
+\textbf{Recurso} & \textbf{Configuración} & \textbf{Coste aprox./mes} \\
+\hline
+\endfirsthead
+\textbf{Recurso} & \textbf{Configuración} & \textbf{Coste aprox./mes} \\
+\hline
+\endhead
+NAT Gateway & 1 AZ, tráfico mínimo & $\sim$\$32 \\
+Application Load Balancer & 1 instancia & $\sim$\$16 \\
+ECS Fargate & 0,25 vCPU / 0,5 GB / 1 tarea & $\sim$\$9 \\
+RDS PostgreSQL & \texttt{db.t3.micro}, sin backups automáticos & $\sim$\$12 \\
+CloudWatch & Logs, dashboard, 9 alarmas & $\sim$\$5 \\
+Route 53 & Hosted zone + consultas & $\sim$\$1 \\
+ECR & Almacenamiento de imágenes & $<$\$1 \\
+Secrets Manager & 2--3 secretos activos & $<$\$1 \\
+\textbf{Total estimado (activo)} & & $\sim$\textbf{\$76/mes} \\
+\end{longtable}
+
+En la práctica, el entorno solo estuvo activo durante los periodos de validación de cada sprint, con duraciones de horas o pocos días. Los recursos base que permanecen tras el destroy (dominio registrado, hosted zone y backend remoto Terraform en S3/DynamoDB) representan un coste residual inferior a \$2/mes.
+
+Esta estrategia de entorno efímero es una de las decisiones de diseño más importantes del proyecto desde el punto de vista económico: permite validar una arquitectura real en AWS sin incurrir en el coste de mantener el entorno activo de forma continua durante los meses de desarrollo.

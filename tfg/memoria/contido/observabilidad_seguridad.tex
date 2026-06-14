@@ -1,6 +1,8 @@
 \chapter{Observabilidad y seguridad}
 \label{chap:observabilidad-seguridad}
 
+Este capítulo cubre las decisiones de observabilidad y seguridad adoptadas en TransitOps. Se describen los endpoints de salud que permiten al balanceador de carga tomar decisiones sobre el tráfico, el sistema de logs JSON correlables en CloudWatch, el dashboard y alarmas operativas, las medidas de seguridad aplicadas en aplicación e infraestructura, las limitaciones asumidas deliberadamente, y la revisión de seguridad realizada en el Sprint 8. El objetivo de este capítulo es demostrar que el entorno \texttt{dev} es operable y auditable, no solo desplegable.
+
 \section{Comprobaciones de salud}
 \label{sec:health-checks}
 
@@ -24,7 +26,7 @@ En Sprint 6 se sustituyó la salida de consola no estructurada por logging JSON 
   \item registra por petición método, ruta, código HTTP, duración, usuario y rol cuando existen.
 \end{itemize}
 
-Esto permite seguir una petición concreta desde la respuesta HTTP hasta los logs de CloudWatch. Además, los errores gestionados por el middleware de excepciones heredan el mismo identificador, por lo que el campo de error devuelto al cliente y el log del servidor quedan correlados.
+Esto permite seguir una petición concreta desde la respuesta HTTP hasta los logs de CloudWatch. Además, los errores gestionados por el middleware de excepciones heredan el mismo identificador, por lo que el campo de error devuelto al cliente y el log del servidor quedan correlados. La Figura~\ref{fig:cloudwatch-logs-correlation} ilustra este mecanismo con una petición real de readiness y su entrada de log JSON asociada en CloudWatch.
 
 \begin{figure}[htbp]
 \centering
@@ -52,7 +54,7 @@ La operación de Sprint 6 deja de depender solo de comprobaciones manuales. Terr
   \item almacenamiento libre en RDS.
 \end{itemize}
 
-Las alarmas usan \texttt{treat\_missing\_data} conservador para reducir ruido cuando \texttt{dev} está destruido o con \texttt{desired\_count = 0}. Si se configura \texttt{alarm\_email}, Terraform crea un topic SNS y una suscripción de email; si no se configura, las alarmas existen sin acciones. Durante la validación de Sprint 6 no se creó topic SNS porque no se proporcionó email.
+Las alarmas usan \texttt{treat\_missing\_data} conservador para reducir ruido cuando \texttt{dev} está destruido o con \texttt{desired\_count = 0}. Si se configura \texttt{alarm\_email}, Terraform crea un topic SNS y una suscripción de email; si no se configura, las alarmas existen sin acciones. Durante la validación de Sprint 6 no se creó topic SNS porque no se proporcionó email. La Figura~\ref{fig:cloudwatch-dashboard} muestra el dashboard \path{transitops-dev-api} con los paneles de ALB, ECS, RDS y logs recientes creados automáticamente por Terraform.
 
 \begin{figure}[htbp]
 \centering
@@ -92,7 +94,7 @@ Estas limitaciones no invalidan el objetivo del trabajo, ya que se ha priorizado
 
 Sprint 8 añadió una revisión explícita de seguridad sobre la arquitectura desplegable. La conclusión principal es que la aplicación mantiene una frontera pública pequeña: el ALB es el único punto de entrada, HTTP se usa únicamente para redirección a HTTPS, ECS no recibe IP pública y RDS no es accesible desde Internet.
 
-En IAM se diferencian tres casos. El execution role de ECS puede leer únicamente los secretos referenciados por la task definition. El task role de la aplicación no tiene permisos AWS porque la API no llama a servicios AWS en ejecución. El rol OIDC de GitHub conserva permisos amplios sobre los servicios gestionados por Terraform para poder aplicar y destruir el entorno \texttt{dev}; se acepta como riesgo controlado porque la trust policy queda limitada al repositorio y rama configurados, y porque el entorno se destruye tras capturar evidencia.
+En IAM se diferencian tres casos. El execution role de ECS puede leer únicamente los secretos referenciados por la task definition. El task role de la aplicación no tiene permisos AWS porque la API no llama a servicios AWS en ejecución. El rol OIDC de GitHub conserva permisos amplios sobre los servicios gestionados por Terraform para poder aplicar y destruir el entorno \texttt{dev}; se acepta como riesgo controlado porque la trust policy queda limitada al repositorio y rama configurados, y porque el entorno se destruye tras capturar evidencia. La Figura~\ref{fig:sprint8-security-review} muestra el resultado de la ejecución del script de auditoría de postura de seguridad que verifica estos puntos de forma automatizada.
 
 \begin{figure}[htbp]
 \centering

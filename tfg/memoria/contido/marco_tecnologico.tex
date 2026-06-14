@@ -1,6 +1,8 @@
 \chapter{Marco tecnológico}
 \label{chap:marco-tecnologico}
 
+Este capítulo describe el conjunto de tecnologías seleccionadas para el proyecto, explicando el papel de cada una dentro de la solución y justificando su elección frente a alternativas disponibles en el mercado. Las decisiones tecnológicas no son independientes entre sí: forman un ecosistema coherente en el que backend, persistencia, contenedores, infraestructura cloud, CI/CD y observabilidad se complementan para cubrir los objetivos del trabajo con la menor complejidad operativa razonable. Las herramientas principales utilizadas son ASP.NET Core, PostgreSQL con Entity Framework Core, Docker, Terraform, AWS, GitHub Actions y CloudWatch.
+
 \section{Backend API y arquitectura de servicios}
 \label{sec:marco-backend-api}
 
@@ -11,6 +13,8 @@ ASP.NET Core proporciona el modelo de ejecución HTTP, el sistema de inyección 
 El diseño de la API sigue una separación por responsabilidades: controladores para recibir peticiones, contratos para definir entradas y salidas, servicios de aplicación para coordinar casos de uso, entidades de dominio para representar reglas centrales e infraestructura para persistencia. Esta estructura permite razonar sobre el sistema sin imponer capas artificiales. En un proyecto académico de alcance acotado, una división excesiva en proyectos o servicios habría añadido coste de mantenimiento sin aportar evidencia técnica relevante.
 
 El uso de HTTP también facilita definir criterios de aceptación observables. Un endpoint de salud debe responder con un código concreto; un login válido debe devolver un token; una operación protegida debe rechazar al usuario no autorizado; un error de validación debe devolver un estado coherente. Estos comportamientos se pueden automatizar en pruebas y repetir tanto en local como en AWS.
+
+ASP.NET Core se eligió frente a otras opciones como Node.js con Express o NestJS, Spring Boot o FastAPI por varias razones. En primer lugar, ofrece tipado estático e integración nativa con Entity Framework Core, lo que resulta adecuado para un dominio con reglas de negocio moderadamente complejas. En segundo lugar, el sistema de inyección de dependencias y la configuración por entornos facilitan la separación entre código y configuración sensible, un requisito explícito del proyecto. Por último, el conocimiento previo del framework por parte del alumno permitió dedicar el tiempo de aprendizaje al ciclo cloud en lugar de al lenguaje.
 
 \section{Persistencia relacional y migraciones}
 \label{sec:marco-persistencia}
@@ -23,6 +27,8 @@ La decisión de usar migraciones también aporta trazabilidad. Cada cambio de es
 
 PostgreSQL aporta restricciones a nivel de base de datos que complementan la validación de aplicación. En TransitOps se usan índices únicos condicionados por borrado lógico, tipos enteros para estados controlados y relaciones entre tablas. La aplicación sigue siendo responsable de expresar reglas de negocio y devolver errores comprensibles, pero la base de datos actúa como última línea de defensa para la integridad persistente.
 
+PostgreSQL se eligió frente a MySQL porque ofrece soporte nativo a índices parciales con condiciones, lo que resulta imprescindible para implementar restricciones de unicidad sobre registros activos con borrado lógico. Frente a bases de datos NoSQL como MongoDB, el modelo relacional encaja mejor con el dominio del proyecto, donde las entidades tienen relaciones claras y se requiere integridad referencial. SQLite no es viable en despliegues cloud con múltiples réplicas de contenedor.
+
 \section{Contenedores y reproducibilidad}
 \label{sec:marco-contenedores}
 
@@ -33,6 +39,8 @@ En local, Docker Compose levanta la API y PostgreSQL con una configuración cont
 La imagen de la API se endureció durante Sprint 7. El contenedor se ejecuta con usuario no root, expone únicamente el puerto necesario y usa una imagen base de runtime en lugar de una imagen completa de SDK. También se añadió un fichero \path{.dockerignore} para evitar enviar al daemon de Docker carpetas de compilación, metadatos de Git, directorios de Terraform, ficheros locales y artefactos pesados de documentación. Esta mejora no cambia la funcionalidad, pero reduce superficie accidental y acelera el proceso de build.
 
 El etiquetado de imágenes es parte de la trazabilidad del despliegue. En los sprints cloud se usaron tags operativos como \tech{sprint6-local-6bb910c}, \tech{sprint7-good-3dca035} o \tech{sprint8-good-fdf98b9}. Estos tags permiten explicar qué versión de la API se ejecutó en cada validación y facilitan el rollback a una imagen conocida. La imagen no es solo un artefacto técnico, sino una pieza de evidencia del flujo de entrega.
+
+Docker es el estándar de facto para la contenerización en entornos cloud y cuenta con la mayor integración nativa con los servicios de AWS, en particular con ECR y ECS Fargate. Frente a herramientas alternativas como Podman, la compatibilidad total con el daemon Docker simplifica el pipeline CI/CD y elimina configuraciones adicionales en los runners de GitHub Actions. Docker Compose se usa en desarrollo frente a alternativas más complejas como Minikube o k3d porque ofrece una configuración más ligera y suficiente para un entorno de un solo nodo.
 
 \section{Infraestructura como código}
 \label{sec:marco-iac}
@@ -45,6 +53,8 @@ El estado remoto se almacena en S3 y se bloquea mediante DynamoDB. Este punto es
 
 El uso de Terraform también hace explícitos los tradeoffs del entorno \texttt{dev}. Por ejemplo, se mantiene \texttt{desired\_count = 0} cuando se desea crear infraestructura sin arrancar todavía la API, se desactivan backups automáticos de RDS para evitar coste recurrente, se permite borrar ECR con imágenes en desarrollo y se destruye el stack al terminar cada validación. Estas decisiones no serían tan visibles si los recursos se creasen manualmente.
 
+Terraform se eligió frente a AWS CloudFormation por su menor verbosidad, su modelo de módulos reutilizables y su capacidad de gestionar recursos de múltiples proveedores en la misma configuración. Frente a AWS CDK, Terraform es agnóstico al proveedor cloud y dispone de un ecosistema de módulos más amplio. Pulumi fue descartado por ser una herramienta menos extendida y porque su modelo de scripts de infraestructura en código de aplicación añadiría fricción en un contexto académico.
+
 \section{AWS como plataforma de despliegue}
 \label{sec:marco-aws}
 
@@ -56,6 +66,8 @@ ECS Fargate encaja con el alcance del trabajo porque evita gestionar clústeres 
 
 RDS aporta una base de datos gestionada que simplifica operación. Aun así, el proyecto no ignora la recuperación: Sprint 7 añadió una prueba real de snapshot manual, restauración temporal y migración contra la base restaurada. Esto demuestra que la decisión de desactivar backups recurrentes en \texttt{dev} es una optimización de coste para un entorno efímero, no una ausencia de criterio sobre protección de datos.
 
+AWS se eligió como plataforma cloud frente a Microsoft Azure o Google Cloud Platform por varias razones. En primer lugar, AWS es el proveedor cloud con mayor cuota de mercado, lo que aporta valor formativo directo al trabajo. En segundo lugar, los servicios específicos utilizados (ECS Fargate, RDS, ACM, Route 53, Secrets Manager, CloudWatch) forman un ecosistema maduro y bien documentado que cubre las necesidades del proyecto sin herramientas adicionales. Azure y GCP ofrecen servicios equivalentes, pero requerirían adaptar la configuración Terraform y los flujos de despliegue a un ecosistema diferente sin aportar una ventaja técnica significativa para los objetivos del TFG.
+
 \section{CI/CD y entrega controlada}
 \label{sec:marco-cicd}
 
@@ -65,6 +77,8 @@ El acceso a AWS desde GitHub se diseña mediante \acrshort{oidc}. Esto evita alm
 
 El pipeline no sustituye a Terraform como fuente de verdad. Cuando se despliega o se hace rollback, el workflow modifica variables como el tag de imagen y reaplica infraestructura. Esto evita cambios manuales directos sobre ECS que quedarían fuera del estado. La operación queda trazada: la task definition activa se deriva de código, variables y estado Terraform.
 
+GitHub Actions se eligió como plataforma de CI/CD frente a Jenkins porque no requiere gestionar infraestructura de servidor de integración continua. Frente a GitLab CI, la integración es nativa al repositorio sin necesidad de migración. Su soporte incorporado para OIDC con AWS simplifica considerablemente el flujo de credenciales, eliminando la necesidad de almacenar claves de larga duración como secretos del repositorio.
+
 \section{Observabilidad mínima}
 \label{sec:marco-observabilidad}
 
@@ -73,6 +87,8 @@ La observabilidad del proyecto se centra en tres elementos: salud, logs correlab
 Los logs se emiten en formato JSON y se envían a CloudWatch mediante el driver \texttt{awslogs}. El middleware de correlación añade o conserva el header \httpheader{X-Correlation-ID}, lo devuelve al cliente y lo usa como \texttt{TraceIdentifier}. De esta forma, un error observado desde una respuesta HTTP puede buscarse en CloudWatch con el mismo identificador. Para un entorno pequeño, esta capacidad aporta un valor operativo alto sin introducir una plataforma \acrshort{apm} completa.
 
 El módulo de observabilidad crea dashboard CloudWatch, alarmas sobre ALB/ECS/RDS y filtro métrico para errores de aplicación. Las alarmas usan tratamiento conservador de datos ausentes para reducir ruido cuando el entorno está destruido o con ECS a cero tareas. Esta decisión refleja el carácter efímero de \texttt{dev}: la observabilidad debe existir cuando el entorno está activo, pero no debe generar falsas incidencias cuando se ha destruido intencionadamente.
+
+CloudWatch se utiliza como plataforma de observabilidad frente a soluciones externas como Datadog, Grafana Cloud o New Relic porque está integrada de forma nativa con los servicios AWS desplegados, no añade licencia adicional y es suficiente para las necesidades de un entorno de desarrollo con un único servicio. La correlación de peticiones mediante header y logs JSON estructurados proporciona un nivel de trazabilidad adecuado para el alcance del proyecto. OpenTelemetry y trazas distribuidas quedan como línea futura para cuando el sistema crezca en número de servicios.
 
 \section{Seguridad y coste como restricciones de diseño}
 \label{sec:marco-seguridad-coste}

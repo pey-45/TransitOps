@@ -1,6 +1,8 @@
 \chapter{Validación y resultados}
 \label{chap:validacion-resultados}
 
+Este capítulo recoge los resultados de la validación del sistema a lo largo de los sprints de cierre. Se documenta la estrategia de validación multicapa, las pruebas funcionales automatizadas, la validación de infraestructura cloud, los resultados obtenidos en cada sprint y el análisis de limitaciones del trabajo. La trazabilidad completa entre requisitos, implementación y evidencias se recoge en el Anexo~\ref{chap:anexo-trazabilidad}.
+
 \section{Estrategia de validación}
 \label{sec:estrategia-validacion}
 
@@ -79,7 +81,7 @@ Las comprobaciones principales fueron:
 
 La prueba de rollback usó el tag inexistente \tech{sprint7-missing-3dca035}. ECS creó una tarea que falló con \texttt{CannotPullContainerError} al no existir el manifiesto de imagen en ECR. Después se reaplicó Terraform con \tech{sprint7-good-3dca035} y el endpoint de readiness volvió a responder \texttt{200}, con correlation id \tech{sprint7-health-after-bad-image}.
 
-La prueba de restore de RDS creó un snapshot manual, restauró una instancia temporal, creó un secreto temporal de conexión y ejecutó una tarea ECS \path{--migrate-only} contra la base restaurada. La task definition temporal \tech{transitops-dev-api-restore-sprint7:2} terminó con exit code \texttt{0}. Durante esta validación se detectó una mejora real: el secreto temporal también necesita permiso \tech{secretsmanager:GetSecretValue} en el execution role de ECS. El script fue corregido para añadir y eliminar una política IAM temporal como parte de la prueba.
+La prueba de restore de RDS creó un snapshot manual, restauró una instancia temporal, creó un secreto temporal de conexión y ejecutó una tarea ECS \path{--migrate-only} contra la base restaurada. La task definition temporal \tech{transitops-dev-api-restore-sprint7:2} terminó con exit code \texttt{0}. Durante esta validación se detectó una mejora real: el secreto temporal también necesita permiso \tech{secretsmanager:GetSecretValue} en el execution role de ECS. El script fue corregido para añadir y eliminar una política IAM temporal como parte de la prueba. La Figura~\ref{fig:cloud-smoke-evidence} muestra el estado del servicio ECS con \texttt{1/1} tareas activas y la respuesta \texttt{200} del endpoint de readiness por HTTPS, confirmando que el entorno estaba operativo.
 
 \begin{figure}[htbp]
 \centering
@@ -114,7 +116,7 @@ La validación funcional confirmó readiness HTTPS \texttt{200} con correlation 
 
 La auditoría de seguridad verificó que RDS no era público, ECS no tenía IP pública, los grupos de seguridad mantenían el flujo Internet--ALB--ECS--RDS, los secretos runtime existían en Secrets Manager y el rol de aplicación no contenía políticas inline. El rol OIDC de despliegue conserva permisos amplios para ejecutar Terraform en \texttt{dev}; se documenta como riesgo aceptado porque la trust policy queda limitada al repositorio y rama configurados.
 
-También se revisa el coste del entorno. Los recursos que generan coste mientras \texttt{dev} está activo son principalmente NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager y ECR. El cierre obligatorio del sprint volvió a ejecutar \texttt{terraform destroy}, eliminó \texttt{72} recursos y después comprobó la ausencia de ALB, ECS, RDS, ECR, certificado ACM, registros \path{api.dev}, logs, dashboard, alarmas, secretos y snapshots temporales. Los secretos runtime se borraron de forma forzada tras quedar inicialmente programados para eliminación por Secrets Manager.
+También se revisa el coste del entorno. Los recursos que generan coste mientras \texttt{dev} está activo son principalmente NAT Gateway, ALB, ECS Fargate, RDS, CloudWatch, Secrets Manager y ECR. El cierre obligatorio del sprint volvió a ejecutar \texttt{terraform destroy}, eliminó \texttt{72} recursos y después comprobó la ausencia de ALB, ECS, RDS, ECR, certificado ACM, registros \path{api.dev}, logs, dashboard, alarmas, secretos y snapshots temporales. Los secretos runtime se borraron de forma forzada tras quedar inicialmente programados para eliminación por Secrets Manager. La Figura~\ref{fig:sprint8-cost-review} muestra la revisión de costes por servicio durante la recreación temporal del entorno, confirmando qué recursos generan gasto y en qué proporción. La Figura~\ref{fig:sprint8-destroy-audit} muestra el resultado de la auditoría post-destroy que verifica la ausencia de recursos efímeros asociados al stack \path{transitops-dev}.
 
 \begin{figure}[htbp]
 \centering

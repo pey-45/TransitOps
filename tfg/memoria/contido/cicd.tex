@@ -1,6 +1,8 @@
 \chapter{Integración y despliegue continuo}
 \label{chap:cicd}
 
+Este capítulo describe el pipeline de integración y despliegue continuo definido para TransitOps. Se explican los objetivos del pipeline, los pasos de validación automática que garantizan la calidad antes de cada despliegue, la publicación de artefactos en ECR y los workflows de despliegue, rollback y recreación completa del entorno. El acceso a AWS se gestiona mediante OIDC, evitando credenciales de larga duración.
+
 \section{Objetivos del pipeline}
 \label{sec:objetivos-pipeline}
 
@@ -55,7 +57,7 @@ Después de aplicar infraestructura, el workflow captura outputs relevantes del 
 
 En Sprint 7 se añadió un flujo de rollback explícito. La operación no reconstruye la aplicación ni cambia el contrato HTTP: recibe un \texttt{api\_image\_tag} ya publicado en ECR y lo convierte en el tag deseado de la task definition mediante Terraform. Esto deja el rollback trazable en el state, evita cambios manuales sobre ECS y permite comprobar que la imagen activa coincide con el tag esperado.
 
-En Sprint 8 se cerró el camino de recreación completa del entorno \texttt{dev}. El procedimiento parte de un state vacío tras \texttt{terraform destroy}, aplica la plataforma con ECS a cero tareas, publica una imagen con tag operativo, carga secretos de runtime, ejecuta migraciones con \path{--migrate-only}, escala ECS a una tarea y valida HTTPS, login y observabilidad. La ejecución real usó el tag \tech{sprint8-good-fdf98b9} y una tarea de migración finalizada con exit code \texttt{0}. Este flujo convierte la reconstrucción del entorno en una operación documentada, no en una secuencia de pasos recordados de forma informal.
+En Sprint 8 se cerró el camino de recreación completa del entorno \texttt{dev}. El procedimiento parte de un state vacío tras \texttt{terraform destroy}, aplica la plataforma con ECS a cero tareas, publica una imagen con tag operativo, carga secretos de runtime, ejecuta migraciones con \path{--migrate-only}, escala ECS a una tarea y valida HTTPS, login y observabilidad. La ejecución real usó el tag \tech{sprint8-good-fdf98b9} y una tarea de migración finalizada con exit code \texttt{0}. Este flujo convierte la reconstrucción del entorno en una operación documentada, no en una secuencia de pasos recordados de forma informal. La Figura~\ref{fig:deploy-cloud-evidence} muestra la imagen publicada en ECR, el servicio ECS estable y el readiness HTTPS respondiendo correctamente. La Figura~\ref{fig:rollback-tag-evidence} verifica que la task definition activa apunta al tag operativo validado. La Figura~\ref{fig:sprint8-recreate} recoge los outputs de Terraform tras la recreación completa, incluyendo los valores de ALB, DNS, ECS y la task definition activa.
 
 \begin{figure}[htbp]
 \centering
