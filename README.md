@@ -1,69 +1,62 @@
 # TransitOps
 
-Transport management backend as a personal project focused on cloud architecture and DevOps practices.
+Transport management application, developed as a full software development lifecycle project: requirements, design, backend, frontend, testing, and deployment.
 
 ## Current Status
 
-Reference date: May 31, 2026.
+Reference date: July 6, 2026.
 
-The repository contains an ASP.NET Core solution with the local backend baseline already in place:
+The project direction changed on 2026-06-19 (signed TFG modification request) from an AWS cloud-platform thesis to this full-lifecycle application thesis. The previous cloud/AWS/Terraform work and TFG memoria/presentation are preserved for reference under [archive/cloud-phase/](archive/README.md) and are not part of the active project.
 
-- `TransitOps.Api`: HTTP entry point, EF Core PostgreSQL persistence, versioned controllers, common response contracts, and minimal domain structure.
-- `TransitOps.Tests`: test project.
+The repository contains an ASP.NET Core solution with the backend baseline already implemented:
 
-The solution is intentionally kept small and KISS-oriented: only the API and tests exist as projects, while the internal API structure stays limited to the folders that already provide concrete value.
+- `TransitOps.Api`: HTTP entry point, EF Core PostgreSQL persistence, versioned controllers, common response contracts, JWT authentication, and a small, deliberate domain structure.
+- `TransitOps.Tests`: xUnit integration test project covering health, auth, users, transports, vehicles, drivers, and shipment events.
 
-The code is intentionally small in functional scope, but the project is now complete enough to defend as a cloud-operable backend. PostgreSQL-backed CRUD exists for transports, vehicles, and drivers, including soft delete on the main operational entities. Transport filters and pagination support demo use, explicit vehicle+driver assignment and lifecycle transitions are implemented, shipment events provide chronological traceability, first-admin bootstrap/login/JWT protection are in place, and admin-only user management covers list, detail, create, role changes, activation/deactivation, and last-active-admin protection.
+PostgreSQL-backed CRUD exists for transports, vehicles, and drivers, including soft delete on the main operational entities. Transport filters and pagination support demo use, explicit vehicle+driver assignment and lifecycle transitions are implemented, shipment events provide chronological traceability, first-admin bootstrap/login/JWT protection are in place, and admin-only user management covers list, detail, create, role changes, and activation/deactivation.
 
-The operational layer is also implemented and documented: Docker local reproducibility, xUnit integration tests, Postman/Newman smoke flow, GitHub Actions CI/deploy/rollback workflows, Terraform remote state, ECS Fargate, ECR, RDS PostgreSQL, ALB, Route53/ACM HTTPS, Secrets Manager/SSM runtime configuration, JSON CloudWatch logs, `X-Correlation-ID`, dashboard, alarms, SNS email support, rollback, RDS restore validation, security/cost reviews, runbooks, final evidence index, and requirements traceability.
-
-The AWS `dev` environment is intentionally disposable. Sprint validations recreated it, ran migrations and smoke checks, verified observability/security/reliability, and destroyed it afterwards to avoid avoidable cost. The domain, hosted zone, and Terraform remote-state backend are the intentionally retained foundation resources.
-
-Planning has now been restructured around an explicit requirements specification and a weekly sprint roadmap so the remaining work stays aligned with the real repository state and the AWS deployment objective.
+The frontend, the deployment target, and lightweight CI/CD-for-deploy are the main remaining work. No frontend code exists yet.
 
 ## Project Objective
 
-Build a backend that is small in functionality and strong in operation:
+Build and demonstrate a complete transport-management application, covering the full software development lifecycle:
 
-- transport management;
-- vehicle and driver assignment;
-- traceability through logistics events;
-- basic authentication and authorization;
-- later deployment to AWS with infrastructure as code;
-- observability, security, and defensible documentation.
-
-The local MVP is not the final objective by itself. It is the minimum credible base for the cloud deployment phase, so scope must stay intentionally tight.
+- analyze the functional and non-functional requirements of the application;
+- design the system architecture: data model, components, and interfaces;
+- implement a backend exposing vehicle, driver, transport, and operations management (already done);
+- develop a frontend for visual, intuitive interaction with the application;
+- implement user authentication and authorization (done on the backend; frontend integration pending);
+- define and execute a functional and integration test plan;
+- deploy the application to an accessible environment and document the process;
+- document the architecture, design decisions, and development process.
 
 ## MVP Scope
 
-The MVP covers a functional backend that can run locally with:
+The MVP covers a functional full-stack application with:
 
-- API ASP.NET Core;
-- PostgreSQL persistence;
-- CRUD for transports, vehicles, and drivers;
-- assignments and state transitions;
-- JWT authentication with basic roles;
-- basic user bootstrap and admin user management;
-- initial tests;
-- local packaging with Docker.
-
-Advanced cloud work is outside the functional MVP, but it is included in the project delivery scope and has been implemented for the disposable AWS `dev` environment: Terraform, ECS, ECR, RDS, ALB, Route53/ACM, CloudWatch, alarms, OIDC-based GitHub Actions, rollback, restore, and cost-safe teardown.
+- API ASP.NET Core (implemented);
+- PostgreSQL persistence (implemented);
+- CRUD for transports, vehicles, and drivers (implemented);
+- assignments and state transitions (implemented);
+- JWT authentication with basic roles (implemented);
+- basic user bootstrap and admin user management (implemented);
+- backend tests (implemented);
+- local packaging with Docker (implemented);
+- a React SPA frontend covering login and the main operational flows (planned);
+- deployment to a simple, accessible environment (planned, target to be decided).
 
 The detailed requirements baseline is in [docs/Requirements.md](docs/Requirements.md), and the current sprint plan is in [docs/Roadmap.md](docs/Roadmap.md).
 
 ## Target Stack
 
-- ASP.NET Core
-- PostgreSQL
-- xUnit
-- Docker
-- Terraform
-- GitHub Actions
-- AWS ECS Fargate
-- Amazon RDS
-- Amazon ECR
-- ALB
-- CloudWatch
+- ASP.NET Core (.NET 10) — implemented
+- PostgreSQL — implemented
+- xUnit — implemented
+- Docker / Docker Compose — implemented (local reproducibility)
+- GitHub Actions — implemented for CI (restore/build/test)
+- React (SPA) — planned, frontend
+- Frontend test tooling — planned, decided when the frontend is scaffolded
+- Deployment target — to be decided during the deployment phase; intentionally not a Terraform-managed cloud platform this time
 
 ## Solution Structure
 
@@ -72,32 +65,20 @@ TransitOps/
 |-- TransitOps.slnx
 |-- AGENTS.md
 |-- CONTEXT.md
-|-- .env.example
 |-- README.md
+|-- .env.example
 |-- docker-compose.yml
 |-- dotnet-tools.json
-|-- infra/
-|   `-- terraform/
-|       |-- bootstrap/
-|       |   `-- remote_state/
-|       |-- modules/
-|       |   |-- container_registry/
-|       |   |-- container_runtime/
-|       |   |-- database/
-|       |   |-- observability/
-|       |   |-- platform_foundation/
-|       |   `-- runtime_config/
-|       `-- environments/
-|           |-- dev/
-|           `-- prod/
+|-- archive/
+|   |-- README.md
+|   `-- cloud-phase/          (superseded cloud/AWS/Terraform work and prior TFG memoria, kept for reference)
 |-- .github/
 |   `-- workflows/
 |       `-- ci.yml
 |-- docs/
-|   |-- CloudArchitecture.md
-|   |-- LocalVerification.md
 |   |-- Requirements.md
-|   `-- Roadmap.md
+|   |-- Roadmap.md
+|   `-- LocalVerification.md
 |-- scripts/
 |   |-- database/
 |   |   `-- postgres/
@@ -114,46 +95,47 @@ TransitOps/
 |   |-- Contracts/
 |   |-- Domain/
 |   |-- Errors/
+|   |-- Extensions/
 |   |-- Middleware/
 |   |-- Application/
 |   |-- Infrastructure/
+|   |-- Security/
 |   |-- Properties/
 |   |-- Dockerfile
 |   |-- TransitOps.Api.http
 |   |-- TransitOps.Api.postman_collection.json
 |   |-- Program.cs
 |   `-- TransitOps.Api.csproj
-`-- TransitOps.Tests/
-    |-- DriverEndpointsTests.cs
-    |-- HealthEndpointsTests.cs
-    |-- TransportEndpointsTests.cs
-    |-- TransportStateMachineTests.cs
-    |-- TransitOpsApiFactory.cs
-    |-- VehicleEndpointsTests.cs
-    `-- TransitOps.Tests.csproj
+|-- TransitOps.Tests/
+|   |-- AuthEndpointsTests.cs
+|   |-- DriverEndpointsTests.cs
+|   |-- HealthEndpointsTests.cs
+|   |-- ShipmentEventEndpointsTests.cs
+|   |-- TransportEndpointsTests.cs
+|   |-- TransportStateMachineTests.cs
+|   |-- UserEndpointsTests.cs
+|   |-- VehicleEndpointsTests.cs
+|   |-- TestAuthenticationHandler.cs
+|   |-- TransitOpsApiFactory.cs
+|   `-- TransitOps.Tests.csproj
+`-- (planned) frontend project, added once the frontend sprints start
 ```
 
-The exact folder distribution may evolve. What matters at this stage is that the solution, the baseline documentation, and the main projects already exist and are consistent with the roadmap.
+The exact folder distribution may evolve, especially once the frontend project is scaffolded. What matters at this stage is that the solution, the baseline documentation, and the backend are already consistent with the roadmap.
 
 ## Available Documentation
 
 - Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
 - Sprint delivery roadmap: [docs/Roadmap.md](docs/Roadmap.md)
 - Local verification guide: [docs/LocalVerification.md](docs/LocalVerification.md)
-- Cloud architecture, conventions, and Terraform remote-state bootstrap: [docs/CloudArchitecture.md](docs/CloudArchitecture.md)
-- Cloud deployment path: [docs/CloudDeployment.md](docs/CloudDeployment.md)
-- Cloud reliability and restore runbooks: [docs/CloudReliability.md](docs/CloudReliability.md)
-- Cloud operations, security, cost, and recreate-from-scratch: [docs/CloudOperations.md](docs/CloudOperations.md)
-- Requirements traceability: [docs/RequirementsTraceability.md](docs/RequirementsTraceability.md)
-- Final evidence index: [docs/FinalEvidence.md](docs/FinalEvidence.md)
-- Final verification and rehearsal guide: [docs/FinalVerification.md](docs/FinalVerification.md)
+- Archived cloud-phase materials (reference only, not current): [archive/README.md](archive/README.md)
 
 ## Local Requirements
 
 - .NET SDK 10
 - Docker Desktop
-- Terraform CLI, when starting the cloud phase
 - PostgreSQL 16 or later, if run without containers
+- Node.js (planned, once the frontend is scaffolded)
 
 ## Local Startup
 
@@ -163,27 +145,22 @@ The repository already includes:
 
 - `docker-compose.yml` for local API + PostgreSQL startup;
 - EF Core PostgreSQL persistence under `TransitOps.Api/Infrastructure/Persistence`;
-- a migrations-managed schema under `TransitOps.Api/Infrastructure/Persistence/Migrations`, including the baseline setup plus follow-up alignment and enum-simplification migrations;
+- a migrations-managed schema under `TransitOps.Api/Infrastructure/Persistence/Migrations`;
 - implemented `GET /api/v1/health/live` and `GET /api/v1/health/ready`;
 - implemented database-backed transport CRUD, including filtered/paginated `GET /api/v1/transports`, `GET /api/v1/transports/{id}`, `POST /api/v1/transports`, `PUT /api/v1/transports/{id}`, `PUT /api/v1/transports/{id}/assignment`, `PUT /api/v1/transports/{id}/status`, and `DELETE /api/v1/transports/{id}`;
 - implemented database-backed vehicle CRUD on `GET /api/v1/vehicles`, `GET /api/v1/vehicles/{id}`, `POST /api/v1/vehicles`, `PUT /api/v1/vehicles/{id}`, and `DELETE /api/v1/vehicles/{id}`;
 - implemented database-backed driver CRUD on `GET /api/v1/drivers`, `GET /api/v1/drivers/{id}`, `POST /api/v1/drivers`, `PUT /api/v1/drivers/{id}`, and `DELETE /api/v1/drivers/{id}`;
-- implemented shipment-event creation/history on `POST /api/v1/transports/{transportId}/shipment-events` and `GET /api/v1/transports/{transportId}/shipment-events`, with actor traceability now resolved from the authenticated user context;
+- implemented shipment-event creation/history on `POST/GET /api/v1/transports/{transportId}/shipment-events`, with actor traceability resolved from the authenticated user context;
 - implemented auth endpoints on `POST /api/v1/auth/bootstrap-admin` and `POST /api/v1/auth/login`, with password hashing, JWT issuance, and protected business endpoints;
 - implemented admin-only user-management on `GET /api/v1/users`, `GET /api/v1/users/{id}`, `POST /api/v1/users`, `PUT /api/v1/users/{id}/role`, and `PUT /api/v1/users/{id}/activation`, including last-active-admin protection;
-- integration tests for the implemented health, transport, vehicle, driver, shipment-event, auth, and user-management endpoints;
+- integration tests for the implemented health, auth, transport, vehicle, driver, shipment-event, and user-management endpoints;
 - manual request artifacts in `TransitOps.Api/TransitOps.Api.http` and `TransitOps.Api/TransitOps.Api.postman_collection.json`;
 - a runner-safe Postman/Newman smoke flow under `scripts/testing/postman/` that starts from deterministic seed data and exercises the live local API against real PostgreSQL;
-- optional manual sample-data scripts under `scripts/database/postgres/seed/`, aligned with the current numeric enum mapping, plus `.bat` wrappers that execute them against the local Docker PostgreSQL service;
-- `smallint`-backed enum storage with check constraints for transport status, shipment event type, and user role;
-- a real readiness check at `GET /api/v1/health/ready` that verifies PostgreSQL connectivity;
-- Terraform modules for the AWS runtime path: ECR, CloudWatch logs/dashboard/alarms, RDS PostgreSQL, Secrets Manager/SSM runtime configuration, ECS Fargate, ALB, target group, listener, Route53/ACM HTTPS, GitHub OIDC, and ECS task/service definition;
-- operational scripts for RDS restore validation, AWS posture audit, and post-destroy audit under `scripts/cloud/aws/`;
-- final Sprint 9 documentation for traceability, evidence, and verification/rehearsal.
+- optional manual sample-data scripts under `scripts/database/postgres/seed/`.
 
-The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Middleware`, `Application`, and `Infrastructure`.
+The API structure remains intentionally simple: `Controllers`, `Contracts`, `Domain`, `Common`, `Errors`, `Extensions`, `Middleware`, `Application`, `Infrastructure`, and `Security`.
 
-`TransitOps.Api/Infrastructure/Persistence/Migrations` is now the only source of truth for the database schema. Local Docker startup relies on EF Core migrations, not on separate SQL schema bootstrap files.
+`TransitOps.Api/Infrastructure/Persistence/Migrations` is the only source of truth for the database schema.
 
 ### Base Commands
 
@@ -262,8 +239,6 @@ dotnet tool restore
 dotnet tool run dotnet-ef database update --project .\TransitOps.Api\TransitOps.Api.csproj --startup-project .\TransitOps.Api\TransitOps.Api.csproj
 ```
 
-`docker compose up --build` starts PostgreSQL on a fresh named volume and the API applies pending EF Core migrations automatically on startup. If you still have an old local volume from the retired SQL-bootstrap flow, reset it with `docker compose down -v`.
-
 The Docker path reads `.env` automatically. `TRANSITOPS_JWT_SIGNING_KEY` is required and must be at least 32 characters long. `TRANSITOPS_BOOTSTRAP_ADMIN_TOKEN` is optional and only needed when you want to call `POST /api/v1/auth/bootstrap-admin`.
 
 Validate the compose file before starting the stack:
@@ -284,18 +259,6 @@ Run the local smoke test against the live Docker API and PostgreSQL:
 .\scripts\testing\postman\run_local_api_smoke.bat
 ```
 
-This smoke flow:
-
-- starts `db` and `api` with Docker Compose;
-- waits for `GET /api/v1/health/ready`;
-- removes any leftover runtime smoke data from previous interrupted runs;
-- resets the deterministic sample dataset through the existing seed scripts;
-- logs in with the deterministic seeded admin user before hitting protected endpoints;
-- executes `scripts/testing/postman/collections/TransitOps.Api.smoke.postman_collection.json` against the live API;
-- physically removes every runtime transport, vehicle, driver, user, shipment-event, and deterministic seed row generated by the smoke flow before exiting, even if the collection fails midway.
-
-`run_local_api_smoke.bat` prefers a globally installed `newman`, but it can also fall back to `npx newman@6` when Node.js is available.
-
 For the full step-by-step local path, including manual `.http` and Postman verification, see [docs/LocalVerification.md](docs/LocalVerification.md).
 
 Deterministic local seed credentials:
@@ -307,18 +270,21 @@ These credentials exist only in the manual local seed dataset under `scripts/dat
 
 ## Next Milestones
 
-1. Add real screenshots to the placeholders listed in [docs/FinalEvidence.md](docs/FinalEvidence.md) and the TFG memory if fresh visual evidence is needed.
-2. Optionally run one short final AWS recreate using [docs/FinalVerification.md](docs/FinalVerification.md), then destroy and audit immediately.
-3. For work beyond the TFG scope, add a separate `prod` environment, tighter IAM deployment policy, WAF/autoscaling, distributed tracing, and a frontend.
+1. Close/confirm requirements and high-level design for the new scope: data model is already stable, so this is mainly architecture notes and UI wireframes/prototype.
+2. Scaffold the React frontend and integrate the authentication flow end-to-end.
+3. Build the main operational frontend views: transports, vehicles, drivers, assignment, lifecycle, shipment events, and user administration.
+4. Decide and set up a simple, accessible deployment target for backend + frontend.
+5. Add lightweight CI/CD for deployment and minimal monitoring.
+6. Run an end-to-end functional test pass across backend and frontend, and close any gaps.
+7. Write the TFG memoria for the new direction.
 
 ## Roadmap Quality Criteria
 
-- The solution must build cleanly.
+- The solution must build cleanly, backend and frontend.
 - Tests must be runnable locally and in CI.
 - The environment must be reproducible.
-- Cloud infrastructure must be versioned.
-- Each week must end with a verifiable result.
+- Each sprint must end with a verifiable, demonstrable result.
 
 ## Verification Note
 
-As of May 31, 2026, the API project builds, the functional MVP is implemented, tests cover the critical API behavior, local Docker verification is documented, and the AWS `dev` platform has been recreated and validated repeatedly in account `661000947340` (`Pablo`, alias `aws-pey-v1`). The cloud path includes Terraform remote state, private RDS, private ECS tasks, ALB HTTPS through Route53/ACM, Secrets Manager/SSM runtime configuration, ECR image publication, ECS `--migrate-only` migrations, JSON logs with `X-Correlation-ID`, CloudWatch dashboard and alarms, rollback workflow, RDS restore validation, security/cost reviews, runbooks, final evidence index, and requirements traceability. The latest validated `dev` stack was destroyed after evidence capture; retained resources are the registered domain, public hosted zone, and Terraform remote-state backend.
+As of July 6, 2026, the backend builds, its functional surface is implemented, and tests cover the critical API behavior; see [docs/LocalVerification.md](docs/LocalVerification.md) for the full local verification path. No frontend and no deployment environment currently exist, by design: the project direction changed on 2026-06-19, and this is the fresh documentation baseline for the new scope. The previous AWS `dev` validation history is preserved under [archive/cloud-phase/](archive/README.md) for reference only.

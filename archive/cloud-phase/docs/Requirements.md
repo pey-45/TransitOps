@@ -6,16 +6,14 @@ Define the current functional and non-functional requirements for TransitOps. Th
 
 ## Planning Context
 
-- Reference date: July 6, 2026.
-- Product type: transport-management application, covering the full software development lifecycle (backend + frontend).
-- Primary objective: deliver a complete, demonstrable application — requirements, design, backend, frontend, testing, and deployment — without inflating functional scope beyond what is needed to demonstrate the full lifecycle credibly.
-- Current baseline completed: backend MVP (local), PostgreSQL persistence, Docker reproducibility, CI baseline (restore/build/test).
-- Not yet started: frontend, updated UI-facing requirements verification, deployment target, and CI/CD-for-deploy.
-- This document supersedes the previous cloud-platform-oriented requirements baseline, preserved at `archive/cloud-phase/docs/Requirements.md`. The backend functional requirements below are carried over unchanged, because the direction change adds a frontend and de-emphasizes cloud depth — it does not change the backend's business rules.
+- Reference date: May 31, 2026.
+- Product type: backend-only transport management API.
+- Primary objective: deliver a small but credible backend that can reach AWS without inflating functional scope.
+- Current baseline completed: local MVP, PostgreSQL persistence, Docker reproducibility, CI baseline, Terraform-managed AWS `dev`, HTTPS deployment, observability, rollback, restore, security/cost review, operations runbooks, and final evidence/traceability documentation.
 
 ## Product Goal
 
-TransitOps must allow a small operations team to manage transports, vehicles, drivers, and shipment events through a secured API and a web interface, while covering the complete software development lifecycle: requirements analysis, design, implementation (backend and frontend), testing, and deployment.
+TransitOps must allow a small operations team to manage transports, vehicles, drivers, and shipment events through a secured API, while keeping the system simple enough to package, deploy, and defend technically in a cloud-oriented academic/professional context.
 
 ## Scope Statement
 
@@ -29,27 +27,22 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 - JWT-based authentication and role-based authorization.
 - PostgreSQL persistence through EF Core.
 - Docker-based local reproducibility.
-- A React SPA frontend covering login and the main operational flows, consuming the existing REST API.
-- CI workflow for build/test, plus lightweight deployment automation once a deployment target is chosen.
-- Deployment to a simple, accessible environment for demo and defense purposes.
+- CI/CD workflows and a repeatable AWS `dev` deployment path.
 
 ### Out of Scope for the Current Phase
 
+- Frontend or administration panel.
 - Self-service registration, forgot-password, or password reset flows.
 - Route optimization, billing, invoicing, or advanced fleet management.
 - Multi-region deployment, autoscaling policy tuning, or microservice decomposition.
-- Native mobile applications.
 - Advanced observability beyond the minimum needed to operate and defend the project, such as distributed tracing, APM, or business metrics.
-- Deep infrastructure-as-code on a managed cloud platform (the previous direction's AWS/Terraform work; see `archive/cloud-phase/`). A simple deployment target is in scope, but a multi-environment, Terraform-managed cloud platform is explicitly not the goal this time.
 
 ## Actors
 
 - `Unauthenticated caller`: can reach public health endpoints and the login entry point.
-- `Operator`: performs day-to-day operational work on transports, assignments, and shipment events, primarily through the frontend.
+- `Operator`: performs day-to-day operational work on transports, assignments, and shipment events.
 - `Admin`: can perform all operator actions and is the only actor allowed to manage users.
-- `Platform`: Docker, CI, and the chosen deployment/runtime tooling interact with the service through startup, health, and deployment contracts.
-
-`Operator` and `Admin` are expected to interact with the system mainly through the frontend once it exists; the REST API remains the underlying contract and stays directly usable (for testing, automation, or API-only integration).
+- `Platform`: Docker, CI, ECS, ALB, and related deployment/runtime tooling interact with the service through startup, health, and deployment contracts.
 
 ## Domain Scope Summary
 
@@ -60,8 +53,6 @@ TransitOps must allow a small operations team to manage transports, vehicles, dr
 | `Vehicle` | Assignable transport resource | `plate_number`, optional internal code, optional brand/model, optional capacities, active flag, audit fields |
 | `Driver` | Assignable human resource | names, `license_number`, optional employee code/contact data, active flag, audit fields |
 | `ShipmentEvent` | Chronological operational event | `transport_id`, `created_by_user_id`, `event_type`, `event_date`, optional location/notes |
-
-This domain model is unaffected by the direction change and is not expected to be restructured for the frontend; the frontend is expected to consume it as-is.
 
 ## Role and Permission Model
 
@@ -82,7 +73,7 @@ This domain model is unaffected by the direction change and is not expected to b
 | Create shipment event | No | Yes | Yes | Protected operational endpoint |
 | Read shipment event history | No | Yes | Yes | Protected operational endpoint |
 
-`Admin` inherits all `operator` permissions. `Operator` is intentionally limited to operational work and cannot manage users or privileged setup flows. The frontend must enforce the same boundaries in its navigation/UI, on top of (not instead of) the backend's authorization checks.
+`Admin` inherits all `operator` permissions. `Operator` is intentionally limited to operational work and cannot manage users or privileged setup flows.
 
 ## Functional Requirements Overview
 
@@ -90,26 +81,18 @@ This domain model is unaffected by the direction change and is not expected to b
 | --- | --- | --- | --- |
 | FR-01 | Health and platform endpoints | Must | Completed |
 | FR-02 | First admin bootstrap | Must | Completed |
-| FR-03 | User administration (API) | Must | Completed |
-| FR-04 | Authentication (API) | Must | Completed |
+| FR-03 | User administration | Must | Completed |
+| FR-04 | Authentication | Must | Completed |
 | FR-05 | Authorization | Must | Completed |
-| FR-06 | Transport management (API) | Must | Completed |
-| FR-07 | Vehicle management (API) | Must | Completed |
-| FR-08 | Driver management (API) | Must | Completed |
+| FR-06 | Transport management | Must | Completed |
+| FR-07 | Vehicle management | Must | Completed |
+| FR-08 | Driver management | Must | Completed |
 | FR-09 | Assignment workflow | Must | Completed |
 | FR-10 | Transport lifecycle | Must | Completed |
-| FR-11 | Shipment events (API) | Must | Completed |
+| FR-11 | Shipment events | Must | Completed |
 | FR-12 | Listings and filters | Should | Completed |
 | FR-13 | Validation, response contract, and conflicts | Must | Completed |
 | FR-14 | Audit trail and logical deletion | Must | Completed |
-| FR-15 | Authentication UI | Must | Not started |
-| FR-16 | Transport management UI | Must | Not started |
-| FR-17 | Vehicle management UI | Must | Not started |
-| FR-18 | Driver management UI | Must | Not started |
-| FR-19 | Shipment event UI | Should | Not started |
-| FR-20 | User administration UI | Should | Not started |
-
-FR-01 through FR-14 are the backend requirements carried over unchanged from the previous direction; they are already implemented and are not expected to change for the frontend to consume them. FR-15 through FR-20 are new for this direction.
 
 ## Detailed Functional Specification
 
@@ -132,6 +115,7 @@ The system shall provide a documented mechanism to create the first active `admi
 
 Behavior:
 
+- The bootstrap path is outside normal user administration and may be implemented through seed data, a script, or a controlled setup procedure.
 - The implemented API bootstrap path is `POST /api/v1/auth/bootstrap-admin` and requires an externally configured bootstrap token.
 - The bootstrap path must only succeed when no active, non-deleted admin user already exists.
 - The bootstrap process must not require committed secrets or hardcoded credentials in repository code.
@@ -139,9 +123,10 @@ Behavior:
 Acceptance criteria:
 
 - Local setup documentation explains how to obtain the first admin user.
+- Cloud setup documentation explains the equivalent first-admin path.
 - Re-running the bootstrap path after an admin already exists is rejected or becomes a no-op with clear behavior.
 
-### FR-03 · User Administration (API)
+### FR-03 · User Administration
 
 The system shall provide basic user administration for admins.
 
@@ -161,13 +146,13 @@ Acceptance criteria:
 - Inactive or deleted users cannot authenticate.
 - The system prevents the last active admin user from being deactivated or losing the admin role.
 
-### FR-04 · Authentication (API)
+### FR-04 · Authentication
 
 The system shall authenticate users through JWT.
 
 Behavior:
 
-- Login uses `username` and `password`.
+- Login uses `username` and `password` in the MVP.
 - Successful login returns a JWT that contains enough claims to identify the user and enforce role-based access.
 - Invalid credentials return `401`.
 - Deleted or inactive users are rejected even if credentials otherwise match.
@@ -194,7 +179,7 @@ Acceptance criteria:
 - A request with missing or invalid token is rejected.
 - A request from an authenticated user without sufficient role is rejected with a coherent authorization error.
 
-### FR-06 · Transport Management (API)
+### FR-06 · Transport Management
 
 The system shall manage transports as the main operational entity.
 
@@ -211,7 +196,7 @@ Acceptance criteria:
 - Deleted transports do not appear in active listings.
 - `planned_delivery_at` cannot be earlier than `planned_pickup_at`.
 
-### FR-07 · Vehicle Management (API)
+### FR-07 · Vehicle Management
 
 The system shall manage vehicles as assignable resources.
 
@@ -226,7 +211,7 @@ Acceptance criteria:
 - Optional `internal_code` is unique among active, non-deleted vehicles when present.
 - Capacity fields cannot be negative.
 
-### FR-08 · Driver Management (API)
+### FR-08 · Driver Management
 
 The system shall manage drivers as assignable resources.
 
@@ -248,7 +233,7 @@ Behavior:
 
 - Assignment is allowed only while the transport is in `planned`.
 - The target vehicle and driver must exist, be active, and not be deleted.
-- The assignment action handles vehicle and driver together to keep the rule set simple.
+- The assignment action in the MVP handles vehicle and driver together to keep the rule set simple.
 - Reassignment is allowed only while the transport remains in `planned`.
 
 Acceptance criteria:
@@ -279,7 +264,7 @@ Acceptance criteria:
 - Invalid transitions are rejected with a coherent business error.
 - Delivered or cancelled transports cannot be moved back into an active operational state.
 
-### FR-11 · Shipment Events (API)
+### FR-11 · Shipment Events
 
 The system shall register and query shipment events attached to a transport.
 
@@ -288,7 +273,7 @@ Behavior:
 - Event creation is available to authenticated admins and operators.
 - Each event stores `transport_id`, `created_by_user_id`, `event_type`, `event_date`, and optional `location` and `notes`.
 - `created_by_user_id` is taken from the authenticated caller context, not from a client-supplied body field.
-- Supported event types are `created`, `assigned`, `departed`, `checkpoint`, `incident`, `delivered`, and `cancelled`.
+- Supported event types in the MVP are `created`, `assigned`, `departed`, `checkpoint`, `incident`, `delivered`, and `cancelled`.
 - Event history is retrieved by transport and returned chronologically.
 
 Acceptance criteria:
@@ -345,87 +330,6 @@ Acceptance criteria:
 - Active-row uniqueness rules are compatible with soft delete.
 - Existing references to users or transports remain valid for historical records.
 
-### FR-15 · Authentication UI
-
-The frontend shall provide a login flow and protect the operational views behind it.
-
-Behavior:
-
-- A login form collects `username` and `password` and calls `POST /api/v1/auth/login`.
-- On success, the frontend stores the issued token for the session and attaches it to subsequent API calls.
-- Unauthenticated access to operational routes redirects to login.
-- A visible logout action clears the session.
-- The UI reflects the caller's role (`admin` vs `operator`) to show or hide admin-only navigation (user administration).
-
-Acceptance criteria:
-
-- Invalid credentials show a clear error without a full page reload failure.
-- Reloading the page keeps the session while the token is valid.
-- An expired or invalid token results in a clean redirect back to login, not a broken screen.
-
-### FR-16 · Transport Management UI
-
-The frontend shall provide views to operate on transports end-to-end.
-
-Behavior:
-
-- A list view shows transports with the filters and pagination already supported by the API (status, planned date range, vehicle, driver).
-- A detail view shows a transport's full data plus its shipment-event history.
-- Create/edit forms cover the fields defined in FR-06, with client-side validation mirroring the API's acceptance criteria.
-- The detail or list view exposes the assignment action (FR-09) and the lifecycle transition actions (FR-10), disabled or hidden when not valid for the transport's current state.
-
-Acceptance criteria:
-
-- A user can create a transport, assign a vehicle and driver, transition it through its lifecycle, and see the result reflected without a manual page refresh.
-- API validation/conflict errors (`400`/`409`) surface as readable UI feedback, not raw JSON.
-
-### FR-17 · Vehicle Management UI
-
-The frontend shall provide list, detail, create, and edit views for vehicles, covering the fields and constraints in FR-07.
-
-Acceptance criteria:
-
-- A user can create, edit, and (soft) delete a vehicle from the UI.
-- Uniqueness conflicts (`409`) on `plate_number`/`internal_code` surface as readable UI feedback.
-
-### FR-18 · Driver Management UI
-
-The frontend shall provide list, detail, create, and edit views for drivers, covering the fields and constraints in FR-08.
-
-Acceptance criteria:
-
-- A user can create, edit, and (soft) delete a driver from the UI.
-- Uniqueness conflicts (`409`) on `license_number`/`employee_code`/`email` surface as readable UI feedback.
-
-### FR-19 · Shipment Event UI
-
-The frontend shall let a user register and review shipment events for a transport, per FR-11.
-
-Behavior:
-
-- The transport detail view lists its shipment-event history in chronological order.
-- A form lets the user record a new event with `event_type`, `event_date`, and optional `location`/`notes`.
-
-Acceptance criteria:
-
-- A newly created event appears in the transport's history without a manual page refresh.
-- Event creation against a deleted or non-existent transport is prevented by the UI, matching the API's acceptance criteria.
-
-### FR-20 · User Administration UI
-
-The frontend shall expose admin-only views for the user-management flows in FR-03, hidden entirely from `operator` sessions.
-
-Behavior:
-
-- List/detail view for existing users.
-- A create-user form for `username`, `email`, `password`, and role.
-- Actions to change a user's role and to activate/deactivate a user.
-
-Acceptance criteria:
-
-- A non-admin cannot reach this view even by direct navigation (the frontend check backs up, and does not replace, the API's `403`).
-- The UI prevents submitting an action that would deactivate or demote the last active admin, mirroring the API's business rule, and still handles the API's rejection gracefully if it happens anyway.
-
 ## Main Business Flows
 
 ### Flow 1 · Bootstrap First Admin
@@ -436,14 +340,14 @@ Acceptance criteria:
 
 ### Flow 2 · Admin Creates an Operator
 
-1. Admin authenticates (via the frontend login).
-2. Admin creates a new user with role `operator`, from the user administration UI.
-3. Operator credentials become usable through the login screen.
+1. Admin authenticates.
+2. Admin creates a new user with role `operator`.
+3. Operator credentials become usable through the login endpoint.
 
 ### Flow 3 · Operator Executes a Transport
 
-1. Operator authenticates through the frontend.
-2. Operator creates a transport from the UI.
+1. Operator authenticates.
+2. Operator creates a transport.
 3. Operator creates or reuses a vehicle and a driver.
 4. Operator assigns the vehicle and driver to the planned transport.
 5. Operator transitions the transport to `in_transit`.
@@ -453,17 +357,15 @@ Acceptance criteria:
 ### Flow 4 · Admin Deactivates a User
 
 1. Admin authenticates.
-2. Admin marks a target user as inactive from the UI.
+2. Admin marks a target user as inactive.
 3. The deactivated user can no longer log in.
 4. Historical records remain preserved.
-
-These flows are already fully exercised against the API (see `docs/LocalVerification.md` and the Postman smoke flow); once the frontend exists, the same flows must be exercisable end-to-end through the UI.
 
 ## Business Rules
 
 - BR-01: A transport can have at most one assigned vehicle and one assigned driver at a time.
 - BR-02: Assignment is valid only while the transport is in `planned`.
-- BR-03: Partial assignment is not supported; vehicle and driver are managed together.
+- BR-03: Partial assignment is not supported in the MVP assignment action; vehicle and driver are managed together.
 - BR-04: Only active, non-deleted users, vehicles, and drivers may participate in operational flows.
 - BR-05: `planned_delivery_at` cannot be earlier than `planned_pickup_at`.
 - BR-06: `actual_delivery_at` cannot be earlier than `actual_pickup_at`.
@@ -476,32 +378,28 @@ These flows are already fully exercised against the API (see `docs/LocalVerifica
 - BR-13: Shipment events belong to exactly one transport and keep the creating user reference.
 - BR-14: Business identifiers only need to be unique among active rows, not among logically deleted rows.
 
-The frontend must respect these rules in its UX (e.g., disabling actions that would violate them), but the backend remains the enforcement authority.
-
 ## Non-Functional Requirements
 
 | ID | Requirement | Priority | Current Status | Acceptance Summary |
 | --- | --- | --- | --- | --- |
-| NFR-01 | Scope discipline and simplicity | Must | Ongoing | The solution stays a small, modular application (backend + frontend) with only justified projects, folders, and abstractions. |
-| NFR-02 | PostgreSQL as system of record | Must | Completed | PostgreSQL remains the single persistent store, with EF Core migrations as the canonical schema. |
-| NFR-03 | Reproducible local execution | Must | Completed for backend; Not started for frontend | Another developer can start the API, PostgreSQL, and (once it exists) the frontend locally with documented commands and without hidden manual steps. |
-| NFR-04 | Deployability to an accessible environment | Must | Not started | Backend and frontend are deployable together to a simple, internet-reachable environment suitable for a demo/defense; the specific target is decided during the deployment sprint. |
-| NFR-05 | Security baseline | Must | Completed for backend; Not started for frontend integration | Passwords are hashed, JWT secrets are externalized, roles are enforced on the API, runtime secrets stay outside Git, and the deployed environment uses HTTPS. |
-| NFR-06 | Maintainability and full-lifecycle documentation | Must | Ongoing | Folder responsibilities stay clear across backend and frontend, and documentation (requirements, design, architecture, testing, deployment, results) is kept aligned with reality for the TFG memoria. |
-| NFR-07 | Testability and CI | Must | Completed for backend; Not started for frontend | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI, for both backend and (once it exists) frontend. |
-| NFR-08 | Basic observability | Should | Not started | Logs and request correlation are available; monitoring stays appropriate for a small demo deployment, not enterprise-scale observability. |
-| NFR-09 | Small-scale performance | Should | Completed for backend | Core list/detail flows use filtering, pagination, and relational constraints/indexes suitable for the academic workload. |
+| NFR-01 | Scope discipline and simplicity | Must | Completed | The solution remains a small modular monolith with only justified projects, folders, and abstractions. |
+| NFR-02 | PostgreSQL as system of record | Must | Completed | PostgreSQL remains the single persistent store locally and in AWS RDS, with EF Core migrations as the canonical schema. |
+| NFR-03 | Reproducible local execution | Must | Completed | Another developer can start the API and PostgreSQL locally with documented commands and without hidden manual steps. |
+| NFR-04 | Cloud deployability | Must | Completed | The API is stateless, containerized, externally configurable, and validated on ECS, ALB, Route53/ACM, RDS, ECR, Secrets Manager, and CloudWatch. |
+| NFR-05 | Security baseline | Must | Completed | Passwords are hashed, JWT secrets are externalized, roles are enforced, runtime secrets stay outside Git, ECS/RDS run privately, and HTTPS is enabled. |
+| NFR-06 | Reliability and controlled failure | Must | Completed | Readiness checks, ECS circuit breaker, rollback workflow, migration task, and RDS restore validation are documented and tested. |
+| NFR-07 | Maintainability and documentation | Must | Completed | Folder responsibilities stay clear, docs are aligned with reality, and Sprint 9 adds traceability/evidence/final verification documents. |
+| NFR-08 | Testability and CI | Must | Completed | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI. |
+| NFR-09 | Observability | Should | Completed | Logs are structured, request correlation is available through `X-Correlation-ID`, and CloudWatch has logs, dashboard, metric filter, alarms, and optional SNS email. |
+| NFR-10 | Small-scale performance | Should | Completed | Core list/detail flows use filtering, pagination, relational constraints/indexes, and bounded cloud connection-pool settings suitable for the academic workload. |
+| NFR-11 | Infrastructure as code and controlled delivery | Must | Completed | AWS infrastructure is versioned in Terraform, remote state uses S3/DynamoDB, and delivery/rollback paths are repeatable through GitHub Actions and local runbooks. |
 
 ## Delivery Gates
 
-### Gate A · Backend MVP Ready (met)
+### Gate A · Local MVP Ready
 
-The backend MVP is considered ready when `FR-01` through `FR-14` and `NFR-02`, `NFR-07`, `NFR-09` are complete. This gate is already met.
+The local MVP is considered ready when `FR-02` through `FR-11`, `FR-13`, `FR-14`, and `NFR-02` through `NFR-08` are complete.
 
-### Gate B · Frontend MVP Ready
+### Gate B · Cloud Deployment Ready
 
-The frontend MVP is considered ready when `FR-15` through `FR-20` are implemented and integrated against the existing backend, and `NFR-03`, `NFR-05`, `NFR-07` extend to cover the frontend.
-
-### Gate C · Deployed and Demonstrable
-
-The project is considered ready for defense when `NFR-04` and `NFR-08` are complete and the full application (frontend + backend) is reachable end-to-end in the chosen deployment environment.
+The cloud deployment phase is considered ready for defense when `NFR-04`, `NFR-05`, `NFR-09`, and `NFR-11` are complete and the API is reachable on AWS with working health checks.
