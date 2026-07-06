@@ -13,7 +13,8 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - Keep the functional scope intentionally small, but demonstrable end-to-end across backend and frontend, rather than deep in any single layer.
 - The project's differentiator is software engineering discipline across the full lifecycle, not infrastructure or cloud depth. Deployment and CI/CD exist, but stay deliberately lightweight.
 - Preserve consistency with the documented requirements and roadmap unless the user explicitly changes scope.
-- The project direction changed on 2026-06-19 (signed TFG modification request) from an AWS cloud-platform thesis to this full-lifecycle application thesis. Prior cloud/AWS/Terraform work and the previous TFG memoria/presentation are preserved for reference under `archive/cloud-phase/` and are not part of the active project; do not edit or build on top of that folder.
+- The project direction changed on 2026-06-19 (signed TFG modification request) from an AWS cloud-platform thesis to this full-lifecycle application thesis. The prior cloud/AWS/Terraform work, the previous TFG memoria/presentation, and the previous-iteration application code are all preserved under `archive/cloud-phase/`.
+- The application is being **rebuilt from scratch** following the new iterative full-lifecycle methodology, on the same stack (.NET + PostgreSQL backend, React frontend). The archived previous-iteration code is a **reference oracle**: consult it (business rules, EF migrations, test cases, decisions already made) while re-implementing, but do not edit it or build the active project directly on top of it.
 
 ## User Preferences
 
@@ -31,25 +32,23 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - `docs/Roadmap.md` is the canonical sprint execution plan and should preserve completed history while replanning pending work.
 - Keep `README.md` focused on repository-facing documentation, setup, and high-level project description.
 - Keep requirements and roadmap documents aligned with actual project decisions when they materially change.
-- `archive/cloud-phase/` holds documentation and code superseded by the direction change. Treat it as historical reference only, never as current state.
+- `archive/cloud-phase/` holds documentation and code superseded by the direction change. Treat it as reference only (a consultable oracle for the rewrite), never as current state and never as something to edit.
 
 ## Engineering Rules
 
-- Favor clear folder and module responsibilities, in both the backend (`TransitOps.Api`) and the frontend once it exists.
+- Favor clear folder and module responsibilities, in both the backend and the frontend, once each is scaffolded.
 - Avoid hidden magic and implicit behavior when a straightforward implementation is available.
 - Add tests when behavior or business rules justify them, on whichever layer the behavior lives in.
 - Prefer validating changes with build or tests when feasible.
 - Do not introduce secrets into committed files.
 
-## Project Orientation
-
-- Main backend: ASP.NET Core / .NET 10 (implemented).
-- Persistence: PostgreSQL via EF Core (implemented).
-- Backend test stack: xUnit (implemented).
-- Frontend: React SPA, not yet started, to integrate with the existing REST API.
+- Main backend: ASP.NET Core / .NET 10 (to be built fresh; a working previous-iteration backend exists in `archive/cloud-phase/` as reference).
+- Persistence: PostgreSQL via EF Core.
+- Backend test stack: xUnit.
+- Frontend: React SPA, not yet started, to integrate with the backend over its REST API.
 - Frontend test stack: to be decided when the frontend is scaffolded.
-- Operational direction: Docker/Docker Compose for local reproducibility (implemented). Deployment target and CI/CD depth are deliberately lightweight and decided later in the roadmap; do not assume AWS, ECS, or Terraform going forward.
-- Current priority: close requirements/design for the new scope, then build the frontend against the existing, already-implemented backend.
+- Operational direction: Docker/Docker Compose for local reproducibility. Deployment target and CI/CD depth are deliberately lightweight and decided later in the roadmap; do not assume AWS, ECS, or Terraform going forward.
+- Current priority: close requirements/design for the new scope, then rebuild the application iteratively, sprint by sprint, each slice going through the full cycle (design, implementation, tests). No active application code exists in the repository root yet.
 
 ## Session Start Checklist
 

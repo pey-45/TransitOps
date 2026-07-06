@@ -1,313 +1,212 @@
-# TransitOps · Sprint Roadmap
+# TransitOps · Roadmap de Sprints
 
-## Purpose
+## Propósito
 
-Translate `docs/Requirements.md` into a sequential sprint plan that closes the full software development lifecycle for the application-focused direction: design, backend closure, frontend, deployment, CI/CD, testing, and documentation.
+Traducir la especificación de [docs/Requirements.md](Requirements.md) en un plan de sprints iterativos que recorra el ciclo de vida completo del software, en línea con la metodología del anteproyecto: enfoque iterativo e incremental, priorizando versiones funcionales desde fases tempranas, con cada incremento validado mediante pruebas funcionales y ejecución real del sistema.
 
-## Planning Model
+## Modelo de Planificación
 
-- Planning uses sequential numbered sprints instead of fixed calendar weeks, at the project owner's request. Each sprint defines mandatory scope, required artifacts, a definition of done, and explicit items that cannot remain open at close — the same discipline as before, just without a pre-assigned date range.
-- Actual sprint duration is not pinned in advance; track how long each sprint really took as it closes (a short note per sprint is enough) instead of estimating hours upfront. Replan the remaining sprints if the observed pace makes that necessary.
-- Target: the engineering work (Sprints 1-9) finished with comfortable buffer before the end-of-September 2026 defense window, leaving Sprint 10 (documentation and close) and rehearsal time before the deadline rather than up against it.
-- Starting reference date: 2026-07-06.
-- This roadmap supersedes the previous cloud-platform-oriented roadmap, preserved at `archive/cloud-phase/docs/Roadmap.md`. That roadmap's Sprints 1-9 already delivered and validated a complete backend; this roadmap starts from that baseline and does not redo backend work already implemented.
+- **Rebanadas verticales, no fases horizontales.** Cada sprint de funcionalidad (S1–S6) añade una porción concreta de `Requirements.md` y la lleva de extremo a extremo: diseño → backend → frontend → pruebas. No se agrupa "todo el diseño", luego "todo el backend", luego "todo el frontend".
+- **El modelo de datos se diseña completo al principio, no a trozos.** El dominio es pequeño y ya está definido en `Requirements.md`, así que el modelo de datos entero se diseña en el Sprint 1. Cada sprint posterior implementa (mediante migraciones incrementales) solo la parte del modelo que su funcionalidad necesita. Esto evita rediseñar el modelo sprint a sprint sin renunciar a la entrega incremental de funcionalidad.
+- **Esqueleto ejecutable desde el primer sprint.** El Sprint 1 deja una aplicación mínima pero real (autenticación funcionando de punta a punta), de modo que a partir de ahí cada sprint amplía algo demostrable y ejecutable.
+- **Sin fechas de calendario fijas.** A petición del autor, los sprints van numerados y secuenciales. La duración real de cada uno se registra al cerrarlo (una línea basta), en lugar de estimar horas por adelantado; si el ritmo observado lo exige, se replanifica lo pendiente.
+- **Objetivo temporal.** Tener la ingeniería (S1–S7) terminada con holgura antes de la ventana de defensa de finales de septiembre de 2026, dejando el Sprint 8 (documentación y cierre) y el ensayo sin agobios.
+- **La implementación anterior es un acelerador.** El código archivado en `archive/cloud-phase/` resuelve ya buena parte del backend del dominio (reglas, migraciones, casos de prueba). Se consulta como referencia al reconstruir cada rebanada, pero no se edita ni se parte de él.
 
-## Historical Baseline Already Completed
+## Convención de Sprint
 
-The following is already implemented and verified, carried over from the previous direction without rework:
+Cada sprint de funcionalidad define:
 
-| Area | Result Already Present |
-| --- | --- |
-| Backend domain & persistence | PostgreSQL schema via EF Core migrations for `AppUser`/`Transport`/`Vehicle`/`Driver`/`ShipmentEvent` |
-| Auth & authorization | JWT auth, first-admin bootstrap, role-based access (`admin`/`operator`) |
-| Core CRUD & workflows | Transport/vehicle/driver CRUD, explicit assignment, lifecycle transitions, shipment events, filters/pagination |
-| User administration | Admin-only list/detail/create/role-change/activation, last-active-admin protection |
-| Local reproducibility | Docker Compose, `.env.example`, migrations-on-startup |
-| Automated tests | xUnit integration tests covering health, auth, users, transports, vehicles, drivers, shipment events |
-| CI baseline | GitHub Actions restore/build/test, migration drift check, `docker compose config` validation |
-| Manual verification | Postman/Newman smoke flow, `.http` file, documented in `docs/LocalVerification.md` |
+- **Objetivo**: qué queda demostrable al cerrarlo.
+- **Requisitos que cubre**: identificadores de `Requirements.md`.
+- **Trabajo por capa**: diseño, backend, frontend y pruebas de esa rebanada.
+- **Entregable demostrable**: qué se puede enseñar funcionando.
+- **Definición de hecho**: criterios objetivos de cierre.
 
-This baseline satisfies Fase 2 (Backend) from the TFG modification request essentially as delivered. Remaining backend work in this roadmap is limited to gaps surfaced while integrating the frontend, not a rebuild.
+`RF-13` (validación y avisos de error) es transversal: su contrato base se establece en el Sprint 1 y se aplica a cada funcionalidad nueva en todos los sprints siguientes.
 
-## Sprint Cadence
+## Cadencia de Sprints
 
-| Sprint | Dominant Phase (per TFG modification request) |
-| --- | --- |
-| Sprint 1 | Fase 1 — Requirements refresh, architecture note, data model confirmation, UI prototype/wireframes |
-| Sprint 2 | Fase 2 — Close backend gaps for frontend-readiness |
-| Sprint 3 | Fase 3 — Frontend scaffold, auth flow, protected routing |
-| Sprint 4 | Fase 3 — Transport management UI |
-| Sprint 5 | Fase 3 — Vehicle & driver management UI |
-| Sprint 6 | Fase 3 — Shipment events UI, admin user management UI, UI polish |
-| Sprint 7 | Fase 4 — Deployment target decision and setup |
-| Sprint 8 | Fase 5 — Lightweight CI/CD for deploy, minimal monitoring |
-| Sprint 9 | Fase 6 — End-to-end functional testing, bug fixing |
-| Sprint 10 | Fase 7 — Documentation and close: memoria, diagrams, results analysis, defense prep |
+| Sprint | Foco | Requisitos |
+| --- | --- | --- |
+| Sprint 1 | Cimientos y esqueleto autenticado | RF-01, RF-02, RF-13 (base) |
+| Sprint 2 | Catálogos: vehículos, conductores, clientes | RF-05, RF-06, RF-07 |
+| Sprint 3 | Envíos: alta, edición, listado y filtros | RF-08, RF-12 |
+| Sprint 4 | Operación del envío: asignación y ciclo de estados | RF-09, RF-10 |
+| Sprint 5 | Trazabilidad: historial de eventos | RF-11 |
+| Sprint 6 | Administración e indicadores | RF-03, RF-04, RF-14 |
+| Sprint 7 | Endurecimiento, pruebas de sistema y despliegue | Transversal |
+| Sprint 8 | Documentación y cierre | Transversal |
 
-Treat this table as a planning baseline, not a fixed contract. Replan it the same way the previous roadmap was replanned when scope or pace made that necessary — update this file rather than tracking the drift only in conversation.
+Los sprints 1–6 son rebanadas verticales de funcionalidad; los sprints 7–8 son consolidación y cierre, lo habitual al final de un proyecto iterativo.
 
-## Sprint 1 · Requirements, Design, and Prototype
+## Sprint 1 · Cimientos y Esqueleto Autenticado
 
-**Phase**
-Fase 1 — Analysis and design.
+**Objetivo**
+Una aplicación mínima pero real: un usuario puede iniciar sesión desde el navegador y llegar a una zona autenticada vacía, con los roles diferenciados. Es el "esqueleto andante" sobre el que se cuelga todo lo demás.
 
-**Mandatory Scope**
+**Requisitos que cubre**
+RF-01 (acceso), RF-02 (arranque del primer administrador), RF-13 (contrato base de validación/errores).
 
-- Confirm the requirements in `docs/Requirements.md` reflect the actual intended scope (FR-15 through FR-20, revised NFRs).
-- Write a short architecture note: how the frontend and backend fit together (SPA calling the existing REST API, where the token is stored, how roles gate navigation).
-- Produce UI wireframes/prototype for the main screens: login, transport list/detail, vehicle list, driver list, shipment-event history, user administration.
-- Decide the frontend project layout (folder name/location) and base tooling (bundler, routing, HTTP client, styling approach).
+**Trabajo por capa**
+- **Diseño**: diseñar el modelo de datos **completo** a partir de `Requirements.md` (usuarios, vehículos, conductores, clientes, envíos, eventos, con sus relaciones, estados y borrado lógico); definir la arquitectura de integración front/back (SPA contra API REST, dónde vive el token, cómo se propagan roles y errores).
+- **Backend**: esqueleto ASP.NET Core + EF Core/PostgreSQL; migración inicial del modelo; arranque del primer administrador (RF-02); autenticación con emisión de token (RF-01); contrato común de respuestas y errores (RF-13).
+- **Frontend**: esqueleto React; pantalla de login; enrutado protegido (lo no autenticado redirige a login); estructura de navegación que se adapta al rol; patrón común de aviso de errores.
+- **Pruebas**: pruebas de backend para arranque de admin, login válido/ inválido y protección de rutas; comprobación de que el esqueleto arranca de forma reproducible (Docker Compose) y de que la CI ejecuta build + pruebas.
 
-**Artifacts That Must Exist By Sprint End**
+**Entregable demostrable**
+Login funcionando de punta a punta contra el backend real, con la aplicación contenerizada y la CI en verde.
 
-- Confirmed `docs/Requirements.md` (already drafted in this pass; revisit if scope shifts).
-- An architecture note (can live in `docs/` or as a new `docs/Architecture.md`) describing the frontend/backend integration.
-- Wireframes or a low-fidelity prototype for the main screens, in whatever format is fastest to produce and iterate on (paper/Figma/hand-drawn, exported into the repo or linked).
-- A decided frontend tooling stack, recorded in `CONTEXT.md`.
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-01 y RF-02.
+- El modelo de datos completo está diseñado y versionado (aunque solo esté implementada la parte de usuarios).
+- La aplicación se levanta localmente sin pasos manuales ocultos y la CI valida build + pruebas.
 
-**Definition of Done**
+## Sprint 2 · Catálogos (Vehículos, Conductores, Clientes)
 
-- Anyone picking up Sprint 3 can start scaffolding the frontend without re-deciding architecture or tooling.
-- The requirements/design docs describe the system as it will actually be built, not the previous cloud-first direction.
+**Objetivo**
+Gestionar de extremo a extremo los tres recursos base que luego consumen los envíos.
 
-**What Must Not Remain Open At Sprint End**
+**Requisitos que cubre**
+RF-05 (vehículos), RF-06 (conductores), RF-07 (clientes).
 
-- Undecided frontend tooling stack.
-- Missing wireframes for any of the main screens listed above.
+**Trabajo por capa**
+- **Diseño**: refinar las pantallas de listado/detalle/formulario reutilizables para las tres entidades; confirmar reglas de unicidad y baja lógica (RN-15).
+- **Backend**: CRUD con baja lógica y validaciones de unicidad de identificadores de negocio para vehículos, conductores y clientes; campos opcionales ampliados (código interno, marca/modelo, capacidad; código de empleado, contacto).
+- **Frontend**: vistas de listado, detalle, alta y edición para las tres entidades, con validación en cliente y avisos de conflicto (RF-13).
+- **Pruebas**: backend para CRUD, unicidad, baja lógica; verificación funcional de las tres altas desde la interfaz.
 
-## Sprint 2 · Backend Frontend-Readiness
+**Entregable demostrable**
+Alta, edición, consulta y baja de vehículos, conductores y clientes desde la interfaz.
 
-**Phase**
-Fase 2 — Backend (closing gaps, not rebuilding).
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-05, RF-06 y RF-07.
+- La baja lógica no borra historial y retira el elemento del uso diario.
 
-**Mandatory Scope**
+## Sprint 3 · Envíos (Alta, Edición, Listado y Filtros)
 
-- Review the existing API contract from a frontend-consumer point of view: response shapes, error envelope, pagination metadata, and confirm they are workable for UI binding.
-- Add or verify CORS configuration so the frontend's local dev server can call the API.
-- Add OpenAPI/Swagger (or equivalent) documentation for the API surface, if not already present, so frontend work doesn't require reading controller source to know the contract.
-- Fix any small backend gaps discovered during the Sprint 1 design pass (e.g., a missing filter, an inconsistent DTO field) — scoped strictly to what the frontend design actually needs.
+**Objetivo**
+Crear y consultar envíos, asociándolos a un cliente, con los filtros operativos que pidió la clienta.
 
-**Artifacts That Must Exist By Sprint End**
+**Requisitos que cubre**
+RF-08 (gestión de envíos), RF-12 (visibilidad y filtros).
 
-- CORS configured and verified against a local frontend dev server origin.
-- API documentation (OpenAPI/Swagger UI or equivalent) reachable locally.
-- Any backend gap fixes, each covered by a test.
+**Trabajo por capa**
+- **Diseño**: pantalla de listado con filtros (estado, fechas, vehículo, conductor) y paginación; formulario de envío con cliente y carga estimada.
+- **Backend**: CRUD de envíos con validación de fechas (RN-06), identificación inequívoca, enlace opcional a cliente activo, carga estimada; listado filtrado y paginado.
+- **Frontend**: listado con filtros y paginación; detalle de envío; formularios de alta/edición.
+- **Pruebas**: backend para creación/edición, validación de fechas y filtros; verificación funcional del alta y del filtrado desde la interfaz.
 
-**Definition of Done**
+**Entregable demostrable**
+Crear un envío, verlo en el listado, filtrarlo por estado/fecha/vehículo/conductor y editarlo.
 
-- A frontend developer can discover and call every endpoint needed for FR-15 through FR-20 without reading backend source code.
-- All existing backend tests still pass; new fixes have test coverage.
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-08 y RF-12.
+- El envío arranca siempre en estado "planificado".
 
-**What Must Not Remain Open At Sprint End**
+## Sprint 4 · Operación del Envío (Asignación y Ciclo de Estados)
 
-- Missing CORS configuration.
-- Undocumented API surface needed by the frontend.
+**Objetivo**
+La lógica de negocio central: asignar recursos sin duplicarlos y mover el envío por su ciclo de vida.
 
-## Sprint 3 · Frontend Scaffold and Authentication
+**Requisitos que cubre**
+RF-09 (asignación), RF-10 (estados).
 
-**Phase**
-Fase 3 — Frontend.
+**Trabajo por capa**
+- **Diseño**: interacción de asignación (vehículo + conductor juntos) y de transición de estado desde el detalle del envío, deshabilitando lo no válido según el estado actual.
+- **Backend**: asignación solo en "planificado" (RN-02); rechazo de recursos inactivos o ya ocupados en otro envío sin terminar (RN-03, RN-04); aviso de capacidad insuficiente sin bloquear (RN-05); transiciones de estado con prerequisitos y estados terminales (RN-07, RN-08); captura de fechas reales de recogida/entrega.
+- **Frontend**: acciones de asignar/reasignar y de transición de estado, con avisos claros cuando una acción no es válida o cuando la capacidad se queda corta.
+- **Pruebas**: backend para asignación válida/ inválida, anti-doble-reserva, aviso de capacidad, transiciones válidas e inválidas; verificación funcional del flujo completo desde la interfaz.
 
-**Mandatory Scope**
+**Entregable demostrable**
+El "Flujo 3" de `Requirements.md` completo desde la interfaz: crear envío, asignar, pasar a en curso, entregar/cancelar; y comprobación de que no deja duplicar un vehículo o conductor ocupado.
 
-- Scaffold the React SPA project with the tooling decided in Sprint 1.
-- Implement the login screen (FR-15): form, call to `POST /api/v1/auth/login`, token storage, error display.
-- Implement protected routing: unauthenticated access redirects to login; role is available to gate navigation.
-- Implement logout.
-- Wire a basic app shell/navigation so subsequent sprints can add screens without re-touching routing/layout.
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-09 y RF-10.
+- Un envío entregado o cancelado no puede volver a cambiar de estado.
 
-**Artifacts That Must Exist By Sprint End**
+## Sprint 5 · Trazabilidad (Historial de Eventos)
 
-- A runnable frontend project with its own README/start instructions (to be folded into the root `README.md` once stable).
-- A working login -> protected shell -> logout loop against the real local backend.
+**Objetivo**
+Que cada envío tenga un historial consultable de lo que le ha pasado, con autor y fecha.
 
-**Definition of Done**
+**Requisitos que cubre**
+RF-11 (historial de eventos del envío).
 
-- FR-15 acceptance criteria are met end-to-end against the local backend.
-- The frontend project builds and runs locally with documented commands, mirroring the rigor already applied to the backend.
+**Trabajo por capa**
+- **Diseño**: sección de historial cronológico en el detalle del envío y formulario de registro de evento.
+- **Backend**: registro y consulta de eventos por envío, ordenados por fecha, con autor tomado del usuario autenticado (RN-09); tipos de evento definidos.
+- **Frontend**: línea de tiempo del envío y alta de nuevos eventos, reflejada sin recargar.
+- **Pruebas**: backend para creación/orden/actor y validación contra envíos inexistentes; verificación funcional del registro desde la interfaz.
 
-**What Must Not Remain Open At Sprint End**
+**Entregable demostrable**
+Registrar eventos (salida, punto de control, incidencia, etc.) sobre un envío y ver su historial ordenado con quién lo registró.
 
-- Missing FR-15 acceptance criteria (error display, session persistence across reload, clean handling of an expired/invalid token).
-- No documented way to start the frontend locally.
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-11.
 
-## Sprint 4 · Transport Management UI
+## Sprint 6 · Administración e Indicadores
 
-**Phase**
-Fase 3 — Frontend.
+**Objetivo**
+Cerrar la funcionalidad de prioridad media: gestión de usuarios, contraseña propia y el resumen operativo.
 
-**Mandatory Scope**
+**Requisitos que cubre**
+RF-04 (administración de usuarios), RF-03 (cambio de contraseña), RF-14 (resumen y estadísticas).
 
-- Implement the transport list view with the API's filters and pagination (status, planned date range, vehicle, driver).
-- Implement the transport detail view, including shipment-event history.
-- Implement create/edit forms with client-side validation mirroring FR-06's acceptance criteria.
-- Implement the assignment action (FR-09) and lifecycle transition actions (FR-10) from the detail/list view, respecting valid-state constraints in the UI.
+**Trabajo por capa**
+- **Diseño**: pantallas de administración de usuarios (solo administrador), formulario de cambio de contraseña, y pantalla de resumen.
+- **Backend**: alta de usuarios, cambio de rol y activación/desactivación con protección de último administrador (RN-10, RN-12); cambio de contraseña con confirmación de la actual (RN-14); agregados para el resumen (envíos por estado, actividad por vehículo/conductor, incidencias).
+- **Frontend**: administración de usuarios oculta a operadores; cambio de contraseña; panel de resumen visible de un vistazo.
+- **Pruebas**: backend para permisos, protección de último admin, cambio de contraseña y cálculo del resumen; verificación funcional de que un operador no alcanza la administración ni por navegación directa.
 
-**Artifacts That Must Exist By Sprint End**
+**Entregable demostrable**
+Un administrador da de alta un operador, cambia su propia contraseña, y todos ven el resumen operativo al entrar.
 
-- FR-16 implemented and integrated against the real backend.
+**Definición de hecho**
+- Se cumplen los criterios de aceptación de RF-03, RF-04 y RF-14.
+- Toda la lista de `Requirements.md` (RF-01…RF-14) queda implementada e integrada.
 
-**Definition of Done**
+## Sprint 7 · Endurecimiento, Pruebas de Sistema y Despliegue
 
-- Flow 3 (`Operator Executes a Transport`) from `docs/Requirements.md` is fully exercisable through the UI, not only through the API.
-- API validation/conflict errors surface as readable UI feedback.
+**Objetivo**
+Dejar la aplicación completa, probada de punta a punta y accesible en un entorno real.
 
-**What Must Not Remain Open At Sprint End**
+**Trabajo**
+- Prueba funcional de extremo a extremo de los cuatro flujos de negocio de `Requirements.md` sobre la aplicación integrada.
+- Repaso transversal de usabilidad, manejo de errores, estados de carga y vacíos, y seguridad básica (RNF-01, RNF-02).
+- Despliegue a un entorno accesible sencillo (decidido en este sprint; deliberadamente no una plataforma cloud gestionada con Terraform) y documentación repetible del proceso; CI/CD ligero de build y despliegue; monitorización mínima (RNF-04, y observabilidad básica).
+- Triaje y corrección de defectos encontrados; reverificación.
 
-- Any FR-16 acceptance criterion left unmet.
+**Entregable demostrable**
+La aplicación completa, accesible por internet, con los cuatro flujos funcionando y un procedimiento de despliegue documentado.
 
-## Sprint 5 · Vehicle and Driver Management UI
+**Definición de hecho**
+- Los cuatro flujos de negocio funcionan de extremo a extremo en el entorno desplegado.
+- Ningún requisito de prioridad alta queda roto.
+- El despliegue es repetible siguiendo la documentación.
 
-**Phase**
-Fase 3 — Frontend.
+## Sprint 8 · Documentación y Cierre
 
-**Mandatory Scope**
+**Objetivo**
+La memoria del TFG y el material de defensa para la nueva dirección.
 
-- Implement list/detail/create/edit views for vehicles (FR-17).
-- Implement list/detail/create/edit views for drivers (FR-18).
-- Ensure both surface backend uniqueness conflicts (`409`) as readable UI feedback.
+**Trabajo**
+- Redactar la memoria: introducción, objetivos, metodología, requisitos, arquitectura, implementación de backend y frontend, pruebas, despliegue, resultados y conclusiones.
+- Producir los diagramas (arquitectura, modelo de datos, flujos) que la memoria referencia.
+- Preparar la presentación de defensa y un guion de ensayo.
+- Repaso final de `README.md`, `CONTEXT.md`, `Requirements.md` y este roadmap para que describan el sistema realmente entregado.
 
-**Artifacts That Must Exist By Sprint End**
+**Entregable demostrable**
+Memoria compilada, presentación y documentación alineada con lo entregado.
 
-- FR-17 and FR-18 implemented and integrated against the real backend.
+**Definición de hecho**
+- El proyecto queda listo para defender antes de la ventana de finales de septiembre de 2026, con tiempo de ensayo.
+- No queda contenido provisional ni funcionalidad descrita como hecha sin estarlo.
 
-**Definition of Done**
+## Nota de Despliegue
 
-- A user can fully manage vehicles and drivers from the UI, including the create/edit/soft-delete paths.
+El despliegue no es una fase final aislada. La aplicación se mantiene contenerizada y con CI (build + pruebas) desde el Sprint 1, de modo que cada sprint entrega algo ejecutable. El despliegue a un entorno accesible por internet se aborda en el Sprint 7, una vez la funcionalidad está completa; si conviene, puede adelantarse un esqueleto desplegado antes, pero no se retrasa más allá de ese punto.
 
-**What Must Not Remain Open At Sprint End**
+## Nota de Ritmo
 
-- Any FR-17 or FR-18 acceptance criterion left unmet.
-
-## Sprint 6 · Shipment Events, User Administration, and UI Polish
-
-**Phase**
-Fase 3 — Frontend (close-out).
-
-**Mandatory Scope**
-
-- Implement the shipment-event history and creation form on the transport detail view (FR-19).
-- Implement the admin-only user administration screens (FR-20), hidden from `operator` sessions.
-- Pass over the whole frontend for consistency: shared error handling, loading states, empty states, and basic responsive layout.
-
-**Artifacts That Must Exist By Sprint End**
-
-- FR-19 and FR-20 implemented and integrated against the real backend.
-- A frontend that feels coherent end-to-end, not a set of disconnected screens.
-
-**Definition of Done**
-
-- All of FR-15 through FR-20 are met; Gate B (`Frontend MVP Ready` in `docs/Requirements.md`) is closed.
-- A non-admin cannot reach the user administration screen even by direct navigation.
-
-**What Must Not Remain Open At Sprint End**
-
-- Any FR-19 or FR-20 acceptance criterion left unmet.
-- Inconsistent error/loading handling across screens.
-
-## Sprint 7 · Deployment
-
-**Phase**
-Fase 4 — Deployment.
-
-**Mandatory Scope**
-
-- Decide the deployment target (a single host, a PaaS free/low-cost tier, or similar — deliberately not a Terraform-managed multi-environment cloud platform).
-- Configure the runtime environment for backend + frontend + PostgreSQL in that target.
-- Deploy and verify the application is reachable end-to-end over the internet.
-- Document the deployment procedure so it is repeatable, not a one-off manual sequence only the project owner remembers.
-
-**Artifacts That Must Exist By Sprint End**
-
-- A deployed, internet-reachable instance of the application.
-- A deployment guide (new `docs/Deployment.md` or equivalent) covering the target, configuration, and redeploy steps.
-
-**Definition of Done**
-
-- NFR-04 (`Deployability to an accessible environment`) is met.
-- Someone other than the project owner could redeploy following the documented steps.
-
-**What Must Not Remain Open At Sprint End**
-
-- An undocumented or manual-only deployment path.
-- Secrets committed to the repository as part of making deployment work.
-
-## Sprint 8 · Lightweight CI/CD and Observability
-
-**Phase**
-Fase 5 — CI/CD and observability.
-
-**Mandatory Scope**
-
-- Extend the existing CI workflow (or add a new one) to build and deploy to the target chosen in Sprint 7, at least for a single environment.
-- Add basic structured logging and request correlation if not already sufficient for the deployed environment.
-- Add minimal monitoring appropriate for a small demo deployment (e.g., uptime/health check, basic log visibility) — explicitly not CloudWatch-scale dashboards/alarms.
-
-**Artifacts That Must Exist By Sprint End**
-
-- A GitHub Actions workflow that can build and deploy on demand or on push, documented in `docs/Deployment.md`.
-- Basic, documented visibility into whether the deployed application is healthy.
-
-**Definition of Done**
-
-- NFR-08 (`Basic observability`) is met.
-- A deploy can be triggered without manual, undocumented steps.
-
-**What Must Not Remain Open At Sprint End**
-
-- A deployment process that only works "on the project owner's machine."
-
-## Sprint 9 · End-to-End Testing and Evaluation
-
-**Phase**
-Fase 6 — Testing and evaluation.
-
-**Mandatory Scope**
-
-- Run a full functional pass of Flows 1-4 from `docs/Requirements.md` against the deployed environment, frontend included.
-- Add or close gaps in frontend automated tests, if the chosen tooling and remaining time allow it.
-- Triage and fix bugs found during this pass; re-verify after fixes.
-
-**Artifacts That Must Exist By Sprint End**
-
-- A short test/evaluation report: what was exercised, what was found, what was fixed.
-
-**Definition of Done**
-
-- All four main business flows work end-to-end in the deployed environment.
-- No known Must-priority requirement is left broken.
-
-**What Must Not Remain Open At Sprint End**
-
-- Any known-broken Must-priority flow.
-
-## Sprint 10 · Documentation and Close
-
-**Phase**
-Fase 7 — Documentation and close.
-
-**Mandatory Scope**
-
-- Write the TFG memoria for the new direction: introduction, objectives, methodology, requirements, architecture, backend implementation, frontend implementation, testing, deployment, results, and conclusions.
-- Produce the architecture/data-model/flow diagrams referenced by the memoria.
-- Prepare a defense presentation and rehearsal guide for the new title, mirroring the rigor of the previous `archive/cloud-phase/docs/plan_presentacion.md` but for this direction's content.
-- Final pass on `README.md`/`CONTEXT.md`/`docs/Requirements.md`/`docs/Roadmap.md` so they describe the delivered system accurately.
-
-**Artifacts That Must Exist By Sprint End**
-
-- A complete, compiled TFG memoria for the new direction.
-- A defense presentation and guide.
-- Documentation that matches the actually delivered application.
-
-**Definition of Done**
-
-- The project is ready to defend before the end-of-September 2026 window, with rehearsal time still available afterward.
-
-**What Must Not Remain Open At Sprint End**
-
-- Placeholder or TODO content in the memoria.
-- Documentation describing planned-but-not-delivered functionality as if it were done.
-
-## Pacing Note
-
-No calendar dates are assigned to these sprints by design. As each sprint closes, add a one-line note here (or in `CONTEXT.md`) with how long it actually took, so the remaining sprints can be resized realistically instead of guessed twice. As a sanity check only: ten sprints finishing at a pace of roughly one week each would land around mid-September, leaving buffer before the end-of-September window for Sprint 10 and rehearsal — if real pace runs slower, compress scope (e.g., merge Sprints 5-6, or narrow FR-19/FR-20 to their acceptance-critical core) rather than letting Sprint 10 get squeezed.
+No se asignan fechas a los sprints. Al cerrar cada uno, anota aquí (o en `CONTEXT.md`) cuánto duró de verdad, para dimensionar los siguientes con datos en vez de estimaciones. Como referencia orientativa: ocho sprints a un ritmo aproximado de una a dos semanas cada uno encajan con holgura antes de finales de septiembre. Si el ritmo real se alarga, comprime alcance (por ejemplo, uniendo los sprints 5 y 6, o acotando RF-14 a su versión mínima) antes de dejar que el Sprint 8 quede apretado.

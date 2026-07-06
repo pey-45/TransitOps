@@ -1,507 +1,271 @@
-# TransitOps · Software Requirements Specification
+# TransitOps · Especificación de Requisitos
 
-## Purpose
+## Propósito
 
-Define the current functional and non-functional requirements for TransitOps. This document is the canonical specification for scope, behavior, permissions, and acceptance criteria.
+Este documento recoge los requisitos funcionales y no funcionales de TransitOps, derivados de la entrevista con la clienta recogida en [docs/ClientRequirements.md](ClientRequirements.md). Se mantiene deliberadamente a nivel funcional/de negocio, sin entrar en decisiones técnicas de implementación (arquitectura, tecnologías, contratos de API, modelo de datos técnico): esas decisiones pertenecen a la fase de diseño posterior, no a esta especificación.
 
-## Planning Context
+Cada requisito indica su origen en la entrevista para mantener la trazabilidad.
 
-- Reference date: July 6, 2026.
-- Product type: transport-management application, covering the full software development lifecycle (backend + frontend).
-- Primary objective: deliver a complete, demonstrable application — requirements, design, backend, frontend, testing, and deployment — without inflating functional scope beyond what is needed to demonstrate the full lifecycle credibly.
-- Current baseline completed: backend MVP (local), PostgreSQL persistence, Docker reproducibility, CI baseline (restore/build/test).
-- Not yet started: frontend, updated UI-facing requirements verification, deployment target, and CI/CD-for-deploy.
-- This document supersedes the previous cloud-platform-oriented requirements baseline, preserved at `archive/cloud-phase/docs/Requirements.md`. The backend functional requirements below are carried over unchanged, because the direction change adds a frontend and de-emphasizes cloud depth — it does not change the backend's business rules.
+## Alcance
 
-## Product Goal
+### Dentro del alcance
 
-TransitOps must allow a small operations team to manage transports, vehicles, drivers, and shipment events through a secured API and a web interface, while covering the complete software development lifecycle: requirements analysis, design, implementation (backend and frontend), testing, and deployment.
+- Acceso mediante usuario y contraseña, con dos niveles de permiso (operador y administrador).
+- Arranque de la aplicación mediante la creación controlada del primer administrador.
+- Que cada persona pueda cambiar su propia contraseña.
+- Administración de usuarios (alta y gestión de permisos) por parte de administradores.
+- Gestión de vehículos y conductores.
+- Gestión de clientes y asociación de cada envío a un cliente.
+- Gestión de transportes/envíos: creación, consulta, edición, asignación de vehículo y conductor, y seguimiento de su estado.
+- Historial de eventos por envío (seguimiento e incidencias).
+- Un resumen/estadísticas operativo básico.
 
-## Scope Statement
+### Fuera de alcance (por ahora)
 
-### In Scope
+- Cálculo de rutas óptimas, tiempos de viaje o integración con GPS de los vehículos.
+- Facturación o presupuestos.
+- Aplicación móvil.
+- Acceso de clientes externos a la aplicación.
+- Recuperación automática de contraseña (por ejemplo, por correo): de momento la reasigna un administrador.
+- Acceso de los conductores a la aplicación: reciben la información por los medios que ya usan hoy (teléfono/mensajería); no son usuarios del sistema.
 
-- Transport, vehicle, and driver operational management.
-- Assignments between transports, vehicles, and drivers.
-- Transport lifecycle transitions.
-- Shipment event registration and history.
-- Basic user management with `admin` and `operator` roles.
-- JWT-based authentication and role-based authorization.
-- PostgreSQL persistence through EF Core.
-- Docker-based local reproducibility.
-- A React SPA frontend covering login and the main operational flows, consuming the existing REST API.
-- CI workflow for build/test, plus lightweight deployment automation once a deployment target is chosen.
-- Deployment to a simple, accessible environment for demo and defense purposes.
+## Actores
 
-### Out of Scope for the Current Phase
+- **Operador**: personal de operaciones que realiza el trabajo diario: gestiona vehículos, conductores, clientes, envíos, asignaciones y seguimiento.
+- **Administrador**: además de todo lo anterior, es la única persona que puede dar de alta usuarios y decidir sus permisos.
+- **Público no identificado**: solo puede llegar a la pantalla de inicio de sesión; el resto de la aplicación requiere haber iniciado sesión.
+- **Instalador / puesta en marcha**: crea el primer administrador durante la instalación, fuera del uso normal de la aplicación.
+- **Conductor** y **Cliente**: aparecen como información gestionada dentro del sistema (a un conductor se le asignan envíos, a un cliente pertenecen envíos), pero no son personas usuarias de la aplicación.
 
-- Self-service registration, forgot-password, or password reset flows.
-- Route optimization, billing, invoicing, or advanced fleet management.
-- Multi-region deployment, autoscaling policy tuning, or microservice decomposition.
-- Native mobile applications.
-- Advanced observability beyond the minimum needed to operate and defend the project, such as distributed tracing, APM, or business metrics.
-- Deep infrastructure-as-code on a managed cloud platform (the previous direction's AWS/Terraform work; see `archive/cloud-phase/`). A simple deployment target is in scope, but a multi-environment, Terraform-managed cloud platform is explicitly not the goal this time.
+## Información que gestiona el sistema
 
-## Actors
+Descrita en términos de negocio, sin especificar cómo se almacena técnicamente:
 
-- `Unauthenticated caller`: can reach public health endpoints and the login entry point.
-- `Operator`: performs day-to-day operational work on transports, assignments, and shipment events, primarily through the frontend.
-- `Admin`: can perform all operator actions and is the only actor allowed to manage users.
-- `Platform`: Docker, CI, and the chosen deployment/runtime tooling interact with the service through startup, health, and deployment contracts.
+- **Vehículo**: matrícula, código interno (opcional), marca y modelo (opcional), capacidad de carga (opcional), si está activo o dado de baja.
+- **Conductor**: nombre, número de carné, código de empleado (opcional), datos de contacto (opcional), si está activo o dado de baja.
+- **Cliente**: nombre, datos de contacto (opcional), si está activo o dado de baja.
+- **Transporte/envío**: origen, destino, fecha prevista de recogida, fecha prevista de entrega (opcional), cliente (opcional), carga estimada (opcional), descripción o notas (opcional), estado, vehículo asignado (opcional), conductor asignado (opcional).
+- **Evento de seguimiento**: envío al que pertenece, tipo de evento, fecha, ubicación (opcional), notas (opcional), quién lo registró.
+- **Usuario de la aplicación**: nombre de usuario, datos de contacto (opcional), tipo de acceso (operador o administrador), si está activo o inactivo.
 
-`Operator` and `Admin` are expected to interact with the system mainly through the frontend once it exists; the REST API remains the underlying contract and stays directly usable (for testing, automation, or API-only integration).
+## Requisitos Funcionales
 
-## Domain Scope Summary
-
-| Entity | Purpose | Main Fields / Notes |
+| ID | Requisito | Prioridad |
 | --- | --- | --- |
-| `AppUser` | Authenticated API user | `username`, `email`, `password_hash`, `user_role`, `is_active`, audit fields, logical deletion |
-| `Transport` | Main operational record | `reference`, origin/destination, planned and actual dates, status, optional vehicle and driver assignment |
-| `Vehicle` | Assignable transport resource | `plate_number`, optional internal code, optional brand/model, optional capacities, active flag, audit fields |
-| `Driver` | Assignable human resource | names, `license_number`, optional employee code/contact data, active flag, audit fields |
-| `ShipmentEvent` | Chronological operational event | `transport_id`, `created_by_user_id`, `event_type`, `event_date`, optional location/notes |
-
-This domain model is unaffected by the direction change and is not expected to be restructured for the frontend; the frontend is expected to consume it as-is.
-
-## Role and Permission Model
-
-| Capability | Unauthenticated | Operator | Admin | Notes |
-| --- | --- | --- | --- | --- |
-| `GET /api/v1/health/live` and `GET /api/v1/health/ready` | Yes | Yes | Yes | Public operational endpoints |
-| Bootstrap first admin | No | No | No | One-time controlled setup mechanism outside normal API use |
-| Login | Yes | Yes | Yes | Public endpoint, valid credentials required |
-| List/detail users | No | No | Yes | Admin-only |
-| Create users | No | No | Yes | Admin-only |
-| Change user role | No | No | Yes | Admin-only |
-| Activate/deactivate users | No | No | Yes | Admin-only |
-| Transport CRUD | No | Yes | Yes | Protected operational endpoints |
-| Vehicle CRUD | No | Yes | Yes | Protected operational endpoints |
-| Driver CRUD | No | Yes | Yes | Protected operational endpoints |
-| Assign vehicle and driver | No | Yes | Yes | Protected operational endpoint |
-| Transition transport status | No | Yes | Yes | Protected operational endpoint |
-| Create shipment event | No | Yes | Yes | Protected operational endpoint |
-| Read shipment event history | No | Yes | Yes | Protected operational endpoint |
+| RF-01 | Acceso a la aplicación | Alta |
+| RF-02 | Arranque del primer administrador | Alta |
+| RF-03 | Cambio de contraseña propia | Media |
+| RF-04 | Administración de usuarios | Media |
+| RF-05 | Gestión de vehículos | Alta |
+| RF-06 | Gestión de conductores | Alta |
+| RF-07 | Gestión de clientes | Media |
+| RF-08 | Gestión de transportes/envíos | Alta |
+| RF-09 | Asignación de vehículo y conductor | Alta |
+| RF-10 | Estados del envío | Alta |
+| RF-11 | Historial de eventos del envío | Alta |
+| RF-12 | Visibilidad y filtros de envíos | Alta |
+| RF-13 | Validación y avisos de error | Alta |
+| RF-14 | Resumen y estadísticas operativas | Media |
 
-`Admin` inherits all `operator` permissions. `Operator` is intentionally limited to operational work and cannot manage users or privileged setup flows. The frontend must enforce the same boundaries in its navigation/UI, on top of (not instead of) the backend's authorization checks.
+### RF-01 · Acceso a la Aplicación
 
-## Functional Requirements Overview
+El sistema debe permitir el acceso mediante usuario y contraseña, y debe distinguir entre los dos tipos de acceso (operador y administrador) para mostrar solo las opciones que correspondan a cada persona.
 
-| ID | Requirement | Priority | Current Status |
-| --- | --- | --- | --- |
-| FR-01 | Health and platform endpoints | Must | Completed |
-| FR-02 | First admin bootstrap | Must | Completed |
-| FR-03 | User administration (API) | Must | Completed |
-| FR-04 | Authentication (API) | Must | Completed |
-| FR-05 | Authorization | Must | Completed |
-| FR-06 | Transport management (API) | Must | Completed |
-| FR-07 | Vehicle management (API) | Must | Completed |
-| FR-08 | Driver management (API) | Must | Completed |
-| FR-09 | Assignment workflow | Must | Completed |
-| FR-10 | Transport lifecycle | Must | Completed |
-| FR-11 | Shipment events (API) | Must | Completed |
-| FR-12 | Listings and filters | Should | Completed |
-| FR-13 | Validation, response contract, and conflicts | Must | Completed |
-| FR-14 | Audit trail and logical deletion | Must | Completed |
-| FR-15 | Authentication UI | Must | Not started |
-| FR-16 | Transport management UI | Must | Not started |
-| FR-17 | Vehicle management UI | Must | Not started |
-| FR-18 | Driver management UI | Must | Not started |
-| FR-19 | Shipment event UI | Should | Not started |
-| FR-20 | User administration UI | Should | Not started |
+**Criterios de aceptación:**
+- Solo se puede entrar con un usuario y contraseña válidos.
+- Una vez dentro, cada persona solo ve y puede usar las opciones que le corresponden según su tipo de acceso.
+- Una persona desactivada no puede entrar aunque sus credenciales sean correctas.
 
-FR-01 through FR-14 are the backend requirements carried over unchanged from the previous direction; they are already implemented and are not expected to change for the frontend to consume them. FR-15 through FR-20 are new for this direction.
+**Origen:** "Sobre cómo quieren usarla", "Sobre quién usará la aplicación".
 
-## Detailed Functional Specification
+### RF-02 · Arranque del Primer Administrador
 
-### FR-01 · Health and Platform Endpoints
+El sistema debe ofrecer un mecanismo controlado para crear el primer administrador durante la puesta en marcha, cuando todavía no existe ningún usuario dentro.
 
-The API shall expose:
+**Criterios de aceptación:**
+- El mecanismo solo funciona mientras no exista ya un administrador activo.
+- No forma parte del uso diario: una vez creado el primer administrador, el resto de usuarios se dan de alta desde dentro de la aplicación (RF-04).
 
-- `GET /api/v1/health/live` for process liveness.
-- `GET /api/v1/health/ready` for dependency readiness.
+**Origen:** "Sobre quién usará la aplicación" (creación del primer administrador en la instalación).
 
-Acceptance criteria:
+### RF-03 · Cambio de Contraseña Propia
 
-- Liveness returns `200`.
-- Readiness returns `200` when PostgreSQL connectivity is available.
-- Readiness returns `503` when PostgreSQL connectivity is unavailable.
+El sistema debe permitir que cada persona usuaria cambie su propia contraseña.
 
-### FR-02 · First Admin Bootstrap
+**Criterios de aceptación:**
+- Para cambiarla, la persona debe confirmar su contraseña actual.
+- La recuperación de una contraseña olvidada no es automática: la reasigna un administrador (queda fuera de alcance por ahora).
 
-The system shall provide a documented mechanism to create the first active `admin` user.
+**Origen:** "Sobre quién usará la aplicación" (gestión de contraseñas).
 
-Behavior:
+### RF-04 · Administración de Usuarios
 
-- The implemented API bootstrap path is `POST /api/v1/auth/bootstrap-admin` and requires an externally configured bootstrap token.
-- The bootstrap path must only succeed when no active, non-deleted admin user already exists.
-- The bootstrap process must not require committed secrets or hardcoded credentials in repository code.
+El sistema debe permitir a un administrador dar de alta nuevas personas usuarias, asignarles un tipo de acceso (operador o administrador), y activarlas o desactivarlas.
 
-Acceptance criteria:
+**Criterios de aceptación:**
+- Solo un administrador puede realizar estas acciones.
+- El sistema no debe permitir quedarse sin ningún administrador activo.
 
-- Local setup documentation explains how to obtain the first admin user.
-- Re-running the bootstrap path after an admin already exists is rejected or becomes a no-op with clear behavior.
+**Origen:** "Sobre quién usará la aplicación".
 
-### FR-03 · User Administration (API)
+### RF-05 · Gestión de Vehículos
 
-The system shall provide basic user administration for admins.
+El sistema debe permitir dar de alta, consultar, listar, editar y dar de baja vehículos. Además de la matrícula, debe permitir registrar (de forma opcional, pero disponible desde el principio) código interno, marca, modelo y capacidad de carga.
 
-Behavior:
+**Criterios de aceptación:**
+- No puede haber dos vehículos activos con la misma matrícula.
+- Si se indica un código interno, no puede repetirse entre vehículos activos.
+- Dar de baja un vehículo no elimina su historial de envíos anteriores, y deja de aparecer en las listas de trabajo diario.
 
-- `Admin` can list non-deleted users and inspect user detail.
-- `Admin` can create new users with `username`, `email`, `password`, and role `admin` or `operator`.
-- `Admin` can change a user's role.
-- `Admin` can activate or deactivate a user.
-- Password hashes are stored, but never returned in response payloads.
-- Self-service registration and forgot-password flows are out of scope.
+**Origen:** "Sobre los vehículos".
 
-Acceptance criteria:
+### RF-06 · Gestión de Conductores
 
-- Only admins can reach user-administration endpoints.
-- Username and email must be unique among non-deleted users.
-- Inactive or deleted users cannot authenticate.
-- The system prevents the last active admin user from being deactivated or losing the admin role.
+El sistema debe permitir dar de alta, consultar, listar, editar y dar de baja conductores. Además del número de carné, debe permitir registrar (de forma opcional, pero disponible desde el principio) código de empleado y datos de contacto.
 
-### FR-04 · Authentication (API)
+**Criterios de aceptación:**
+- No puede haber dos conductores activos con el mismo número de carné.
+- Dar de baja un conductor no elimina su historial de envíos anteriores, y deja de aparecer en las listas de trabajo diario.
 
-The system shall authenticate users through JWT.
+**Origen:** "Sobre los conductores".
 
-Behavior:
+### RF-07 · Gestión de Clientes
 
-- Login uses `username` and `password`.
-- Successful login returns a JWT that contains enough claims to identify the user and enforce role-based access.
-- Invalid credentials return `401`.
-- Deleted or inactive users are rejected even if credentials otherwise match.
+El sistema debe permitir dar de alta, consultar, listar, editar y dar de baja clientes, con al menos su nombre y unos datos de contacto, para poder asociarlos a los envíos.
 
-Acceptance criteria:
+**Criterios de aceptación:**
+- Dar de baja un cliente no elimina los envíos que ya se le hicieron, y deja de aparecer en las listas de trabajo diario.
+- Un cliente dado de baja no puede asociarse a nuevos envíos.
 
-- An active user can obtain a valid token.
-- Invalid credentials return a coherent error response.
-- Token generation is based on externalized configuration, not hardcoded secrets.
+**Origen:** "Sobre los clientes de los envíos".
 
-### FR-05 · Authorization
+### RF-08 · Gestión de Transportes/Envíos
 
-The system shall authorize protected endpoints using the `admin` and `operator` roles.
+El sistema debe permitir crear, listar, consultar y editar transportes/envíos, con origen, destino, fecha prevista de recogida, fecha prevista de entrega, cliente, carga estimada y notas.
 
-Behavior:
+**Criterios de aceptación:**
+- La fecha prevista de entrega no puede ser anterior a la fecha prevista de recogida.
+- Cada envío debe poder identificarse de forma inequívoca dentro de la aplicación.
+- El cliente y la carga estimada son opcionales; si se indica un cliente, debe ser un cliente activo.
 
-- All business endpoints are protected.
-- `Admin` can perform all operator actions plus user administration.
-- `Operator` can perform operational actions only.
+**Origen:** "Sobre los transportes/envíos".
 
-Acceptance criteria:
+### RF-09 · Asignación de Vehículo y Conductor
 
-- Public endpoints remain limited to health and login.
-- A request with missing or invalid token is rejected.
-- A request from an authenticated user without sufficient role is rejected with a coherent authorization error.
+El sistema debe permitir asignar un vehículo y un conductor a un envío, y cambiar esa asignación, solo mientras el envío esté planificado, evitando duplicar recursos ya ocupados.
 
-### FR-06 · Transport Management (API)
+**Criterios de aceptación:**
+- No se puede asignar un vehículo o conductor que esté dado de baja.
+- No se puede asignar un vehículo o conductor que ya esté asignado a otro envío sin terminar (planificado o en curso): el sistema lo impide y lo avisa.
+- Si la capacidad del vehículo es conocida y es menor que la carga estimada del envío, el sistema avisa antes de confirmar la asignación (aviso, no bloqueo).
+- No se puede modificar la asignación una vez que el envío ha salido (está en curso o finalizado).
 
-The system shall manage transports as the main operational entity.
+**Origen:** "Sobre el negocio y el problema actual" (evitar duplicar asignaciones), "Sobre los vehículos" (capacidad), "Sobre los transportes/envíos".
 
-Behavior:
+### RF-10 · Estados del Envío
 
-- Create, list, detail, update, and logical delete shall be supported.
-- A transport includes at least: `reference`, `origin`, `destination`, `planned_pickup_at`, optional `planned_delivery_at`, optional `description`, status, optional assigned vehicle, optional assigned driver, and audit data.
-- A new transport starts in `planned`.
-- Generic transport update is separate from assignment and lifecycle actions.
+El sistema debe llevar el envío a través de una secuencia de estados: planificado, en curso, y finalmente entregado o cancelado.
 
-Acceptance criteria:
+**Criterios de aceptación:**
+- Un envío nuevo empieza siempre en estado planificado.
+- Pasar a "en curso" solo es posible si el envío ya tiene vehículo y conductor asignados.
+- Una vez entregado o cancelado, el envío no puede volver a cambiar de estado; si hace falta rehacerlo, se crea un envío nuevo.
 
-- `reference` is unique among active, non-deleted transports.
-- Deleted transports do not appear in active listings.
-- `planned_delivery_at` cannot be earlier than `planned_pickup_at`.
+**Origen:** "Sobre los transportes/envíos".
 
-### FR-07 · Vehicle Management (API)
+### RF-11 · Historial de Eventos del Envío
 
-The system shall manage vehicles as assignable resources.
+El sistema debe permitir registrar y consultar, para cada envío, un historial de sucesos con su fecha: creación, asignación, salida, puntos de control, incidencias, entrega o cancelación.
 
-Behavior:
+**Criterios de aceptación:**
+- El historial se muestra ordenado por fecha.
+- Cada suceso registrado queda asociado a la persona que lo registró.
 
-- Create, list, detail, update, and logical delete shall be supported.
-- Vehicles include at least `plate_number`, optional `internal_code`, optional `brand`, optional `model`, optional capacities, active flag, and audit data.
+**Origen:** "Sobre el seguimiento / historial".
 
-Acceptance criteria:
+### RF-12 · Visibilidad y Filtros de Envíos
 
-- `plate_number` is unique among active, non-deleted vehicles.
-- Optional `internal_code` is unique among active, non-deleted vehicles when present.
-- Capacity fields cannot be negative.
+El sistema debe permitir ver rápidamente el estado de los envíos, filtrando por estado, fechas, vehículo o conductor.
 
-### FR-08 · Driver Management (API)
+**Criterios de aceptación:**
+- Es posible ver solo los envíos en un estado concreto (por ejemplo, "en curso").
+- Es posible acotar por fechas, por vehículo o por conductor.
 
-The system shall manage drivers as assignable resources.
+**Origen:** "Sobre cómo quieren usarla", "Sobre el negocio y el problema actual".
 
-Behavior:
+### RF-13 · Validación y Avisos de Error
 
-- Create, list, detail, update, and logical delete shall be supported.
-- Drivers include at least name fields, `license_number`, optional `employee_code`, optional expiry/contact data, active flag, and audit data.
+El sistema debe validar los datos que introduce la persona usuaria y avisar con claridad cuando algo es incorrecto, en lugar de fallar de forma confusa o quedarse a medias.
 
-Acceptance criteria:
+**Criterios de aceptación:**
+- Los datos obligatorios ausentes o incorrectos se señalan antes de guardar.
+- Cuando una acción no es válida por una regla de negocio (por ejemplo, un duplicado o una transición de estado no permitida), el sistema lo explica de forma comprensible.
 
-- `license_number` is unique among active, non-deleted drivers.
-- Optional `employee_code` and optional `email` are unique among active, non-deleted drivers when present.
+**Origen:** "Sobre cómo quieren usarla" (que avise con claridad de los errores).
 
-### FR-09 · Assignment Workflow
+### RF-14 · Resumen y Estadísticas Operativas
 
-The system shall assign a vehicle and a driver to a transport through an explicit operational action.
+El sistema debe ofrecer un resumen con el número de envíos en cada estado, la actividad de cada vehículo y cada conductor en un periodo, y el número de incidencias registradas.
 
-Behavior:
+**Criterios de aceptación:**
+- El resumen se puede consultar sin necesidad de contar manualmente los envíos uno a uno.
+- No es necesario que incluya gráficos elaborados; basta con verlo de un vistazo.
 
-- Assignment is allowed only while the transport is in `planned`.
-- The target vehicle and driver must exist, be active, and not be deleted.
-- The assignment action handles vehicle and driver together to keep the rule set simple.
-- Reassignment is allowed only while the transport remains in `planned`.
+**Origen:** "Sobre estadísticas e informes".
 
-Acceptance criteria:
+## Reglas de Negocio
 
-- Invalid assignments are rejected with a clear business error.
-- Successful assignment updates the transport record without bypassing lifecycle rules.
+- **RN-01:** Un envío solo puede tener un vehículo y un conductor asignados a la vez.
+- **RN-02:** La asignación (o su cambio) solo es válida mientras el envío está planificado.
+- **RN-03:** Solo pueden participar en un envío vehículos, conductores y clientes que estén activos.
+- **RN-04:** Un vehículo o un conductor no puede estar asignado simultáneamente a más de un envío sin terminar (planificado o en curso).
+- **RN-05:** Al asignar, si la capacidad conocida del vehículo es menor que la carga estimada del envío, el sistema avisa, pero no impide la asignación.
+- **RN-06:** La fecha prevista de entrega no puede ser anterior a la fecha prevista de recogida.
+- **RN-07:** Pasar a "en curso" requiere tener vehículo y conductor asignados.
+- **RN-08:** Un envío entregado o cancelado no puede volver a cambiar de estado.
+- **RN-09:** Cada evento de seguimiento pertenece a un único envío y queda vinculado a quien lo registró.
+- **RN-10:** Solo un administrador puede dar de alta usuarios o cambiar sus permisos.
+- **RN-11:** El mecanismo de arranque solo puede crear el primer administrador cuando no existe ya un administrador activo.
+- **RN-12:** Debe existir siempre al menos un administrador activo.
+- **RN-13:** Una persona usuaria desactivada no puede acceder a la aplicación.
+- **RN-14:** Cambiar la contraseña propia requiere confirmar la contraseña actual.
+- **RN-15:** Dar de baja un vehículo, conductor o cliente no elimina los envíos ni el historial asociados; solo lo retira del uso diario.
+- **RN-16:** Los conductores y los clientes no acceden a la aplicación; su información se gestiona, pero no son personas usuarias del sistema.
 
-### FR-10 · Transport Lifecycle
+## Requisitos No Funcionales
 
-The system shall manage transport state transitions through explicit business rules.
+| ID | Requisito | Descripción |
+| --- | --- | --- |
+| RNF-01 | Facilidad de uso | Interfaz clara y sencilla, sin necesitar formación previa, accesible desde el navegador sin instalar nada. |
+| RNF-02 | Acceso seguro | Solo entra quien tenga usuario y contraseña válidos; las credenciales se custodian de forma segura (nunca en claro); cada persona ve y hace solo lo que su tipo de acceso permite. |
+| RNF-03 | Fiabilidad de los datos | La información no se pierde; dar de baja un vehículo, conductor, cliente o usuario no borra su historial. |
+| RNF-04 | Trazabilidad | Las acciones relevantes sobre un envío quedan registradas con su fecha y con quién las realizó, de forma que se pueda reconstruir qué ha pasado. |
+| RNF-05 | Disponibilidad | La aplicación debe poder usarse desde cualquier ordenador de la oficina con conexión a internet. |
+| RNF-06 | Rendimiento adecuado | La aplicación debe responder con fluidez para el volumen de una empresa pequeña-mediana (una veintena de vehículos/conductores), sin necesitar infraestructura compleja. |
 
-Supported transitions:
+## Prioridades
 
-- `planned -> in_transit`
-- `planned -> cancelled`
-- `in_transit -> delivered`
-- `in_transit -> cancelled`
+- **Alta (imprescindible desde el principio):** RF-01, RF-02, RF-05, RF-06, RF-08, RF-09, RF-10, RF-11, RF-12, RF-13.
+- **Media (puede llegar una vez lo anterior funcione):** RF-03, RF-04, RF-07, RF-14.
 
-Behavior:
+Esta priorización refleja lo que indicó la clienta: el acceso (con su arranque inicial), la gestión de vehículos/conductores/envíos, la asignación sin duplicados, los estados, el historial y unos avisos de error claros son imprescindibles desde el principio; los clientes, las estadísticas, el cambio de contraseña y la administración de usuarios son igualmente reales, pero pueden llegar un poco después.
 
-- `delivered` and `cancelled` are terminal.
-- Transition to `in_transit` requires an assigned vehicle and driver.
-- Transition to `in_transit` should capture the actual pickup timestamp.
-- Transition to `delivered` should capture the actual delivery timestamp.
+## Trazabilidad con la Entrevista
 
-Acceptance criteria:
+| Sección de la entrevista | Requisitos derivados |
+| --- | --- |
+| Sobre el negocio y el problema actual | RF-09 (evitar duplicados), RF-12 (visibilidad) |
+| Sobre los vehículos | RF-05, RF-09 (capacidad) |
+| Sobre los conductores | RF-06 |
+| Sobre los clientes de los envíos | RF-07, RF-08 (asociar cliente) |
+| Sobre los transportes/envíos | RF-08, RF-09, RF-10 |
+| Sobre el seguimiento / historial | RF-11 |
+| Sobre estadísticas e informes | RF-14 |
+| Sobre quién usará la aplicación | RF-01, RF-02, RF-03, RF-04 |
+| Sobre cómo quieren usarla | RF-01, RF-12, RF-13, RNF-01, RNF-05 |
+| Sobre lo que no necesitáis ahora | Sección "Fuera de alcance" |
+| Prioridades | Sección "Prioridades" |
 
-- Invalid transitions are rejected with a coherent business error.
-- Delivered or cancelled transports cannot be moved back into an active operational state.
+## Siguiente Paso
 
-### FR-11 · Shipment Events (API)
-
-The system shall register and query shipment events attached to a transport.
-
-Behavior:
-
-- Event creation is available to authenticated admins and operators.
-- Each event stores `transport_id`, `created_by_user_id`, `event_type`, `event_date`, and optional `location` and `notes`.
-- `created_by_user_id` is taken from the authenticated caller context, not from a client-supplied body field.
-- Supported event types are `created`, `assigned`, `departed`, `checkpoint`, `incident`, `delivered`, and `cancelled`.
-- Event history is retrieved by transport and returned chronologically.
-
-Acceptance criteria:
-
-- Event creation fails if the target transport does not exist or is deleted.
-- Event history is ordered by `event_date`.
-- The actor who created the event is persisted for traceability.
-
-### FR-12 · Listings and Filters
-
-The system shall support useful operational queries, not only raw CRUD listings.
-
-Behavior:
-
-- Transport list supports filters by status, planned date range, assigned vehicle, and assigned driver.
-- Transport list supports basic pagination.
-- Active lists exclude logically deleted rows by default.
-
-Acceptance criteria:
-
-- Filtered transport listing can support the demo and minimum operational use.
-- Pagination parameters are validated and behave predictably.
-
-### FR-13 · Validation, Response Contract, and Conflicts
-
-The system shall expose a consistent API contract for success and failure cases.
-
-Behavior:
-
-- Successful responses use the common API response envelope.
-- Error responses use the common API error envelope with a machine-readable code.
-- The API distinguishes validation errors, authentication failures, authorization failures, not found cases, and business conflicts.
-
-Acceptance criteria:
-
-- Validation errors return `400`.
-- Missing or invalid authentication returns `401`.
-- Forbidden role access returns `403`.
-- Missing resource returns `404`.
-- Business or uniqueness conflict returns `409`.
-
-### FR-14 · Audit Trail and Logical Deletion
-
-The system shall preserve operational traceability through audit metadata and soft deletion.
-
-Behavior:
-
-- Primary operational entities and users keep `created_at`, `updated_at`, and `deleted_at`.
-- Shipment events keep `created_at` and `created_by_user_id`.
-- Logical deletion hides active rows without physically removing historical references.
-
-Acceptance criteria:
-
-- Active-row uniqueness rules are compatible with soft delete.
-- Existing references to users or transports remain valid for historical records.
-
-### FR-15 · Authentication UI
-
-The frontend shall provide a login flow and protect the operational views behind it.
-
-Behavior:
-
-- A login form collects `username` and `password` and calls `POST /api/v1/auth/login`.
-- On success, the frontend stores the issued token for the session and attaches it to subsequent API calls.
-- Unauthenticated access to operational routes redirects to login.
-- A visible logout action clears the session.
-- The UI reflects the caller's role (`admin` vs `operator`) to show or hide admin-only navigation (user administration).
-
-Acceptance criteria:
-
-- Invalid credentials show a clear error without a full page reload failure.
-- Reloading the page keeps the session while the token is valid.
-- An expired or invalid token results in a clean redirect back to login, not a broken screen.
-
-### FR-16 · Transport Management UI
-
-The frontend shall provide views to operate on transports end-to-end.
-
-Behavior:
-
-- A list view shows transports with the filters and pagination already supported by the API (status, planned date range, vehicle, driver).
-- A detail view shows a transport's full data plus its shipment-event history.
-- Create/edit forms cover the fields defined in FR-06, with client-side validation mirroring the API's acceptance criteria.
-- The detail or list view exposes the assignment action (FR-09) and the lifecycle transition actions (FR-10), disabled or hidden when not valid for the transport's current state.
-
-Acceptance criteria:
-
-- A user can create a transport, assign a vehicle and driver, transition it through its lifecycle, and see the result reflected without a manual page refresh.
-- API validation/conflict errors (`400`/`409`) surface as readable UI feedback, not raw JSON.
-
-### FR-17 · Vehicle Management UI
-
-The frontend shall provide list, detail, create, and edit views for vehicles, covering the fields and constraints in FR-07.
-
-Acceptance criteria:
-
-- A user can create, edit, and (soft) delete a vehicle from the UI.
-- Uniqueness conflicts (`409`) on `plate_number`/`internal_code` surface as readable UI feedback.
-
-### FR-18 · Driver Management UI
-
-The frontend shall provide list, detail, create, and edit views for drivers, covering the fields and constraints in FR-08.
-
-Acceptance criteria:
-
-- A user can create, edit, and (soft) delete a driver from the UI.
-- Uniqueness conflicts (`409`) on `license_number`/`employee_code`/`email` surface as readable UI feedback.
-
-### FR-19 · Shipment Event UI
-
-The frontend shall let a user register and review shipment events for a transport, per FR-11.
-
-Behavior:
-
-- The transport detail view lists its shipment-event history in chronological order.
-- A form lets the user record a new event with `event_type`, `event_date`, and optional `location`/`notes`.
-
-Acceptance criteria:
-
-- A newly created event appears in the transport's history without a manual page refresh.
-- Event creation against a deleted or non-existent transport is prevented by the UI, matching the API's acceptance criteria.
-
-### FR-20 · User Administration UI
-
-The frontend shall expose admin-only views for the user-management flows in FR-03, hidden entirely from `operator` sessions.
-
-Behavior:
-
-- List/detail view for existing users.
-- A create-user form for `username`, `email`, `password`, and role.
-- Actions to change a user's role and to activate/deactivate a user.
-
-Acceptance criteria:
-
-- A non-admin cannot reach this view even by direct navigation (the frontend check backs up, and does not replace, the API's `403`).
-- The UI prevents submitting an action that would deactivate or demote the last active admin, mirroring the API's business rule, and still handles the API's rejection gracefully if it happens anyway.
-
-## Main Business Flows
-
-### Flow 1 · Bootstrap First Admin
-
-1. System checks whether an active admin already exists.
-2. If none exists, the bootstrap mechanism creates the first admin user.
-3. Credentials or access path are communicated through the documented setup procedure.
-
-### Flow 2 · Admin Creates an Operator
-
-1. Admin authenticates (via the frontend login).
-2. Admin creates a new user with role `operator`, from the user administration UI.
-3. Operator credentials become usable through the login screen.
-
-### Flow 3 · Operator Executes a Transport
-
-1. Operator authenticates through the frontend.
-2. Operator creates a transport from the UI.
-3. Operator creates or reuses a vehicle and a driver.
-4. Operator assigns the vehicle and driver to the planned transport.
-5. Operator transitions the transport to `in_transit`.
-6. Operator records shipment events as needed.
-7. Operator transitions the transport to `delivered` or `cancelled`.
-
-### Flow 4 · Admin Deactivates a User
-
-1. Admin authenticates.
-2. Admin marks a target user as inactive from the UI.
-3. The deactivated user can no longer log in.
-4. Historical records remain preserved.
-
-These flows are already fully exercised against the API (see `docs/LocalVerification.md` and the Postman smoke flow); once the frontend exists, the same flows must be exercisable end-to-end through the UI.
-
-## Business Rules
-
-- BR-01: A transport can have at most one assigned vehicle and one assigned driver at a time.
-- BR-02: Assignment is valid only while the transport is in `planned`.
-- BR-03: Partial assignment is not supported; vehicle and driver are managed together.
-- BR-04: Only active, non-deleted users, vehicles, and drivers may participate in operational flows.
-- BR-05: `planned_delivery_at` cannot be earlier than `planned_pickup_at`.
-- BR-06: `actual_delivery_at` cannot be earlier than `actual_pickup_at`.
-- BR-07: Transition to `in_transit` requires a valid assignment.
-- BR-08: `delivered` and `cancelled` are terminal states.
-- BR-09: Username and email must be unique among active, non-deleted users.
-- BR-10: Inactive or deleted users cannot authenticate.
-- BR-11: Only admins can manage users.
-- BR-12: The system must always preserve at least one active admin user.
-- BR-13: Shipment events belong to exactly one transport and keep the creating user reference.
-- BR-14: Business identifiers only need to be unique among active rows, not among logically deleted rows.
-
-The frontend must respect these rules in its UX (e.g., disabling actions that would violate them), but the backend remains the enforcement authority.
-
-## Non-Functional Requirements
-
-| ID | Requirement | Priority | Current Status | Acceptance Summary |
-| --- | --- | --- | --- | --- |
-| NFR-01 | Scope discipline and simplicity | Must | Ongoing | The solution stays a small, modular application (backend + frontend) with only justified projects, folders, and abstractions. |
-| NFR-02 | PostgreSQL as system of record | Must | Completed | PostgreSQL remains the single persistent store, with EF Core migrations as the canonical schema. |
-| NFR-03 | Reproducible local execution | Must | Completed for backend; Not started for frontend | Another developer can start the API, PostgreSQL, and (once it exists) the frontend locally with documented commands and without hidden manual steps. |
-| NFR-04 | Deployability to an accessible environment | Must | Not started | Backend and frontend are deployable together to a simple, internet-reachable environment suitable for a demo/defense; the specific target is decided during the deployment sprint. |
-| NFR-05 | Security baseline | Must | Completed for backend; Not started for frontend integration | Passwords are hashed, JWT secrets are externalized, roles are enforced on the API, runtime secrets stay outside Git, and the deployed environment uses HTTPS. |
-| NFR-06 | Maintainability and full-lifecycle documentation | Must | Ongoing | Folder responsibilities stay clear across backend and frontend, and documentation (requirements, design, architecture, testing, deployment, results) is kept aligned with reality for the TFG memoria. |
-| NFR-07 | Testability and CI | Must | Completed for backend; Not started for frontend | Core rules have automated tests, key flows are covered by integration tests, and build/test can run locally and in CI, for both backend and (once it exists) frontend. |
-| NFR-08 | Basic observability | Should | Not started | Logs and request correlation are available; monitoring stays appropriate for a small demo deployment, not enterprise-scale observability. |
-| NFR-09 | Small-scale performance | Should | Completed for backend | Core list/detail flows use filtering, pagination, and relational constraints/indexes suitable for the academic workload. |
-
-## Delivery Gates
-
-### Gate A · Backend MVP Ready (met)
-
-The backend MVP is considered ready when `FR-01` through `FR-14` and `NFR-02`, `NFR-07`, `NFR-09` are complete. This gate is already met.
-
-### Gate B · Frontend MVP Ready
-
-The frontend MVP is considered ready when `FR-15` through `FR-20` are implemented and integrated against the existing backend, and `NFR-03`, `NFR-05`, `NFR-07` extend to cover the frontend.
-
-### Gate C · Deployed and Demonstrable
-
-The project is considered ready for defense when `NFR-04` and `NFR-08` are complete and the full application (frontend + backend) is reachable end-to-end in the chosen deployment environment.
+A partir de esta especificación, el siguiente paso es dividir el desarrollo en sprints iterativos: cada sprint debe añadir funcionalidad concreta de esta lista y recorrer el ciclo completo de desarrollo (diseño, implementación, pruebas) para esa funcionalidad, en lugar de agrupar el trabajo por fases técnicas.

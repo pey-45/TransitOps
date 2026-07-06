@@ -27,6 +27,9 @@ R: Tenemos una hoja de Excel compartida con los envíos de la semana, y luego co
 **P: ¿Qué problemas os da esa forma de trabajar?**
 R: Sobre todo tres cosas: se nos duplica alguna asignación de vehículo o conductor porque dos personas tocan la hoja a la vez; no queda constancia clara de qué ha pasado con un envío si hay una incidencia (¿cuándo salió?, ¿hubo algún problema por el camino?, ¿quién lo entregó?); y no hay forma de saber rápido qué transportes están en marcha ahora mismo sin preguntar a la gente.
 
+**P: Sobre eso de que se os duplican las asignaciones, ¿qué esperarías de la aplicación?**
+R: Que no me deje asignar el mismo vehículo o el mismo conductor a dos envíos a la vez. Si ese vehículo o ese conductor ya está ocupado en un envío que todavía no ha terminado, que me avise y no me deje repetirlo, para no volver a mandar la misma furgoneta a dos sitios el mismo día.
+
 ### Sobre los vehículos
 
 **P: ¿Qué necesitáis saber o controlar sobre los vehículos?**
@@ -40,10 +43,18 @@ R: Igual que los vehículos: lista de conductores, su número de carné, algún 
 **P: ¿Los conductores necesitan entrar en la aplicación?**
 R: No, y de momento que quede así: ellos reciben la información por teléfono o whatsapp como hasta ahora. La aplicación es para el personal de oficina/operaciones. Si en el futuro nos interesa darles acceso, ya lo pediremos como algo aparte; por ahora que se quede completamente fuera.
 
+### Sobre los clientes de los envíos
+
+**P: ¿Guardáis información de para quién es cada envío?**
+R: Sí, casi siempre el envío es para un cliente nuestro, y muchos se repiten porque tenemos clientes habituales. Nos vendría muy bien tener una lista de clientes con su nombre y un contacto, y poder decir a qué cliente pertenece cada envío. Así, cuando llaman preguntando por lo suyo, encontramos sus envíos rápido. No hace falta nada complicado ni una ficha detallada, solo saber de quién es cada envío y cómo localizarle. Igual que con vehículos y conductores, si dejamos de trabajar con un cliente querríamos poder quitarlo de la lista del día a día sin perder los envíos que ya le hicimos.
+
 ### Sobre los transportes/envíos (el trabajo del día a día)
 
 **P: Cuando entra un envío nuevo, ¿qué información manejáis?**
-R: Un envío tiene un origen y un destino, una fecha en la que está previsto recogerlo y, normalmente, una fecha en la que debería entregarse. A veces añadimos alguna nota o descripción (por ejemplo, "mercancía frágil" o el número de referencia que nos da el cliente).
+R: Un envío tiene un origen y un destino, una fecha en la que está previsto recogerlo y, normalmente, una fecha en la que debería entregarse. A veces añadimos alguna nota o descripción (por ejemplo, "mercancía frágil" o el número de referencia que nos da el cliente). Y, como decía, normalmente sabemos para qué cliente es.
+
+**P: ¿Y sobre la mercancía en sí?**
+R: Con una idea del tamaño o el peso aproximado nos vale, no necesito un inventario detallado. Me interesa sobre todo para lo de la capacidad del vehículo: si sé que el envío es grande, que la aplicación me avise si le estoy asignando una furgoneta que se queda corta. Con una carga estimada del envío es suficiente.
 
 **P: ¿Cómo pasa un envío de "pendiente" a "hecho"?**
 R: Primero está "planificado" (lo tenemos apuntado, pero sin salir todavía). Cuando le asignamos un vehículo y un conductor, y sale, pasa a "en curso". Cuando llega a destino, lo marcamos como "entregado". Y si por lo que sea no se llega a hacer, "cancelado". Una vez entregado o cancelado, ya no se puede reabrir ni cambiar de estado: si hay que rehacerlo, se crea un envío nuevo.
@@ -66,10 +77,16 @@ R: Sí, esto sí me interesa como algo real, no solo como capricho. Me gustaría
 **P: ¿Quién va a usar esto en tu empresa?**
 R: Por un lado, el personal de operaciones (turno de oficina), que es quien crea los envíos, asigna vehículos y conductores, y va actualizando el estado. Por otro lado, yo y una persona más llevamos la parte de administración: además de todo lo anterior, necesitamos poder dar de alta a la gente que puede entrar en la aplicación y decidir quién tiene permisos de "solo operación" y quién tiene permisos de "administración". No queremos que cualquiera pueda dar de alta usuarios nuevos.
 
+**P: ¿Y el primer usuario administrador, cómo se crea si todavía no hay nadie dentro?**
+R: Eso entiendo que es cosa de la puesta en marcha: que quien nos instale la aplicación cree ese primer administrador para poder arrancar, y a partir de ahí ya damos de alta al resto nosotros desde dentro. No es algo del día a día, solo para empezar.
+
+**P: ¿Cómo queréis gestionar las contraseñas?**
+R: Cada persona debería poder cambiar su propia contraseña cuando quiera, y sobre todo la primera vez que entra con la que le hemos dado. Si a alguien se le olvida, de momento ya me encargo yo como administradora de asignarle una nueva; no necesitamos nada automático por correo por ahora.
+
 ### Sobre cómo quieren usarla
 
 **P: ¿Cómo os imagináis usando la aplicación en el día a día?**
-R: Algo sencillo, desde el navegador, sin instalar nada especial, a lo que se pueda entrar con un usuario y contraseña. Que se vea claro qué envíos hay, en qué estado están, y poder filtrar (por ejemplo, ver solo los que están "en curso", o los de una fecha). No hace falta que sea vistoso ni sofisticado, que sea claro y que no se rompa.
+R: Algo sencillo, desde el navegador, sin instalar nada especial, a lo que se pueda entrar con un usuario y contraseña. Que se vea claro qué envíos hay, en qué estado están, y poder filtrar (por ejemplo, ver solo los que están "en curso", o los de una fecha). No hace falta que sea vistoso ni sofisticado, que sea claro y que no se rompa. Y que si me equivoco al meter un dato, me lo diga con claridad en vez de quedarse a medias.
 
 ### Sobre lo que no necesitáis ahora
 
@@ -79,19 +96,23 @@ R: No necesitamos que la aplicación calcule rutas óptimas ni tiempos de viaje,
 ### Prioridades
 
 **P: Si tuvieras que elegir qué es imprescindible desde el primer día y qué puede esperar, ¿qué dirías?**
-R: Lo imprescindible es: poder entrar con usuario/contraseña, tener la lista de vehículos y conductores, poder crear y ver los envíos, asignar vehículo/conductor, y cambiar el estado según va avanzando el envío. El historial de incidencias/eventos es muy importante también, casi tan imprescindible como lo anterior. El resumen de estadísticas también lo quiero de verdad, aunque puede llegar un poco después de tener lo básico funcionando. Lo de dar de alta usuarios y permisos de administración puede llegar también algo después, mientras alguien nos ayude a crear el primer usuario administrador para empezar.
+R: Lo imprescindible es: poder entrar con usuario/contraseña, tener la lista de vehículos y conductores, poder crear y ver los envíos, asignar vehículo/conductor (sin que me deje duplicar), y cambiar el estado según va avanzando el envío. El historial de incidencias/eventos es muy importante también, casi tan imprescindible como lo anterior. Lo de los clientes y el resumen de estadísticas también lo quiero de verdad, aunque pueden llegar un poco después de tener lo básico funcionando. Y lo de dar de alta usuarios y cambiar contraseñas puede llegar también algo después, mientras alguien nos cree el primer administrador para arrancar.
 
 ## Resumen de necesidades (sin tecnicismos)
 
 - Una aplicación web con usuario y contraseña para el personal de operaciones y administración (los conductores no la usan, y por ahora se quedan completamente fuera de la aplicación).
 - Dos tipos de acceso: operación (trabajo diario) y administración (además, gestionar quién tiene acceso).
+- Que quien instale la aplicación pueda crear el primer administrador para poder arrancar, y que a partir de ahí los administradores den de alta al resto.
+- Que cada persona pueda cambiar su propia contraseña, especialmente la primera vez que entra.
 - Gestión de vehículos: alta, listado, ver detalle, editar datos (incluyendo marca/modelo/capacidad como datos adicionales), y retirarlos sin perder su historial.
 - Gestión de conductores: alta, listado, ver detalle, editar datos (incluyendo código de empleado/contacto como datos adicionales), y darlos de baja sin perder su historial.
-- Gestión de envíos/transportes: crear, listar (con filtros), ver detalle, editar datos generales.
-- Asignar vehículo y conductor a un envío, solo mientras está planificado.
+- Gestión de clientes: lista de clientes con nombre y contacto, poder asociar cada envío a un cliente, y retirarlos sin perder los envíos ya hechos.
+- Gestión de envíos/transportes: crear, listar (con filtros), ver detalle, editar datos generales, incluyendo el cliente y una carga estimada.
+- Asignar vehículo y conductor a un envío, solo mientras está planificado, sin permitir duplicar un vehículo o conductor que ya esté ocupado en otro envío sin terminar, y avisando si el vehículo se queda corto de capacidad.
 - Cambiar el estado de un envío siguiendo un orden lógico (planificado → en curso → entregado/cancelado), sin poder retroceder desde un estado final.
 - Historial de eventos por envío: creación, asignación, salida, puntos de control, incidencias, entrega o cancelación, cada uno con su fecha.
 - Un resumen/estadísticas real: envíos por estado, actividad por vehículo y por conductor, e incidencias registradas.
 - Ver rápidamente qué envíos están en curso, filtrando por estado, fechas, vehículo o conductor.
+- Que los errores de datos se avisen con claridad.
 - Nada de rutas óptimas, GPS, facturación, app de móvil, ni acceso para clientes externos, al menos por ahora.
-- Prioridad alta: login, vehículos, conductores, envíos, asignación, estados, historial. Prioridad algo menor: estadísticas, alta de usuarios/permisos.
+- Prioridad alta: login, vehículos, conductores, envíos, asignación (sin duplicados), estados, historial. Prioridad algo menor: clientes, estadísticas, cambio de contraseña, alta de usuarios/permisos.
