@@ -67,5 +67,55 @@ describe('authenticated skeleton', () => {
     renderAt('/')
     expect(screen.getByText('Usuarios (próximamente)')).toBeInTheDocument()
     expect(screen.getByText('Administrador')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Vehículos' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Conductores' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Clientes' })).toBeInTheDocument()
+  })
+
+  it('loads an authenticated vehicle list and sends the bearer token', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{
+        id: 'vehicle-1', licensePlate: '1234 ABC', internalCode: 'V-1', brand: 'Volvo', model: 'FH',
+        loadCapacity: 12000, isActive: true, createdAt: '2026-07-19', updatedAt: '2026-07-19',
+      }], requestId: 'request-vehicles' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/vehiculos')
+
+    expect(await screen.findByRole('link', { name: '1234 ABC' })).toBeInTheDocument()
+    const headers = new Headers(fetchMock.mock.calls[0][1].headers)
+    expect(headers.get('Authorization')).toBe('Bearer test-token')
+  })
+
+  it('creates a vehicle and redirects to its detail', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const vehicle = { id: 'vehicle-1', licensePlate: '1234 ABC', internalCode: null, brand: null, model: null, loadCapacity: null, isActive: true, createdAt: '2026-07-19', updatedAt: '2026-07-19' }
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ data: vehicle, requestId: 'create-1' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: vehicle, requestId: 'get-1' }) }))
+    renderAt('/vehiculos/nuevo')
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText('Matrícula'), '1234 ABC')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByRole('heading', { name: '1234 ABC' })).toBeInTheDocument()
+  })
+
+  it('shows a business conflict while creating a vehicle', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: { code: 'vehicle_plate_conflict', message: 'Ya existe un vehículo activo con esa matrícula.' }, requestId: 'conflict-1' }),
+    }))
+    renderAt('/vehiculos/nuevo')
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText('Matrícula'), '1234 ABC')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ya existe un vehículo activo con esa matrícula.')
   })
 })

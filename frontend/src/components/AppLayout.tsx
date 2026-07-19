@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/auth-state'
 
 export function AppLayout() {
@@ -6,9 +6,12 @@ export function AppLayout() {
   return (
     <div className="app-shell">
       <header>
-        <a className="brand" href="/">TransitOps</a>
+        <Link className="brand" to="/">TransitOps</Link>
         <nav aria-label="Navegación principal">
-          <a href="/">Inicio</a>
+          <NavLink to="/" end>Inicio</NavLink>
+          <NavLink to="/vehiculos">Vehículos</NavLink>
+          <NavLink to="/conductores">Conductores</NavLink>
+          <NavLink to="/clientes">Clientes</NavLink>
           {session?.user.role === 'admin' && <span className="future-nav">Usuarios (próximamente)</span>}
         </nav>
         <div className="account">

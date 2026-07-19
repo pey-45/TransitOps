@@ -86,6 +86,9 @@ Alta, edición, consulta y baja de vehículos, conductores y clientes desde la i
 - Se cumplen los criterios de aceptación de RF-05, RF-06 y RF-07.
 - La baja lógica no borra historial y retira el elemento del uso diario.
 
+**Cierre (2026-07-19)**
+Sprint implementado en una sesión de trabajo. Se añadieron las entidades y la migración incremental de vehículos, conductores y clientes; API CRUD autenticada con unicidad entre activos, normalización, validación y baja lógica; SPA con listado, detalle, alta, edición y baja para los tres catálogos; 13 pruebas backend nuevas y 3 frontend nuevas. La validación final dejó 29 pruebas backend y 7 frontend en verde, lint y builds de producción correctos, y un flujo integrado comprobado a través de Nginx contra PostgreSQL real, incluida la aplicación de la migración y la conservación de filas inactivas.
+
 ## Sprint 3 · Envíos (Alta, Edición, Listado y Filtros)
 
 **Objetivo**

@@ -4,6 +4,9 @@ import { ProtectedRoute } from './routes/ProtectedRoute'
 import { AppLayout } from './components/AppLayout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { VehicleDetailPage, VehicleFormPage, VehicleListPage } from './pages/vehicles/VehiclePages'
+import { DriverDetailPage, DriverFormPage, DriverListPage } from './pages/drivers/DriverPages'
+import { CustomerDetailPage, CustomerFormPage, CustomerListPage } from './pages/customers/CustomerPages'
 
 export function AppRoutes() {
   return (
@@ -12,6 +15,18 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/vehiculos" element={<VehicleListPage />} />
+          <Route path="/vehiculos/nuevo" element={<VehicleFormPage />} />
+          <Route path="/vehiculos/:id" element={<VehicleDetailPage />} />
+          <Route path="/vehiculos/:id/editar" element={<VehicleFormPage />} />
+          <Route path="/conductores" element={<DriverListPage />} />
+          <Route path="/conductores/nuevo" element={<DriverFormPage />} />
+          <Route path="/conductores/:id" element={<DriverDetailPage />} />
+          <Route path="/conductores/:id/editar" element={<DriverFormPage />} />
+          <Route path="/clientes" element={<CustomerListPage />} />
+          <Route path="/clientes/nuevo" element={<CustomerFormPage />} />
+          <Route path="/clientes/:id" element={<CustomerDetailPage />} />
+          <Route path="/clientes/:id/editar" element={<CustomerFormPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

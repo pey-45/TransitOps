@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Este diseño cubre el dominio completo definido en `docs/Requirements.md`. En el Sprint 1 solo se implementa y migra `AppUser`; las demás entidades se incorporarán mediante migraciones incrementales en los sprints correspondientes.
+Este diseño cubre el dominio completo definido en `docs/Requirements.md`. El Sprint 1 implementó y migró `AppUser`; el Sprint 2 incorporó `Vehicle`, `Driver` y `Customer`. `Shipment` y `ShipmentEvent` se incorporarán mediante migraciones incrementales en los sprints correspondientes.
 
 ```mermaid
 erDiagram

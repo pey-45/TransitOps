@@ -8,7 +8,7 @@ This is the Final Degree Project (TFG) of the Bachelor's in Computer Engineering
 
 Reference date: July 19, 2026.
 
-Sprint 1 is implemented: the greenfield application has an ASP.NET Core API with PostgreSQL persistence, controlled first-admin bootstrap and JWT authentication, plus a React/TypeScript SPA with login, protected routing and role-aware navigation. Backend and frontend tests, Docker Compose and CI form the initial walking skeleton.
+Sprints 1 and 2 are implemented: the greenfield application has an ASP.NET Core API with PostgreSQL persistence, controlled first-admin bootstrap and JWT authentication, plus end-to-end vehicle, driver and customer catalogs with business-key validation and soft deletion. The React/TypeScript SPA provides login, protected routing, role-aware navigation and list/detail/create/edit/deactivate flows for all three catalogs. Backend and frontend tests, Docker Compose and CI keep the increment reproducible.
 
 The earlier AWS-oriented direction remains archived as a read-only reference; the active solution is independent and lives at the repository root.
 

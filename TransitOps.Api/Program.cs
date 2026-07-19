@@ -8,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Auth;
+using TransitOps.Api.Features.Customers;
+using TransitOps.Api.Features.Drivers;
+using TransitOps.Api.Features.Vehicles;
 using TransitOps.Api.Middleware;
 using TransitOps.Api.Persistence;
 using TransitOps.Api.Security;
@@ -53,6 +56,9 @@ public class Program
         builder.Services.AddSingleton(bootstrapOptions);
         builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IVehicleService, VehicleService>();
+        builder.Services.AddScoped<IDriverService, DriverService>();
+        builder.Services.AddScoped<ICustomerService, CustomerService>();
 
         builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy =>
             policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])

@@ -2,30 +2,85 @@ export type Role = 'admin' | 'operator'
 export interface User { id: string; username: string; email: string; role: Role; isActive: boolean }
 export interface Session { accessToken: string; tokenType: string; expiresAt: string; user: User }
 interface ApiResponse<T> { data: T; requestId: string }
-interface ErrorBody { error?: { code?: string; message?: string }; requestId?: string }
+export type ValidationDetails = Record<string, string[]>
+interface ErrorBody { error?: { code?: string; message?: string; details?: ValidationDetails }; requestId?: string }
+
+export interface Vehicle {
+  id: string; licensePlate: string; internalCode: string | null; brand: string | null; model: string | null
+  loadCapacity: number | null; isActive: boolean; createdAt: string; updatedAt: string
+}
+export interface VehicleInput { licensePlate: string; internalCode?: string; brand?: string; model?: string; loadCapacity?: number }
+export interface Driver {
+  id: string; name: string; licenseNumber: string; employeeCode: string | null; contactDetails: string | null
+  isActive: boolean; createdAt: string; updatedAt: string
+}
+export interface DriverInput { name: string; licenseNumber: string; employeeCode?: string; contactDetails?: string }
+export interface Customer {
+  id: string; name: string; contactDetails: string | null; isActive: boolean; createdAt: string; updatedAt: string
+}
+export interface CustomerInput { name: string; contactDetails?: string }
 
 export class ApiClientError extends Error {
   readonly code: string
   readonly requestId?: string
+  readonly details?: ValidationDetails
 
-  constructor(message: string, code = 'request_failed', requestId?: string) {
+  constructor(message: string, code = 'request_failed', requestId?: string, details?: ValidationDetails) {
     super(message)
     this.code = code
     this.requestId = requestId
+    this.details = details
   }
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? ''
+const STORAGE_KEY = 'transitops.session'
 
-export async function login(username: string, password: string): Promise<Session> {
-  const response = await fetch(`${API_URL}/api/v1/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  })
-  const body = await response.json() as ApiResponse<Session> & ErrorBody
+function getAccessToken(): string | null {
+  try {
+    return (JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Session | null)?.accessToken ?? null
+  } catch {
+    return null
+  }
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getAccessToken()
+  const headers = new Headers(options.headers)
+  if (options.body) headers.set('Content-Type', 'application/json')
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}${path}`, { ...options, headers })
+  } catch {
+    throw new ApiClientError('No se pudo conectar con el servidor.')
+  }
+  if (response.status === 204) return undefined as T
+  const body = await response.json() as ApiResponse<T> & ErrorBody
   if (!response.ok) {
-    throw new ApiClientError(body.error?.message ?? 'No se pudo iniciar sesión.', body.error?.code, body.requestId)
+    throw new ApiClientError(body.error?.message ?? 'La operación no se pudo completar.', body.error?.code, body.requestId, body.error?.details)
   }
   return body.data
 }
+
+export function login(username: string, password: string): Promise<Session> {
+  return request('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+}
+
+export const listVehicles = () => request<Vehicle[]>('/api/v1/vehicles')
+export const getVehicle = (id: string) => request<Vehicle>(`/api/v1/vehicles/${id}`)
+export const createVehicle = (input: VehicleInput) => request<Vehicle>('/api/v1/vehicles', { method: 'POST', body: JSON.stringify(input) })
+export const updateVehicle = (id: string, input: VehicleInput) => request<Vehicle>(`/api/v1/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+export const deactivateVehicle = (id: string) => request<void>(`/api/v1/vehicles/${id}`, { method: 'DELETE' })
+
+export const listDrivers = () => request<Driver[]>('/api/v1/drivers')
+export const getDriver = (id: string) => request<Driver>(`/api/v1/drivers/${id}`)
+export const createDriver = (input: DriverInput) => request<Driver>('/api/v1/drivers', { method: 'POST', body: JSON.stringify(input) })
+export const updateDriver = (id: string, input: DriverInput) => request<Driver>(`/api/v1/drivers/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+export const deactivateDriver = (id: string) => request<void>(`/api/v1/drivers/${id}`, { method: 'DELETE' })
+
+export const listCustomers = () => request<Customer[]>('/api/v1/customers')
+export const getCustomer = (id: string) => request<Customer>(`/api/v1/customers/${id}`)
+export const createCustomer = (input: CustomerInput) => request<Customer>('/api/v1/customers', { method: 'POST', body: JSON.stringify(input) })
+export const updateCustomer = (id: string, input: CustomerInput) => request<Customer>(`/api/v1/customers/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+export const deactivateCustomer = (id: string) => request<void>(`/api/v1/customers/${id}`, { method: 'DELETE' })
