@@ -41,14 +41,15 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - Add tests when behavior or business rules justify them, on whichever layer the behavior lives in.
 - Prefer validating changes with build or tests when feasible.
 - Do not introduce secrets into committed files.
+- Local runtime configuration is sourced from the ignored root `.env`, created from the committed `.env.example`; keep real credentials out of `appsettings*.json` and other tracked files.
 
-- Main backend: ASP.NET Core / .NET 10 (to be built fresh; a working previous-iteration backend exists in `archive/cloud-phase/` as reference).
+- Main backend: active ASP.NET Core / .NET 10 project in `TransitOps.Api/`; a working previous-iteration backend exists in `archive/cloud-phase/` as reference only.
 - Persistence: PostgreSQL via EF Core.
 - Backend test stack: xUnit.
-- Frontend: React SPA, not yet started, to integrate with the backend over its REST API.
-- Frontend test stack: to be decided when the frontend is scaffolded.
+- Frontend: active Vite + React + TypeScript SPA in `frontend/`, integrated with the backend REST API.
+- Frontend test stack: Vitest + React Testing Library.
 - Operational direction: Docker/Docker Compose for local reproducibility. Deployment target and CI/CD depth are deliberately lightweight and decided later in the roadmap; do not assume AWS, ECS, or Terraform going forward.
-- Current priority: close requirements/design for the new scope, then rebuild the application iteratively, sprint by sprint, each slice going through the full cycle (design, implementation, tests). No active application code exists in the repository root yet.
+- Current priority: continue from the completed Sprint 1 into Sprint 2, preserving the iterative full-cycle approach (design, implementation, tests) for each slice.
 
 ## Session Start Checklist
 

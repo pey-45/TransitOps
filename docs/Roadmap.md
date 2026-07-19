@@ -62,6 +62,9 @@ Login funcionando de punta a punta contra el backend real, con la aplicación co
 - El modelo de datos completo está diseñado y versionado (aunque solo esté implementada la parte de usuarios).
 - La aplicación se levanta localmente sin pasos manuales ocultos y la CI valida build + pruebas.
 
+**Cierre (2026-07-18)**
+Sprint implementado en una sesión de trabajo. Se entregaron el modelo completo y la arquitectura de integración; API .NET 10 con migración de usuarios, bootstrap y JWT; SPA React/TypeScript con login, rutas protegidas y navegación por rol; 16 pruebas backend organizadas por servicio y controlador, y 4 frontend; Docker Compose y workflow de CI. La verificación local contenerizada completó salud, bootstrap, conflicto al repetir, login y sesión protegida a través del proxy. La ejecución remota del workflow queda pendiente del siguiente push.
+
 ## Sprint 2 · Catálogos (Vehículos, Conductores, Clientes)
 
 **Objetivo**

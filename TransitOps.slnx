@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="TransitOps.Api/TransitOps.Api.csproj" />
+  <Project Path="TransitOps.Tests/TransitOps.Tests.csproj" />
+</Solution>

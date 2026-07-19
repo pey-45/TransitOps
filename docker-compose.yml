@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:?Define POSTGRES_PORT in .env}:5432"
+    volumes:
+      - transitops-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Define POSTGRES_USER in .env} -d ${POSTGRES_DB:?Define POSTGRES_DB in .env}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: TransitOps.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:?Define POSTGRES_DB in .env};Username=${POSTGRES_USER:?Define POSTGRES_USER in .env};Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in .env}
+      Database__ApplyMigrationsOnStartup: "true"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Define JWT_SIGNING_KEY in .env}
+      Bootstrap__FirstAdminToken: ${BOOTSTRAP_TOKEN:?Define BOOTSTRAP_TOKEN in .env}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  transitops-data:

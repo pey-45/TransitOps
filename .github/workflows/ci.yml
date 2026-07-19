@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: transitops_ci
+          POSTGRES_USER: transitops
+          POSTGRES_PASSWORD: transitops_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U transitops -d transitops_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=transitops_ci;Username=transitops;Password=transitops_ci
+      Jwt__SigningKey: transitops-ci-signing-key-with-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore TransitOps.slnx
+      - run: dotnet build TransitOps.slnx --configuration Release --no-restore
+      - run: dotnet test TransitOps.slnx --configuration Release --no-build
+      - run: dotnet tool restore
+      - run: dotnet run --project TransitOps.Api --configuration Release --no-build -- --migrate-only
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run test

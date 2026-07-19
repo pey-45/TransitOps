@@ -383,3 +383,6 @@ override.tf.json
 
 # Claude
 .claude/
+
+# TransitOps active frontend build output
+frontend/dist/

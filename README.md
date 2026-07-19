@@ -6,21 +6,27 @@ This is the Final Degree Project (TFG) of the Bachelor's in Computer Engineering
 
 ## Current Status
 
-Reference date: July 7, 2026.
+Reference date: July 19, 2026.
 
-The project is **starting fresh**. It previously followed a different direction — an AWS cloud-platform thesis — which was superseded by a signed TFG modification request (2026-06-19). The decision (2026-07-07) is to rebuild the application from scratch, applying the new iterative full-lifecycle methodology cleanly, while keeping the previous iteration only as an archived reference.
+Sprint 1 is implemented: the greenfield application has an ASP.NET Core API with PostgreSQL persistence, controlled first-admin bootstrap and JWT authentication, plus a React/TypeScript SPA with login, protected routing and role-aware navigation. Backend and frontend tests, Docker Compose and CI form the initial walking skeleton.
 
-As a result, the repository root currently contains **only planning documentation**. There is no active application code, solution, or build yet — it is recreated fresh as the sprints progress.
+The earlier AWS-oriented direction remains archived as a read-only reference; the active solution is independent and lives at the repository root.
 
 ```text
 TransitOps/
 |-- README.md
 |-- AGENTS.md
 |-- CONTEXT.md
+|-- TransitOps.slnx
+|-- TransitOps.Api/              (ASP.NET Core API)
+|-- TransitOps.Tests/            (xUnit service and controller tests)
+|-- frontend/                    (Vite + React + TypeScript)
+|-- docker-compose.yml
 |-- docs/
 |   |-- ClientRequirements.md   (simulated client interview)
 |   |-- Requirements.md         (formal functional/non-functional requirements)
-|   `-- Roadmap.md              (sprint plan — pending rewrite to the iterative methodology)
+|   |-- Roadmap.md              (iterative sprint plan)
+|   `-- design/                 (data model and integration architecture)
 `-- archive/
     |-- README.md
     `-- cloud-phase/            (previous direction + previous-iteration code, kept as reference)
@@ -50,7 +56,7 @@ The functional scope is defined in [docs/Requirements.md](docs/Requirements.md),
 - ASP.NET Core (.NET 10) + PostgreSQL / EF Core — backend
 - React (SPA) — frontend
 - xUnit — backend tests
-- Frontend test tooling — to be decided when the frontend is scaffolded
+- Vitest + React Testing Library — frontend tests
 - Docker / Docker Compose — local reproducibility
 - GitHub Actions — CI
 - Deployment target — to be decided during the deployment sprint; intentionally not a Terraform-managed cloud platform this time
@@ -65,7 +71,9 @@ Development follows an iterative, incremental approach organized in sprints, as 
 
 - Simulated client interview: [docs/ClientRequirements.md](docs/ClientRequirements.md)
 - Software requirements specification: [docs/Requirements.md](docs/Requirements.md)
-- Sprint roadmap: [docs/Roadmap.md](docs/Roadmap.md) *(pending rewrite to the iterative methodology)*
+- Sprint roadmap: [docs/Roadmap.md](docs/Roadmap.md)
+- Data model: [docs/design/DataModel.md](docs/design/DataModel.md)
+- Integration architecture: [docs/design/IntegrationArchitecture.md](docs/design/IntegrationArchitecture.md)
 - Stable agent instructions: [AGENTS.md](AGENTS.md)
 - Evolving project context and decision log: [CONTEXT.md](CONTEXT.md)
 - Archived materials (previous direction + previous-iteration reference code): [archive/README.md](archive/README.md)
@@ -76,4 +84,38 @@ A complete previous-iteration backend (ASP.NET Core, EF Core/PostgreSQL, JWT aut
 
 ## Local Setup
 
-Setup and run instructions will be added here once the new backend and frontend are scaffolded during the first implementation sprints. Local requirements will include the .NET SDK 10, Docker Desktop, and Node.js (for the frontend).
+The reproducible path only requires Docker Desktop. Create the ignored local configuration from the committed template before the first start:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+In PowerShell, use `Copy-Item .env.example .env` for the first command. Docker Compose reads `.env`; startup fails explicitly when a required value is missing.
+
+The web application is then available at `http://localhost:5173` and the API health endpoint at `http://localhost:8080/api/v1/health`. On a new database, create the first administrator once:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/bootstrap-admin \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: transitops-bootstrap-local-only" \
+  -d '{"username":"admin","email":"admin@transitops.local","password":"ChangeMe!123"}'
+```
+
+The committed `.env.example` contains development-only values so the local flow is reproducible. `.env` is ignored by Git and is the place to replace them. Never reuse these values in a deployed environment.
+PostgreSQL is published on host port `5433` by default to avoid collisions with an existing local installation; change `POSTGRES_PORT` in `.env` if needed. Services inside Compose continue to use port `5432`.
+
+For native development, use .NET SDK 10 and Node.js 22:
+
+```bash
+dotnet restore TransitOps.slnx
+dotnet test TransitOps.slnx
+cd frontend
+npm ci
+npm run test
+npm run dev
+```
+
+## Testing
+
+Backend tests are organized by responsibility: `TransitOps.Tests/Services/` verifies service business behavior directly, `TransitOps.Tests/Controllers/` verifies HTTP contracts and authorization, and `TransitOps.Tests/Support/` contains shared test infrastructure. CI runs backend build/tests and migration validation, plus frontend lint/build/tests.
