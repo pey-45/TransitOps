@@ -1,0 +1,15 @@
+\chapter{Diseño detallado}
+
+\section{Autenticación y autorización}
+
+El arranque recibe un secreto de instalación mediante la cabecera \texttt{X-Bootstrap-Token}. Antes de crear el usuario comprueba que no existe un administrador activo y almacena un hash de la contraseña. El login rechaza de forma indistinguible usuario inexistente, contraseña incorrecta y usuario inactivo para no revelar información de cuentas.
+
+Un login válido emite un JWT firmado con identificador, nombre, correo, rol y caducidad. Las políticas \emph{operational} y \emph{admin} se aplican en el servidor. La SPA usa el rol devuelto para adaptar la navegación, pero esa adaptación visual no sustituye a la autorización de API.
+
+\section{Contrato uniforme}
+
+Una respuesta correcta contiene \texttt{data} y \texttt{requestId}. Un error contiene \texttt{error.code}, \texttt{error.message}, detalles opcionales y el mismo identificador. Middleware y eventos de autenticación garantizan esta forma para 400, 401, 403, 409 y 500. La interfaz traduce el mensaje a un aviso accesible con rol \texttt{alert}.
+
+\section{Sesión en frontend}
+
+La sesión se conserva en \texttt{localStorage} y se descarta al expirar. Es una decisión pragmática para el Sprint 1, documentada con su riesgo frente a XSS. El endurecimiento del Sprint 7 evaluará cookie \texttt{HttpOnly} y una política de seguridad de contenidos. Los diseños de catálogos, envíos y operaciones se incorporarán en sus respectivos sprints.

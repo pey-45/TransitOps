@@ -1,0 +1,38 @@
+\chapter{Arquitectura}
+
+La solución separa una SPA, una \gls{api} REST y PostgreSQL. El navegador nunca accede directamente a persistencia: todas las reglas y autorizaciones se evalúan en la API.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.82\textwidth}\centering
+\textbf{Navegador: React SPA}\\[8pt]
+$\downarrow$ \quad HTTPS / JSON / JWT \quad $\uparrow$\\[8pt]
+\textbf{ASP.NET Core REST API}\\[8pt]
+$\downarrow$ \quad Entity Framework Core \quad $\uparrow$\\[8pt]
+\textbf{PostgreSQL}
+\end{minipage}}
+\caption{Arquitectura de integración de TransitOps}
+\label{fig:architecture}
+\end{figure}
+
+\section{Modelo de datos}
+
+El modelo completo se diseñó antes de implementar las rebanadas funcionales. \texttt{Shipment} referencia opcionalmente cliente, vehículo y conductor; \texttt{ShipmentEvent} referencia obligatoriamente el envío y el usuario autor. Los catálogos y usuarios usan \gls{baja-logica}; las relaciones históricas no se borran en cascada.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.9\textwidth}\centering
+\begin{tabular}{ccl}
+Customer & $0..1 \longleftarrow *$ & Shipment \\
+Vehicle & $0..1 \longleftarrow *$ & Shipment \\
+Driver & $0..1 \longleftarrow *$ & Shipment \\
+Shipment & $1 \longleftarrow *$ & ShipmentEvent \\
+AppUser & $1 \longleftarrow *$ & ShipmentEvent \\
+\end{tabular}\\[10pt]
+\small AppUser, Vehicle, Driver y Customer conservan estado activo; Shipment contiene estado, fechas y carga estimada.
+\end{minipage}}
+\caption{Relaciones principales del modelo de datos completo}
+\label{fig:data-model}
+\end{figure}
+
+El diseño detallado, con todos los atributos y restricciones, está versionado en \texttt{docs/design/DataModel.md}. La migración inicial materializa únicamente \texttt{app\_users}; las demás tablas se añadirán al implementar sus requisitos.

@@ -1,0 +1,7 @@
+\chapter{Despliegue y reproducibilidad}
+
+Desde el primer sprint, \texttt{docker compose up --build} crea tres servicios. PostgreSQL mantiene un volumen persistente y expone una comprobación de salud; la API espera a que la base esté disponible, aplica migraciones y escucha en el puerto 8080; Nginx sirve la SPA en el puerto 5173 y reenvía \texttt{/api} al backend.
+
+Los valores del Compose permiten una demostración local inmediata. El fichero \texttt{.env.example} enumera las variables que deben sustituirse y \texttt{.env} queda excluido del control de versiones. En particular, claves JWT, token de bootstrap y contraseña de base de datos deberán gestionarse como secretos en cualquier entorno accesible.
+
+El objetivo de este sprint es reproducibilidad local, no operación pública. La selección del destino accesible, HTTPS, copias de seguridad, observabilidad mínima y automatización de despliegue pertenece al Sprint 7.

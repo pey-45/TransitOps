@@ -1,0 +1,24 @@
+\chapter{Metodología}
+
+Se adopta un proceso iterativo e incremental. La entrevista simulada con la responsable de operaciones constituye la fuente primaria; de ella se deriva la especificación funcional, y el roadmap distribuye los requisitos en ocho incrementos verticales. Cada sprint incluye diseño detallado, implementación de API e interfaz cuando corresponde, pruebas y actualización documental.
+
+\begin{table}[htbp]
+\centering
+\caption{Plan incremental del proyecto}
+\begin{tabular}{cll}
+\hline
+Sprint & Incremento & Requisitos principales \\
+\hline
+1 & Esqueleto autenticado & RF-01, RF-02, RF-13 \\
+2 & Catálogos & RF-05, RF-06, RF-07 \\
+3 & Envíos y filtros & RF-08, RF-12 \\
+4 & Asignación y ciclo de vida & RF-09, RF-10 \\
+5 & Historial de eventos & RF-11 \\
+6 & Usuarios, contraseña y resumen & RF-03, RF-04, RF-14 \\
+7 & Sistema completo y despliegue & RNF y E2E \\
+8 & Documentación y defensa & Cierre \\
+\hline
+\end{tabular}
+\end{table}
+
+El modelo completo se diseña en el primer sprint para evitar decisiones locales incompatibles. Su implementación, sin embargo, se realiza mediante migraciones incrementales, conservando una entrega pequeña y demostrable. La definición de hecho de cada sprint exige build y pruebas en verde; los cambios relevantes se registran en el contexto del repositorio.

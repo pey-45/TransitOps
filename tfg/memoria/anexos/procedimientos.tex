@@ -1,0 +1,26 @@
+\chapter{Procedimientos de reproducción}
+
+\section{Ejecución contenerizada}
+
+Con Docker Desktop disponible, desde la raíz se ejecuta:
+
+\begin{verbatim}
+copy .env.example .env
+docker compose up --build
+\end{verbatim}
+
+La interfaz queda en \url{http://localhost:5173} y la salud de API en \url{http://localhost:8080/api/v1/health}. El primer administrador se crea una sola vez mediante \texttt{POST /api/v1/auth/bootstrap-admin}, enviando JSON con usuario, correo y contraseña y la cabecera \texttt{X-Bootstrap-Token}. El fichero \texttt{.env} es obligatorio, queda ignorado por Git y se crea desde \texttt{.env.example}; sus valores son exclusivamente locales.
+
+\section{Verificación nativa}
+
+\begin{verbatim}
+dotnet restore TransitOps.slnx
+dotnet build TransitOps.slnx
+dotnet test TransitOps.slnx
+cd frontend
+npm ci
+npm run build
+npm run test
+\end{verbatim}
+
+La migración se valida con \texttt{dotnet tool restore} y la opción \texttt{--migrate-only} de la API contra una instancia PostgreSQL configurada.

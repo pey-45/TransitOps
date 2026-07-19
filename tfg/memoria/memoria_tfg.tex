@@ -1,0 +1,53 @@
+\documentclass[11pt,a4paper,titlepage,oneside]{report}
+
+\def\lingua{esp}
+\def\nome{Pablo Manzanares López}
+\def\nomedirectorA{Paula María Castro Castro}
+\def\titulo{Diseño y desarrollo de una aplicación de gestión de transportes: ciclo de vida completo del software}
+\def\titulacion{gei}
+\def\mencion{INGENIERÍA DEL SOFTWARE}
+
+\usepackage{estilo_tfg}
+\usepackage{longtable}
+\setlength{\emergencystretch}{3em}
+\newcommand{\fotoPlaceholder}[1]{\begin{center}\fbox{\parbox[c][3.2cm][c]{0.78\textwidth}{\centering\itshape PENDIENTE --- #1}}\end{center}}
+
+\begin{document}
+  \include{portada/portada}
+  \begin{agradecementos}
+    A mi familia, amistades y profesorado por el apoyo, la paciencia y el acompañamiento durante este trabajo.
+  \end{agradecementos}
+  \include{portada/resumo}
+
+  \pagenumbering{roman}
+  \setcounter{page}{1}
+  \tableofcontents
+  \listoffigures
+  \listoftables
+  \clearpage
+  \pagenumbering{arabic}
+  \setcounter{page}{1}
+
+  \include{contido/introduccion}
+  \include{contido/contexto_objetivos}
+  \include{contido/marco_tecnologico}
+  \include{contido/metodologia}
+  \include{contido/requisitos}
+  \include{contido/arquitectura}
+  \include{contido/diseno_detallado}
+  \include{contido/desarrollo_iterativo}
+  \include{contido/validacion}
+  \include{contido/despliegue}
+  \include{contido/resultados}
+  \include{contido/conclusions}
+
+  \appendix
+  \appendixpage
+  \include{anexos/trazabilidad}
+  \include{anexos/procedimientos}
+
+  \printglossary[type=\acronymtype,title=\nomeglosarioacronimos]
+  \printglossary[title=\nomeglosariotermos]
+  \bibliographystyle{IEEEtranN}
+  \bibliography{\bibconfig,bibliografia/bibliografia}
+\end{document}

@@ -1,0 +1,25 @@
+\chapter{Requisitos}
+
+Los actores son operador, administrador, público no identificado e instalador. Conductores y clientes son información del dominio, pero no usuarios del sistema. Los requisitos se formalizaron sin decisiones técnicas para separar el problema de la solución.
+
+\begin{longtable}{p{1.2cm}p{9.8cm}p{1.8cm}}
+\caption{Requisitos funcionales}\label{tab:rf}\\
+\hline ID & Descripción & Prioridad \\ \hline
+RF-01 & Acceso con usuario y contraseña y permisos por rol. & Alta \\
+RF-02 & Creación controlada del primer administrador. & Alta \\
+RF-03 & Cambio de contraseña propia confirmando la actual. & Media \\
+RF-04 & Administración de usuarios, roles y activación. & Media \\
+RF-05 & Gestión y baja lógica de vehículos. & Alta \\
+RF-06 & Gestión y baja lógica de conductores. & Alta \\
+RF-07 & Gestión y baja lógica de clientes. & Media \\
+RF-08 & Creación, consulta y edición de envíos. & Alta \\
+RF-09 & Asignación no duplicada de vehículo y conductor. & Alta \\
+RF-10 & Estados planificado, en curso, entregado y cancelado. & Alta \\
+RF-11 & Historial trazable de eventos del envío. & Alta \\
+RF-12 & Visibilidad y filtros operativos de envíos. & Alta \\
+RF-13 & Validación y mensajes comprensibles. & Alta \\
+RF-14 & Resumen estadístico operativo. & Media \\
+\hline
+\end{longtable}
+
+Las dieciséis reglas de negocio concretan asignaciones, recursos activos, capacidad, fechas, transiciones, autoría de eventos, administración y bajas lógicas. Los seis requisitos no funcionales cubren facilidad de uso, acceso seguro, fiabilidad, trazabilidad, disponibilidad y rendimiento adecuado para una empresa con unas decenas de recursos. La especificación canónica y su origen se conservan en \texttt{docs/Requirements.md} y \texttt{docs/ClientRequirements.md}.

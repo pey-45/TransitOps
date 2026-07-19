@@ -1,0 +1,9 @@
+\chapter{Marco tecnológico}
+
+El backend utiliza ASP.NET Core sobre .NET 10, plataforma que integra servidor HTTP, inyección de dependencias, validación, autenticación y autorización \cite{aspnetcore}. Entity Framework Core actúa como \gls{orm} y mantiene migraciones versionadas \cite{efcore}; PostgreSQL proporciona persistencia relacional y restricciones transaccionales \cite{postgresql}.
+
+El frontend es una \gls{spa} creada con React \cite{react}, TypeScript y Vite. React Router resuelve navegación y rutas protegidas; Vitest y React Testing Library verifican el comportamiento desde la perspectiva de la persona usuaria.
+
+La autenticación se basa en \gls{jwt}, estándar definido por RFC~7519 \cite{rfc7519}. El token firmado transporta la identidad y el rol, mientras que la API conserva la autoridad final sobre cada operación. Las contraseñas se procesan con el algoritmo adaptativo ofrecido por ASP.NET Core Identity y nunca se almacenan en claro.
+
+Docker encapsula PostgreSQL, API y servidor web. Docker Compose describe sus relaciones y GitHub Actions ejecuta la \gls{ci}: restauración, compilación, migración y pruebas. Esta automatización temprana reduce la distancia entre el entorno local y el producto verificable, en línea con las prácticas de entrega continua \cite{humble2010}.

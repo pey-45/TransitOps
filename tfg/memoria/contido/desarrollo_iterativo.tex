@@ -1,0 +1,40 @@
+\chapter{Desarrollo iterativo}
+
+\section{Sprint 1: cimientos y esqueleto autenticado}
+
+El incremento comenzó con una solución .NET y dos proyectos independientes, más una SPA TypeScript. En backend se implementaron la entidad de usuario, su configuración EF Core y la migración \texttt{InitialCreate}; el servicio de autenticación; los controladores de salud y sesión; JWT, CORS, correlación y tratamiento uniforme de excepciones.
+
+En frontend se construyeron el cliente HTTP, un contexto de sesión persistente, la pantalla de login, el componente de error, la ruta protegida y un layout adaptable. Un administrador ve la futura entrada de usuarios, mientras que un operador recibe solo la navegación común. El resultado atraviesa navegador, proxy, API y PostgreSQL: constituye un \gls{walking-skeleton} real.
+
+Docker Compose orquesta base de datos, API y web; la API aplica migraciones al arrancar. GitHub Actions compila y prueba ambas aplicaciones y ejecuta la migración contra PostgreSQL. Esta infraestructura se mantendrá en todos los incrementos siguientes.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{imaxes/login-docker-compose}
+\caption{Pantalla de login servida por el stack de Docker Compose}
+\label{fig:login-compose}
+\end{figure}
+
+\section{Sprints 2 a 8}
+
+\subsection*{Sprint 2 --- Catálogos}
+% TODO(Sprint 2): sustituir por diseño, implementación, pruebas y resultado reales.
+Pendiente de completar vehículos, conductores y clientes.
+\subsection*{Sprint 3 --- Envíos y filtros}
+% TODO(Sprint 3)
+Pendiente de completar el CRUD y la visibilidad operativa.
+\subsection*{Sprint 4 --- Asignación y ciclo de vida}
+% TODO(Sprint 4)
+Pendiente de completar reglas de recursos, capacidad y estados.
+\subsection*{Sprint 5 --- Eventos}
+% TODO(Sprint 5)
+Pendiente de completar la trazabilidad de sucesos e incidencias.
+\subsection*{Sprint 6 --- Administración y resumen}
+% TODO(Sprint 6)
+Pendiente de completar usuarios, contraseña propia y estadísticas.
+\subsection*{Sprint 7 --- Endurecimiento y despliegue}
+% TODO(Sprint 7)
+Pendiente de pruebas de sistema y entorno accesible.
+\subsection*{Sprint 8 --- Cierre}
+% TODO(Sprint 8)
+Pendiente de consolidación de memoria, defensa y conclusiones.

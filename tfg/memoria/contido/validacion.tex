@@ -1,0 +1,29 @@
+\chapter{Validación}
+
+La estrategia combina pruebas de integración de API y pruebas de componentes/rutas de frontend. Las primeras arrancan la aplicación completa con \texttt{WebApplicationFactory} y sustituyen solo PostgreSQL por una base en memoria aislada. Las segundas simulan la API y manipulan la interfaz como lo haría una persona usuaria.
+
+\begin{table}[htbp]
+\centering
+\caption{Pruebas automatizadas del Sprint 1}
+\begin{tabular}{p{6.2cm}p{2cm}p{2.5cm}}
+\hline Comportamiento & Capa & Resultado \\ \hline
+Primer administrador y hash de contraseña & Backend & Correcto \\
+Bloqueo de un segundo bootstrap & Backend & Correcto \\
+Login válido, erróneo y usuario inactivo & Backend & Correcto \\
+Rutas protegidas 401 y 403 & Backend & Correcto \\
+Contrato de validación & Backend & Correcto \\
+Redirección sin sesión & Frontend & Correcto \\
+Login, persistencia y error visible & Frontend & Correcto \\
+Navegación adaptada al rol administrador & Frontend & Correcto \\
+\hline
+\end{tabular}
+\end{table}
+
+La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de build de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16. Las pruebas funcionales de sistema crecerán con cada flujo y se consolidarán en el Sprint 7.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.4\textwidth]{imaxes/ci-verde}
+\caption{Ejecución de la integración continua en verde tras publicar la rama}
+\label{fig:ci-verde}
+\end{figure}
