@@ -232,6 +232,47 @@ El sistema debe ofrecer un resumen con el número de envíos en cada estado, la 
 - **RN-15:** Dar de baja un vehículo, conductor o cliente no elimina los envíos ni el historial asociados; solo lo retira del uso diario.
 - **RN-16:** Los conductores y los clientes no acceden a la aplicación; su información se gestiona, pero no son personas usuarias del sistema.
 
+## Flujos de Negocio
+
+Los siguientes flujos describen los recorridos de extremo a extremo más representativos del sistema. Sirven de guía para las pruebas funcionales de sistema (ver `Roadmap.md`, Sprint 7) y no introducen requisitos nuevos: cada paso se apoya en requisitos funcionales (RF) y reglas de negocio (RN) ya definidos.
+
+### Flujo 1 · Puesta en Marcha del Primer Administrador
+
+1. Al instalar la aplicación todavía no existe ninguna persona usuaria.
+2. El mecanismo de arranque crea el primer administrador (RF-02, RN-11).
+3. Una vez creado, el arranque queda inhabilitado mientras exista un administrador activo (RN-11); a partir de ahí, el resto de usuarios se dan de alta desde dentro de la aplicación (RF-04).
+
+**Origen:** "Sobre quién usará la aplicación".
+
+### Flujo 2 · Un Administrador Da de Alta a un Operador
+
+1. El administrador inicia sesión (RF-01).
+2. Da de alta una nueva persona usuaria con acceso de operador (RF-04, RN-10).
+3. El operador ya puede iniciar sesión con sus credenciales y, la primera vez, cambiar su contraseña (RF-03, RN-14).
+
+**Origen:** "Sobre quién usará la aplicación".
+
+### Flujo 3 · Un Operador Ejecuta un Envío de Principio a Fin
+
+1. El operador inicia sesión (RF-01).
+2. Da de alta o reutiliza el vehículo, el conductor y el cliente que necesita (RF-05, RF-06, RF-07).
+3. Crea un envío, que nace en estado planificado, con origen, destino, fechas previstas, cliente y carga estimada (RF-08, RN-06).
+4. Asigna vehículo y conductor mientras el envío está planificado; el sistema impide reutilizar recursos ya ocupados o dados de baja y avisa si la capacidad del vehículo se queda corta (RF-09, RN-02, RN-03, RN-04, RN-05).
+5. Pasa el envío a en curso, lo que exige tener vehículo y conductor asignados (RF-10, RN-07).
+6. Registra los eventos de seguimiento que correspondan: salida, puntos de control, incidencias, etc. (RF-11, RN-09).
+7. Marca el envío como entregado o, si no llega a hacerse, cancelado; desde un estado final ya no puede volver a cambiar (RF-10, RN-08).
+
+**Origen:** "Sobre los transportes/envíos", "Sobre el seguimiento / historial".
+
+### Flujo 4 · Un Administrador Da de Baja a una Persona Usuaria
+
+1. El administrador inicia sesión (RF-01).
+2. Marca como inactiva a una persona usuaria, siempre que con ello no se quede el sistema sin ningún administrador activo (RF-04, RN-10, RN-12).
+3. La persona desactivada deja de poder iniciar sesión (RN-13).
+4. Su historial (envíos gestionados, eventos registrados) se conserva íntegro (RNF-03).
+
+**Origen:** "Sobre quién usará la aplicación".
+
 ## Requisitos No Funcionales
 
 | ID | Requisito | Descripción |
