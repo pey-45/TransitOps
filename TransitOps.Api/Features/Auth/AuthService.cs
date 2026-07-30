@@ -15,7 +15,8 @@ public sealed class AuthService(
     TransitOpsDbContext dbContext,
     IPasswordHasher<AppUser> passwordHasher,
     JwtOptions jwtOptions,
-    BootstrapOptions bootstrapOptions) : IAuthService
+    BootstrapOptions bootstrapOptions,
+    ICurrentUser currentUser) : IAuthService
 {
     public async Task<UserResponse> BootstrapAsync(
         BootstrapAdminRequest request, string? token, CancellationToken cancellationToken)
@@ -49,6 +50,33 @@ public sealed class AuthService(
 
         var expiresAt = DateTime.UtcNow.AddMinutes(jwtOptions.ExpirationMinutes);
         return new LoginResponse(CreateToken(user, expiresAt), "Bearer", expiresAt, MapUser(user));
+    }
+
+    public async Task ChangePasswordAsync(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var user = currentUser.Id.HasValue
+            ? await dbContext.AppUsers.SingleOrDefaultAsync(
+                item => item.Id == currentUser.Id.Value,
+                cancellationToken)
+            : null;
+        if (user is null || !user.IsActive ||
+            passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) ==
+            PasswordVerificationResult.Failed)
+        {
+            throw new ApiException(401, "invalid_credentials", "El usuario o la contraseña no son válidos.");
+        }
+
+        if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.NewPassword) !=
+            PasswordVerificationResult.Failed)
+        {
+            throw new ApiException(400, "password_unchanged", "La nueva contraseña debe ser diferente de la actual.");
+        }
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private string CreateToken(AppUser user, DateTime expiresAt)

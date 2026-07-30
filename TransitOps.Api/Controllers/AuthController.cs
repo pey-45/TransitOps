@@ -37,8 +37,13 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         role = User.FindFirst("role")?.Value
     }, HttpContext.TraceIdentifier));
 
-    [Authorize(Policy = Policies.Admin)]
-    [HttpGet("admin-check")]
-    public ActionResult<ApiResponse<object>> AdminCheck() =>
-        Ok(ApiResponse<object>.Success(new { authorized = true }, HttpContext.TraceIdentifier));
+    [Authorize(Policy = Policies.Operational)]
+    [HttpPost("password")]
+    public async Task<ActionResult<ApiResponse<object>>> ChangePassword(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await authService.ChangePasswordAsync(request, cancellationToken);
+        return Ok(ApiResponse<object>.Success(new { changed = true }, HttpContext.TraceIdentifier));
+    }
 }

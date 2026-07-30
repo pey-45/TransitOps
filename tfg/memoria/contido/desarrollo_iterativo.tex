@@ -129,10 +129,25 @@ La SPA integra una línea de tiempo en el detalle. Los eventos automáticos form
 \end{figure}
 
 \clearpage
-\section{Sprints 6 a 8}
-\subsection*{Sprint 6 --- Administración y resumen}
-% TODO(Sprint 6)
-Pendiente de completar usuarios, contraseña propia y estadísticas.
+\section{Sprint 6: administración e indicadores}
+
+El sexto incremento cerró los requisitos funcionales de prioridad media sin modificar el esquema. La entidad \texttt{AppUser}, diseñada y migrada en el Sprint 1, ya contenía rol, estado y marcas temporales; el resumen se obtiene mediante agregaciones sobre envíos y eventos. Esta ausencia de migración es un resultado del diseño anticipado del modelo, no una reducción de alcance.
+
+La administración de usuarios se separó del servicio de autenticación y se situó tras la política \texttt{Admin}. Permite alta, cambio de rol, desactivación y reactivación, pero no borrado. Usuario y correo conservan unicidad global aunque la cuenta esté inactiva, porque identifican a la persona en el historial. RN-12 se aplica antes de cualquier mutación mediante una guarda común: desactivar al último administrador activo o degradarlo a operador devuelve un conflicto \texttt{last\_admin\_protected}. La SPA oculta el módulo a operadores y una ruta específica redirige también cualquier navegación directa; la API continúa siendo la autoridad y devuelve 403.
+
+El cambio de contraseña propia reutiliza \texttt{ICurrentUser}: carga la cuenta activa, verifica el hash de la contraseña actual y rechaza tanto una credencial incorrecta como una nueva contraseña idéntica. El JWT no se sustituye ni se revocan sesiones previas. Del mismo modo, un token ya emitido sobrevive temporalmente a una desactivación o cambio de rol. Es una limitación consciente de la autenticación sin estado, acotada por la caducidad del token, que se revisará junto con el almacenamiento en \texttt{localStorage} durante el endurecimiento del Sprint 7.
+
+El endpoint \texttt{/summary} combina tres consultas. Los contadores por estado son globales y representan la situación actual. La actividad de vehículo y conductor usa la fecha prevista de recogida dentro de un periodo configurable ---treinta días por defecto---, mientras que las incidencias se cuentan por \texttt{OccurredAt}. Las etiquetas se resuelven sin filtrar recursos inactivos, de modo que una baja no borra actividad histórica. En el Inicio de la SPA, cada contador enlaza al listado de envíos ya filtrado y la interfaz explica expresamente qué cifras dependen del periodo.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/resumen-sprint6}
+\caption{Panel operativo con situación actual y actividad del periodo}
+\label{fig:resumen-s6}
+\end{figure}
+
+\clearpage
+\section{Sprints 7 y 8}
 \subsection*{Sprint 7 --- Endurecimiento y despliegue}
 % TODO(Sprint 7)
 Pendiente de pruebas de sistema y entorno accesible.

@@ -3,7 +3,7 @@
     "name": "TransitOps API",
     "_postman_id": "b3f2a6e0-5b1a-4a2a-9d3a-transitops0001",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos, operación de envíos e historial de eventos (Sprints 1–5). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
+    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos, operación y trazabilidad de envíos, administración de usuarios e indicadores (Sprints 1–6). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
   },
   "auth": {
     "type": "bearer",
@@ -35,7 +35,9 @@
     { "key": "vehicleId", "value": "", "type": "string" },
     { "key": "driverId", "value": "", "type": "string" },
     { "key": "customerId", "value": "", "type": "string" },
-    { "key": "shipmentId", "value": "", "type": "string" }
+    { "key": "shipmentId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "temporaryPassword", "value": "Admin!87654321", "type": "string" }
   ],
   "item": [
     {
@@ -170,16 +172,54 @@
           ]
         },
         {
-          "name": "Admin Check",
+          "name": "Cambiar Contraseña Propia",
           "request": {
-            "method": "GET",
-            "header": [ { "key": "Accept", "value": "application/json" } ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/admin-check",
-              "host": [ "{{baseUrl}}" ],
-              "path": [ "api", "v1", "auth", "admin-check" ]
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{bootstrapPassword}}\",\n  \"newPassword\": \"{{temporaryPassword}}\"\n}"
             },
-            "description": "Requiere Bearer con policy 'admin' (solo rol admin). Devuelve data.authorized = true. Con un token de operator debería devolver 403 authorization_forbidden."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "auth", "password" ]
+            },
+            "description": "Cambia la contraseña de la cuenta autenticada tras comprobar la actual (RN-14). Esta petición usa una contraseña temporal; restáurala antes de cerrar la sesión."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurar Contraseña Propia",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{temporaryPassword}}\",\n  \"newPassword\": \"{{bootstrapPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "auth", "password" ]
+            },
+            "description": "Restaura la contraseña local después de ejecutar la petición anterior."
           },
           "event": [
             {
@@ -636,6 +676,192 @@
               "path": [ "api", "v1", "customers", "{{customerId}}" ]
             },
             "description": "Baja lógica: marca isActive=false."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar Usuarios Activos",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users" ]
+            },
+            "description": "Solo administradores. Por defecto omite cuentas desactivadas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        },
+        {
+          "name": "Listar Usuarios Incluyendo Desactivados",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users?includeInactive=true",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users" ],
+              "query": [ { "key": "includeInactive", "value": "true" } ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        },
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operator.{{runId}}\",\n  \"email\": \"operator.{{runId}}@transitops.local\",\n  \"password\": \"Operator!123456\",\n  \"role\": \"operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"userId\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar Rol de Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"admin\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/role",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users", "{{userId}}", "role" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        },
+        {
+          "name": "Desactivar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": false\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/activation",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users", "{{userId}}", "activation" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        },
+        {
+          "name": "Reactivar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/activation",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users", "{{userId}}", "activation" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resumen",
+      "item": [
+        {
+          "name": "Resumen - Últimos 30 Días",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/summary",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "summary" ]
+            },
+            "description": "Contadores globales por estado; actividad e incidencias de los últimos 30 días."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
+            }
+          ]
+        },
+        {
+          "name": "Resumen - Periodo Explícito",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/summary?from=2026-07-01&to=2026-12-31",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "summary" ],
+              "query": [
+                { "key": "from", "value": "2026-07-01" },
+                { "key": "to", "value": "2026-12-31" }
+              ]
+            }
           },
           "event": [
             {

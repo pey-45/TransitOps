@@ -13,10 +13,11 @@ export function AppLayout() {
           <NavLink to="/vehiculos">Vehículos</NavLink>
           <NavLink to="/conductores">Conductores</NavLink>
           <NavLink to="/clientes">Clientes</NavLink>
-          {session?.user.role === 'admin' && <span className="future-nav">Usuarios (próximamente)</span>}
+          {session?.user.role === 'admin' && <NavLink to="/usuarios">Usuarios</NavLink>}
         </nav>
         <div className="account">
           <span>{session?.user.username} · {session?.user.role === 'admin' ? 'Administrador' : 'Operador'}</span>
+          <Link className="account-link" to="/cambiar-contrasena">Cambiar contraseña</Link>
           <button className="secondary" type="button" onClick={logout}>Cerrar sesión</button>
         </div>
       </header>

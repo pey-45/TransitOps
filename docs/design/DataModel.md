@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Este diseño cubre el dominio completo definido en `docs/Requirements.md`. El Sprint 1 implementó y migró `AppUser`; el Sprint 2 incorporó `Vehicle`, `Driver` y `Customer`; el Sprint 3 incorporó `Shipment`; el Sprint 4 completó su operación con asignación, estados y fechas reales, y el Sprint 5 incorporó `ShipmentEvent`. Con ello, el modelo diseñado al inicio está implementado al completo.
+Este diseño cubre el dominio completo definido en `docs/Requirements.md`. El Sprint 1 implementó y migró `AppUser`; el Sprint 2 incorporó `Vehicle`, `Driver` y `Customer`; el Sprint 3 incorporó `Shipment`; el Sprint 4 completó su operación con asignación, estados y fechas reales, y el Sprint 5 incorporó `ShipmentEvent`. El Sprint 6 reutilizó el esquema completo para administración e indicadores, sin generar una migración nueva.
 
 ```mermaid
 erDiagram
@@ -83,7 +83,7 @@ erDiagram
 
 ## Entidades y decisiones
 
-- `AppUser`: usuario interno con rol `Admin` u `Operator`. La contraseña solo se guarda como hash. `IsActive` aplica la baja lógica exigida por RNF-03.
+- `AppUser`: usuario interno con rol `Admin` u `Operator`. La contraseña solo se guarda como hash. `IsActive` aplica la baja lógica exigida por RNF-03. Usuario y correo tienen unicidad global, también para registros inactivos: no se reutilizan porque forman parte de la identidad conservada en el historial.
 - `Vehicle`, `Driver` y `Customer`: catálogos con baja lógica. Las unicidades funcionales solo afectan a registros activos y se reforzarán en servicio y base de datos al implementar cada catálogo.
 - `Shipment`: agregado operativo con referencia única global y estado `Planned`, `InProgress`, `Delivered` o `Cancelled`. No usa `IsActive`: su ciclo se expresa mediante el estado. Cliente, carga estimada, vehículo, conductor y entrega prevista son opcionales; sus claves foráneas usan `RESTRICT` para conservar relaciones históricas aunque el catálogo se desactive. Las fechas de negocio se normalizan y persisten en UTC; la recogida y entrega reales se sellan automáticamente al entrar en `InProgress` y `Delivered`.
 - `ShipmentEvent`: historial inmutable del envío: solo admite alta y consulta. `OccurredAt` expresa cuándo sucedió el hecho y puede indicarlo el operador; `CreatedAt` conserva cuándo se anotó. Los tipos `Created`, `Assigned`, `Unassigned`, `Departed`, `Delivered` y `Cancelled` están reservados al sistema, mientras que `Checkpoint` e `Incident` se registran manualmente. `RecordedByUserId` identifica al actor autenticado y solo puede ser nulo en trazas de sistema sin identidad. La relación con `Shipment` usa `CASCADE` como única excepción al criterio restrictivo general porque el evento forma parte del agregado y no tiene vida independiente; la relación con `AppUser` conserva `RESTRICT`.

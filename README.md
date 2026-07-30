@@ -8,7 +8,7 @@ This is the Final Degree Project (TFG) of the Bachelor's in Computer Engineering
 
 Reference date: July 31, 2026.
 
-Sprints 1–5 are implemented: the greenfield application has an ASP.NET Core API with PostgreSQL persistence, controlled first-admin bootstrap and JWT authentication, end-to-end vehicle, driver and customer catalogs, and shipment creation/editing/detail plus filtered, paginated visibility. Shipments support joint resource assignment, availability/capacity rules, terminal lifecycle transitions and actual dates. Every relevant action now produces an immutable, chronologically visible event linked to its authenticated actor; operators can add checkpoints and incidents from the React/TypeScript timeline without reloading. Backend and frontend tests, Docker Compose and CI keep the increment reproducible.
+Sprints 1–6 are implemented and RF-01…RF-14 are integrated. The greenfield application combines an ASP.NET Core/PostgreSQL API with a React/TypeScript SPA: authenticated catalogs and shipment CRUD, filtered operational visibility, joint resource assignment, lifecycle transitions, immutable event traceability, admin-only user management with last-admin protection, self-service password changes, and an at-a-glance operational summary. Backend and frontend tests, Docker Compose and CI keep the increment reproducible. Sprint 7 is the next priority: hardening, system testing and lightweight deployment.
 
 The earlier AWS-oriented direction remains archived as a read-only reference; the active solution is independent and lives at the repository root.
 

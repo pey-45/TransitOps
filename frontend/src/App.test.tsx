@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
-import type { Shipment, ShipmentEvent } from './api/client'
+import type { Shipment, ShipmentEvent, SummaryResponse } from './api/client'
 import { AuthProvider } from './auth/AuthContext'
 
 const session = {
@@ -11,6 +11,14 @@ const session = {
   tokenType: 'Bearer',
   expiresAt: '2099-01-01T00:00:00Z',
   user: { id: 'user-1', username: 'admin', email: 'admin@test.dev', role: 'admin', isActive: true },
+}
+const summary: SummaryResponse = {
+  shipments: { planned: 2, inProgress: 1, delivered: 4, cancelled: 1, total: 8 },
+  vehicles: [{ id: 'vehicle-1', label: '1234 ABC', shipmentCount: 3 }],
+  drivers: [{ id: 'driver-1', label: 'Ana', shipmentCount: 3 }],
+  incidents: 2,
+  from: '2026-07-01T00:00:00Z',
+  to: '2026-07-31T23:59:59Z',
 }
 
 function renderAt(path: string) {
@@ -35,10 +43,9 @@ describe('authenticated skeleton', () => {
   })
 
   it('logs in against the API and reaches the protected home', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: session, requestId: 'request-1' }),
-    }))
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: session, requestId: 'request-1' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: summary, requestId: 'summary-1' }) }))
     renderAt('/login')
     const user = userEvent.setup()
     await user.type(screen.getByLabelText('Usuario'), 'admin')
@@ -65,9 +72,13 @@ describe('authenticated skeleton', () => {
 
   it('adapts navigation to the admin role', () => {
     localStorage.setItem('transitops.session', JSON.stringify(session))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => ({ data: summary, requestId: 'summary-1' }),
+    }))
     renderAt('/')
-    expect(screen.getByText('Usuarios (próximamente)')).toBeInTheDocument()
-    expect(screen.getByText('Administrador')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Usuarios' })).toBeInTheDocument()
+    expect(screen.getByText((_, element) =>
+      element?.tagName === 'SPAN' && element.textContent === 'admin · Administrador')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Vehículos' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Conductores' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Clientes' })).toBeInTheDocument()
@@ -118,6 +129,131 @@ describe('authenticated skeleton', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Ya existe un vehículo activo con esa matrícula.')
+  })
+})
+
+describe('administración e indicadores', () => {
+  function response(data: unknown, ok = true, status = 200) {
+    return Promise.resolve({ ok, status, json: async () => data })
+  }
+
+  it('shows the operational summary and links status counters to filtered shipments', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() =>
+      response({ data: summary, requestId: 'summary-1' })))
+
+    renderAt('/')
+
+    expect(await screen.findByRole('heading', { name: 'Envíos por estado' })).toBeInTheDocument()
+    expect(screen.getByText('Situación actual; estos contadores no dependen del periodo.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Actividad en el periodo' })).toBeInTheDocument()
+    expect(screen.getByText('1234 ABC')).toBeInTheDocument()
+    expect(screen.getByText('Ana')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /En curso/ })).toHaveAttribute('href', '/envios?status=in_progress')
+  })
+
+  it('applies an explicit summary period with local day limits', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const fetchMock = vi.fn().mockImplementation(() =>
+      response({ data: summary, requestId: 'summary-1' }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/')
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: 'Actividad en el periodo' })
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-07-20' } })
+    await user.click(screen.getByRole('button', { name: 'Aplicar periodo' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    const url = String(fetchMock.mock.calls[1][0])
+    expect(url).toContain('from=')
+    expect(url).toContain('to=')
+  })
+
+  it('hides administration from operators and redirects direct navigation', async () => {
+    const operatorSession = { ...session, user: { ...session.user, username: 'operator', role: 'operator' as const } }
+    localStorage.setItem('transitops.session', JSON.stringify(operatorSession))
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() =>
+      response({ data: summary, requestId: 'summary-1' })))
+
+    renderAt('/usuarios')
+
+    expect(await screen.findByRole('heading', { name: 'Hola, operator' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Usuarios' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Usuarios' })).toBeNull()
+  })
+
+  it('shows administration to admins and lists inactive users on request', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const users = [
+      session.user,
+      { ...session.user, id: 'user-2', username: 'inactive', role: 'operator' as const, isActive: false },
+    ]
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      return response({ data: url.includes('includeInactive=true') ? users : [session.user], requestId: 'users-1' })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/usuarios')
+    const user = userEvent.setup()
+
+    expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument()
+    expect(screen.queryByText('inactive')).toBeNull()
+    await user.click(screen.getByLabelText('Mostrar también los desactivados'))
+    expect(await screen.findByText('inactive')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain('includeInactive=true')
+  })
+
+  it('sends a user creation contract and shows backend conflicts', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const fetchMock = vi.fn().mockImplementation((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') return response({
+        error: { code: 'user_credentials_conflict', message: 'El nombre de usuario o correo ya está en uso.' },
+        requestId: 'conflict-1',
+      }, false, 409)
+      throw new Error('Unexpected request')
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/usuarios/nuevo')
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText('Usuario'), 'operator')
+    await user.type(screen.getByLabelText('Correo'), 'operator@test.dev')
+    await user.type(screen.getByLabelText('Contraseña inicial'), 'OperatorPass!123')
+    await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('El nombre de usuario o correo ya está en uso.')
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
+    expect(body).toEqual({
+      username: 'operator',
+      email: 'operator@test.dev',
+      password: 'OperatorPass!123',
+      role: 'operator',
+    })
+  })
+
+  it('checks repeated password locally and submits a valid password change', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session))
+    const fetchMock = vi.fn().mockImplementation(() =>
+      response({ data: { changed: true }, requestId: 'password-1' }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/cambiar-contrasena')
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText('Contraseña actual'), 'SecurePass!123')
+    await user.type(screen.getByLabelText('Nueva contraseña'), 'NewSecurePass!456')
+    await user.type(screen.getByLabelText('Repetir nueva contraseña'), 'DifferentPass!789')
+    await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }))
+
+    expect(screen.getByText('Las contraseñas nuevas no coinciden.')).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByLabelText('Repetir nueva contraseña'))
+    await user.type(screen.getByLabelText('Repetir nueva contraseña'), 'NewSecurePass!456')
+    await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Contraseña cambiada correctamente.')
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({
+      currentPassword: 'SecurePass!123',
+      newPassword: 'NewSecurePass!456',
+    })
   })
 })
 

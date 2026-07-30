@@ -181,6 +181,9 @@ Un administrador da de alta un operador, cambia su propia contraseña, y todos v
 - Se cumplen los criterios de aceptación de RF-03, RF-04 y RF-14.
 - Toda la lista de `Requirements.md` (RF-01…RF-14) queda implementada e integrada.
 
+**Cierre (2026-07-31)**
+Sprint implementado en una sesión de trabajo, sin cambios de esquema: el modelo de S1 ya contenía toda la información necesaria. Se añadió administración de usuarios exclusiva para administradores, reactivación y protección del último administrador; cambio de contraseña propia con comprobación de la actual; y un resumen operativo con estados globales, actividad por recurso e incidencias en un periodo configurable. La SPA protege también la navegación directa de operadores y convierte Inicio en un panel enlazado con los filtros de envíos. La validación final dejó 127 pruebas backend y 30 frontend en verde, además de lint, builds y un flujo Docker/PostgreSQL/navegador correcto con consultas agregadas y fechas sin zona. Con ello, RF-01…RF-14 quedan implementados e integrados y Sprint 7 pasa a ser la siguiente prioridad.
+
 ## Sprint 7 · Endurecimiento, Pruebas de Sistema y Despliegue
 
 **Objetivo**

@@ -69,7 +69,7 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
-    public async Task Admin_check_returns_forbidden_contract_for_operator()
+    public async Task Operator_can_change_own_password_and_login_with_the_new_password()
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
@@ -78,10 +78,41 @@ public sealed class AuthControllerTests
             "Bearer",
             login["data"]?["accessToken"]?.GetValue<string>());
 
-        var response = await client.GetAsync("/api/v1/auth/admin-check");
+        var response = await client.PostAsJsonAsync("/api/v1/auth/password", new
+        {
+            currentPassword = "SecurePass!123",
+            newPassword = "NewSecurePass!456"
+        });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal("authorization_forbidden", (await ReadJson(response))["error"]?["code"]?.GetValue<string>());
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True((await ReadJson(response))["data"]?["changed"]?.GetValue<bool>());
+        client.DefaultRequestHeaders.Authorization = null;
+        var newLogin = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            username = "operator",
+            password = "NewSecurePass!456"
+        });
+        Assert.Equal(HttpStatusCode.OK, newLogin.StatusCode);
+    }
+
+    [Fact]
+    public async Task Change_password_rejects_an_incorrect_current_password()
+    {
+        using var factory = FactoryWithOperator();
+        using var client = factory.CreateClient();
+        var login = await ReadJson(await Login(client));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            login["data"]?["accessToken"]?.GetValue<string>());
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/password", new
+        {
+            currentPassword = "WrongPassword!123",
+            newPassword = "NewSecurePass!456"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("invalid_credentials", (await ReadJson(response))["error"]?["code"]?.GetValue<string>());
     }
 
     [Fact]

@@ -110,7 +110,7 @@ internal static class ShipmentEventTypes
     };
 }
 
-internal static class ShipmentTime
+public static class ShipmentTime
 {
     public static DateTime Utc(DateTime value) => value.Kind switch
     {

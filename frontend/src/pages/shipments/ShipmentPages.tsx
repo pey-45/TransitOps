@@ -7,16 +7,13 @@ import {
   type ShipmentEvent, type ShipmentEventInput, type ShipmentEventType, type ShipmentInput,
   type ShipmentStatus, type ValidationDetails, type Vehicle,
 } from '../../api/client'
-import { BackLink, DetailList, Empty, FormField, Loading, PageHeader } from '../../components/CatalogUi'
+import { BackLink, DetailList, Empty, FormField, Loading, PageHeader, StatusChip } from '../../components/CatalogUi'
+import { dayEnd, dayStart } from '../../components/dates'
 import { ErrorAlert } from '../../components/ErrorAlert'
 import { fieldErrors } from '../../components/form-errors'
 
 function errorMessage(reason: unknown) { return reason instanceof ApiClientError ? reason.message : 'No se pudo conectar con el servidor.' }
 function formatDate(value: string | null) { return value ? new Date(value).toLocaleString() : '—' }
-function statusLabel(status: ShipmentStatus) { return { planned: 'Planificado', in_progress: 'En curso', delivered: 'Entregado', cancelled: 'Cancelado' }[status] }
-function StatusChip({ status }: { status: ShipmentStatus }) { return <span className={`status-chip status-${status}`}>{statusLabel(status)}</span> }
-function dayStart(value: string) { return value ? new Date(`${value}T00:00`).toISOString() : undefined }
-function dayEnd(value: string) { if (!value) return undefined; const date = new Date(`${value}T00:00`); date.setHours(23, 59, 59, 999); return date.toISOString() }
 function toLocalInput(value: string | null) {
   if (!value) return ''
   const date = new Date(value)

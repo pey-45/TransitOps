@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './routes/ProtectedRoute'
+import { AdminRoute } from './routes/AdminRoute'
 import { AppLayout } from './components/AppLayout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -8,6 +9,8 @@ import { VehicleDetailPage, VehicleFormPage, VehicleListPage } from './pages/veh
 import { DriverDetailPage, DriverFormPage, DriverListPage } from './pages/drivers/DriverPages'
 import { CustomerDetailPage, CustomerFormPage, CustomerListPage } from './pages/customers/CustomerPages'
 import { ShipmentDetailPage, ShipmentFormPage, ShipmentListPage } from './pages/shipments/ShipmentPages'
+import { UserFormPage, UserListPage } from './pages/users/UserPages'
+import { ChangePasswordPage } from './pages/ChangePasswordPage'
 
 export function AppRoutes() {
   return (
@@ -32,6 +35,11 @@ export function AppRoutes() {
           <Route path="/clientes/nuevo" element={<CustomerFormPage />} />
           <Route path="/clientes/:id" element={<CustomerDetailPage />} />
           <Route path="/clientes/:id/editar" element={<CustomerFormPage />} />
+          <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/usuarios" element={<UserListPage />} />
+            <Route path="/usuarios/nuevo" element={<UserFormPage />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

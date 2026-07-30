@@ -10,7 +10,9 @@ using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Auth;
 using TransitOps.Api.Features.Customers;
 using TransitOps.Api.Features.Drivers;
+using TransitOps.Api.Features.Reporting;
 using TransitOps.Api.Features.Shipments;
+using TransitOps.Api.Features.Users;
 using TransitOps.Api.Features.Vehicles;
 using TransitOps.Api.Middleware;
 using TransitOps.Api.Persistence;
@@ -64,6 +66,8 @@ public class Program
         builder.Services.AddScoped<ICurrentUser, CurrentUser>();
         builder.Services.AddScoped<IShipmentService, ShipmentService>();
         builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<ISummaryService, SummaryService>();
 
         builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy =>
             policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])

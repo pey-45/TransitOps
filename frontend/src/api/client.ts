@@ -1,5 +1,6 @@
 export type Role = 'admin' | 'operator'
 export interface User { id: string; username: string; email: string; role: Role; isActive: boolean }
+export interface UserInput { username: string; email: string; password: string; role: Role }
 export interface Session { accessToken: string; tokenType: string; expiresAt: string; user: User }
 interface ApiResponse<T> { data: T; requestId: string }
 export type ValidationDetails = Record<string, string[]>
@@ -46,6 +47,14 @@ export interface ShipmentEvent {
 }
 export interface ShipmentEventInput {
   eventType: 'checkpoint' | 'incident'; occurredAt?: string; location?: string; notes?: string
+}
+export interface ShipmentStatusCounts {
+  planned: number; inProgress: number; delivered: number; cancelled: number; total: number
+}
+export interface ResourceActivity { id: string; label: string; shipmentCount: number }
+export interface SummaryResponse {
+  shipments: ShipmentStatusCounts; vehicles: ResourceActivity[]; drivers: ResourceActivity[]
+  incidents: number; from: string; to: string
 }
 
 export class ApiClientError extends Error {
@@ -113,7 +122,7 @@ export const createCustomer = (input: CustomerInput) => request<Customer>('/api/
 export const updateCustomer = (id: string, input: CustomerInput) => request<Customer>(`/api/v1/customers/${id}`, { method: 'PUT', body: JSON.stringify(input) })
 export const deactivateCustomer = (id: string) => request<void>(`/api/v1/customers/${id}`, { method: 'DELETE' })
 
-function query(params: ShipmentFilters) {
+function query<T extends object>(params: T) {
   const search = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') search.set(key, String(value)) })
   const value = search.toString()
@@ -129,3 +138,11 @@ export const unassignShipment = (id: string) => request<Shipment>(`/api/v1/shipm
 export const changeShipmentStatus = (id: string, status: ShipmentStatus) => request<Shipment>(`/api/v1/shipments/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) })
 export const listShipmentEvents = (shipmentId: string) => request<ShipmentEvent[]>(`/api/v1/shipments/${shipmentId}/events`)
 export const createShipmentEvent = (shipmentId: string, input: ShipmentEventInput) => request<ShipmentEvent>(`/api/v1/shipments/${shipmentId}/events`, { method: 'POST', body: JSON.stringify(input) })
+
+export const listUsers = (includeInactive = false) => request<User[]>(`/api/v1/users${query({ includeInactive: includeInactive || undefined })}`)
+export const getUser = (id: string) => request<User>(`/api/v1/users/${id}`)
+export const createUser = (input: UserInput) => request<User>('/api/v1/users', { method: 'POST', body: JSON.stringify(input) })
+export const changeUserRole = (id: string, role: Role) => request<User>(`/api/v1/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) })
+export const changeUserActivation = (id: string, isActive: boolean) => request<User>(`/api/v1/users/${id}/activation`, { method: 'PUT', body: JSON.stringify({ isActive }) })
+export const changePassword = (currentPassword: string, newPassword: string) => request<{ changed: boolean }>('/api/v1/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) })
+export const getSummary = (from?: string, to?: string) => request<SummaryResponse>(`/api/v1/summary${query({ from, to })}`)
