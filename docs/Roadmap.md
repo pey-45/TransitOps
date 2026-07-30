@@ -134,6 +134,9 @@ El "Flujo 3" de `Requirements.md` completo desde la interfaz: crear envío, asig
 - Se cumplen los criterios de aceptación de RF-09 y RF-10.
 - Un envío entregado o cancelado no puede volver a cambiar de estado.
 
+**Cierre (2026-07-30)**
+Sprint implementado en una sesión de trabajo. Se añadieron la migración incremental de fechas reales; endpoints y reglas de asignación conjunta, recursos activos, anti-doble-reserva, aviso no bloqueante de capacidad y máquina de estados terminal; y la pantalla de operación del envío con acciones contextuales y recursos visibles en listado/detalle. La validación final dejó 74 pruebas backend y 19 frontend en verde, lint y builds correctos, y un flujo integrado sobre Nginx, API y PostgreSQL real con evidencia visual. La comprobación RN-04 se mantiene en servicio y su pequeña ventana de concurrencia queda anotada para revisión en S7.
+
 ## Sprint 5 · Trazabilidad (Historial de Eventos)
 
 **Objetivo**

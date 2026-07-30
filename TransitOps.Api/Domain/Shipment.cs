@@ -16,6 +16,8 @@ public sealed class Shipment
     public required string Destination { get; set; }
     public required DateTime PlannedPickupAt { get; set; }
     public DateTime? PlannedDeliveryAt { get; set; }
+    public DateTime? ActualPickupAt { get; set; }
+    public DateTime? ActualDeliveryAt { get; set; }
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
     public decimal? EstimatedLoad { get; set; }

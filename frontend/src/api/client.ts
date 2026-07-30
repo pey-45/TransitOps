@@ -25,7 +25,9 @@ export interface Shipment {
   id: string; reference: string; origin: string; destination: string; plannedPickupAt: string
   plannedDeliveryAt: string | null; customerId: string | null; customerName: string | null
   estimatedLoad: number | null; notes: string | null; status: ShipmentStatus
-  vehicleId: string | null; driverId: string | null; createdAt: string; updatedAt: string
+  vehicleId: string | null; driverId: string | null; vehiclePlate: string | null; driverName: string | null
+  actualPickupAt: string | null; actualDeliveryAt: string | null; capacityWarning: string | null
+  createdAt: string; updatedAt: string
 }
 export interface ShipmentInput {
   reference: string; origin: string; destination: string; plannedPickupAt: string
@@ -112,3 +114,6 @@ export const listShipments = (filters: ShipmentFilters = {}) => request<Page<Shi
 export const getShipment = (id: string) => request<Shipment>(`/api/v1/shipments/${id}`)
 export const createShipment = (input: ShipmentInput) => request<Shipment>('/api/v1/shipments', { method: 'POST', body: JSON.stringify(input) })
 export const updateShipment = (id: string, input: ShipmentInput) => request<Shipment>(`/api/v1/shipments/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+export const assignShipment = (id: string, input: { vehicleId: string; driverId: string }) => request<Shipment>(`/api/v1/shipments/${id}/assignment`, { method: 'PUT', body: JSON.stringify(input) })
+export const unassignShipment = (id: string) => request<Shipment>(`/api/v1/shipments/${id}/assignment`, { method: 'DELETE' })
+export const changeShipmentStatus = (id: string, status: ShipmentStatus) => request<Shipment>(`/api/v1/shipments/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) })

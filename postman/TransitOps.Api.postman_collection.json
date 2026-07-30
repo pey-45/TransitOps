@@ -3,7 +3,7 @@
     "name": "TransitOps API",
     "_postman_id": "b3f2a6e0-5b1a-4a2a-9d3a-transitops0001",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos y gestión de envíos con filtros y paginación (Sprints 1–3). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
+    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos y operación de envíos con filtros, asignación y ciclo de estados (Sprints 1–4). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
   },
   "auth": {
     "type": "bearer",
@@ -474,6 +474,35 @@
             "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  \"reference\": \"ENV-{{runId}}\",\n  \"origin\": \"A Coruña\",\n  \"destination\": \"Barcelona\",\n  \"plannedPickupAt\": \"2026-08-01T08:00:00Z\",\n  \"plannedDeliveryAt\": \"2026-08-01T20:00:00Z\",\n  \"estimatedLoad\": 1600.00,\n  \"notes\": \"Actualizado desde Postman\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}" ] }
+          }
+        },
+        {
+          "name": "Asignar vehículo y conductor",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"driverId\": \"{{driverId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/assignment", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "assignment" ] },
+            "description": "Asigna conjuntamente un vehículo y un conductor activos a un envío planificado. data.capacityWarning solo se informa en esta respuesta cuando la capacidad conocida es inferior a la carga estimada; el aviso no bloquea la asignación."
+          }
+        },
+        {
+          "name": "Quitar asignación",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/assignment", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "assignment" ] },
+            "description": "Retira conjuntamente vehículo y conductor mientras el envío siga planificado. Devuelve 200 con el envío actualizado."
+          }
+        },
+        {
+          "name": "Cambiar estado",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"in_progress\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/status", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "status" ] },
+            "description": "Transiciones permitidas: planned → in_progress/cancelled e in_progress → delivered/cancelled. Los estados finales no se reabren."
           }
         }
       ]

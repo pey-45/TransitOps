@@ -40,6 +40,24 @@ Cliente activo y conservación del vínculo histórico & Backend & Correcto \\
 
 Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 añadió 16 y 6 respectivamente, elevando el total a 45 pruebas backend y 13 frontend, todas correctas junto con el lint y las compilaciones de producción.
 
+\begin{table}[htbp]
+\centering
+\caption{Validación del Sprint 4}
+\begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
+\hline Comportamiento & Capa & Resultado \\ \hline
+Asignación conjunta y retirada idempotente & Backend/Frontend & Correcto \\
+Recursos activos y exclusión del propio envío & Backend & Correcto \\
+Anti-doble-reserva en estados abiertos & Backend/Sistema & Correcto \\
+Aviso no bloqueante de capacidad & Backend/Frontend & Correcto \\
+Transiciones válidas, inválidas y terminales & Backend/Frontend & Correcto \\
+Sellado UTC de recogida y entrega reales & Backend/PostgreSQL & Correcto \\
+Proyección de matrícula y conductor en PostgreSQL & Integración & Correcto \\
+\hline
+\end{tabular}
+\end{table}
+
+El cierre del Sprint 4 elevó el total a 74 pruebas backend y 19 frontend. Además de las suites, se ejecutó el flujo integrado mediante Nginx, API y PostgreSQL 16: se verificaron la migración, las proyecciones SQL, el aviso de capacidad, el conflicto que identifica el envío ocupante y el bloqueo visual de un estado final. La prueba en navegador descubrió además un caso de fecha inválida que podía dejar el formulario pendiente; se corrigió y quedó cubierto por una prueba de regresión.
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.4\textwidth]{imaxes/ci-verde}

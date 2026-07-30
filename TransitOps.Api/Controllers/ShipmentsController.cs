@@ -30,4 +30,16 @@ public sealed class ShipmentsController(IShipmentService service) : ControllerBa
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ApiResponse<ShipmentResponse>>> Update(Guid id, UpsertShipmentRequest request, CancellationToken cancellationToken) =>
         Ok(ApiResponse<ShipmentResponse>.Success(await service.UpdateAsync(id, request, cancellationToken), HttpContext.TraceIdentifier));
+
+    [HttpPut("{id:guid}/assignment")]
+    public async Task<ActionResult<ApiResponse<ShipmentResponse>>> Assign(Guid id, AssignShipmentRequest request, CancellationToken cancellationToken) =>
+        Ok(ApiResponse<ShipmentResponse>.Success(await service.AssignAsync(id, request, cancellationToken), HttpContext.TraceIdentifier));
+
+    [HttpDelete("{id:guid}/assignment")]
+    public async Task<ActionResult<ApiResponse<ShipmentResponse>>> Unassign(Guid id, CancellationToken cancellationToken) =>
+        Ok(ApiResponse<ShipmentResponse>.Success(await service.UnassignAsync(id, cancellationToken), HttpContext.TraceIdentifier));
+
+    [HttpPost("{id:guid}/status")]
+    public async Task<ActionResult<ApiResponse<ShipmentResponse>>> ChangeStatus(Guid id, ChangeShipmentStatusRequest request, CancellationToken cancellationToken) =>
+        Ok(ApiResponse<ShipmentResponse>.Success(await service.ChangeStatusAsync(id, request, cancellationToken), HttpContext.TraceIdentifier));
 }

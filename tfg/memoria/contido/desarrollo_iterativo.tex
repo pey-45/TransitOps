@@ -46,10 +46,63 @@ La automatización del cierre alcanzó 45 pruebas backend y 13 frontend, con com
 \end{figure}
 
 \clearpage
-\section{Sprints 4 a 8}
-\subsection*{Sprint 4 --- Asignación y ciclo de vida}
-% TODO(Sprint 4)
-Pendiente de completar reglas de recursos, capacidad y estados.
+\section{Sprint 4: asignación y ciclo de vida}
+
+El cuarto incremento convirtió el detalle del envío en la pantalla de operación. La asignación trata vehículo y conductor como una unidad y solo se modifica mientras el envío está planificado. El servicio rechaza recursos inexistentes o dados de baja y consulta el resto de envíos planificados o en curso para impedir una doble reserva. La consulta excluye el propio envío, por lo que es posible cambiar únicamente el conductor sin provocar un falso conflicto con el vehículo que ya tenía asignado.
+
+La capacidad insuficiente sigue una semántica distinta a la de los errores: la asignación se persiste y la respuesta incorpora un aviso transitorio. La SPA lo muestra en ámbar, separado del componente rojo de error. No se persiste una bandera derivada que podría quedar obsoleta al editar la carga o el vehículo.
+
+La máquina de estados adopta una política cerrada: solo se permiten las cuatro transiciones dibujadas en la Figura~\ref{fig:maquina-estados-s4}. Entrar en curso requiere los dos recursos y sella la recogida real en UTC; entregar sella la entrega real. Entregado y cancelado son terminales, y ninguna operación devuelve el envío a planificado.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.86\textwidth}
+\centering
+\begin{tabular}{ccccc}
+Planificado & $\longrightarrow$ & En curso & $\longrightarrow$ & Entregado \\
+& $\searrow$ & $\downarrow$ & & \\
+& & Cancelado & &
+\end{tabular}
+
+\vspace{0.5em}
+\small La transición a ``En curso'' requiere vehículo y conductor; ``Entregado'' y ``Cancelado'' no tienen salida.
+\end{minipage}}
+\caption{Máquina de estados cerrada del envío en el Sprint 4}
+\label{fig:maquina-estados-s4}
+\end{figure}
+
+La migración \texttt{AddShipmentOperation} añadió las dos fechas reales y una restricción de coherencia. La API expone acciones explícitas para asignar, retirar la asignación y cambiar el estado; el CRUD general no puede alterar estos campos. En la interfaz, los botones se derivan del estado actual, las acciones irreversibles piden confirmación y un estado final muestra de forma explícita que ya no admite cambios.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.72\textwidth]{imaxes/envio-planificado-sprint4}
+\caption{Panel conjunto de asignación en un envío planificado}
+\label{fig:asignacion-s4}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/aviso-capacidad-sprint4}
+\caption{Asignación guardada con aviso no bloqueante de capacidad}
+\label{fig:capacidad-s4}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/envio-en-curso-sprint4}
+\caption{Envío en curso con recogida real y acciones válidas}
+\label{fig:en-curso-s4}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/envio-entregado-sprint4}
+\caption{Envío entregado, con fechas reales y sin acciones de transición}
+\label{fig:entregado-s4}
+\end{figure}
+
+\clearpage
+\section{Sprints 5 a 8}
 \subsection*{Sprint 5 --- Eventos}
 % TODO(Sprint 5)
 Pendiente de completar la trazabilidad de sucesos e incidencias.

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using TransitOps.Api.Common;
+using TransitOps.Api.Domain;
 
 namespace TransitOps.Api.Features.Shipments;
 
@@ -23,7 +25,15 @@ public sealed record UpsertShipmentRequest(
 public sealed record ShipmentResponse(
     Guid Id, string Reference, string Origin, string Destination, DateTime PlannedPickupAt,
     DateTime? PlannedDeliveryAt, Guid? CustomerId, string? CustomerName, decimal? EstimatedLoad,
-    string? Notes, string Status, Guid? VehicleId, Guid? DriverId, DateTime CreatedAt, DateTime UpdatedAt);
+    string? Notes, string Status, Guid? VehicleId, Guid? DriverId, string? VehiclePlate,
+    string? DriverName, DateTime? ActualPickupAt, DateTime? ActualDeliveryAt,
+    string? CapacityWarning, DateTime CreatedAt, DateTime UpdatedAt);
+
+public sealed record AssignShipmentRequest(Guid? VehicleId, Guid? DriverId);
+
+public sealed record ChangeShipmentStatusRequest(
+    [Required, RegularExpression("^(in_progress|delivered|cancelled)$", ErrorMessage = "El estado indicado no es válido.")]
+    string? Status);
 
 public sealed record ShipmentPageResponse(
     IReadOnlyList<ShipmentResponse> Items, int Page, int PageSize, int TotalCount, int TotalPages);
@@ -51,6 +61,30 @@ public interface IShipmentService
     Task<ShipmentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<ShipmentResponse> CreateAsync(UpsertShipmentRequest request, CancellationToken cancellationToken);
     Task<ShipmentResponse> UpdateAsync(Guid id, UpsertShipmentRequest request, CancellationToken cancellationToken);
+    Task<ShipmentResponse> AssignAsync(Guid id, AssignShipmentRequest request, CancellationToken cancellationToken);
+    Task<ShipmentResponse> UnassignAsync(Guid id, CancellationToken cancellationToken);
+    Task<ShipmentResponse> ChangeStatusAsync(Guid id, ChangeShipmentStatusRequest request, CancellationToken cancellationToken);
+}
+
+internal static class ShipmentStatuses
+{
+    public static ShipmentStatus Parse(string? value) => value switch
+    {
+        "planned" => ShipmentStatus.Planned,
+        "in_progress" => ShipmentStatus.InProgress,
+        "delivered" => ShipmentStatus.Delivered,
+        "cancelled" => ShipmentStatus.Cancelled,
+        _ => throw new ApiException(400, "shipment_status_invalid", "El estado indicado no es válido.")
+    };
+
+    public static string Token(ShipmentStatus value) => value switch
+    {
+        ShipmentStatus.Planned => "planned",
+        ShipmentStatus.InProgress => "in_progress",
+        ShipmentStatus.Delivered => "delivered",
+        ShipmentStatus.Cancelled => "cancelled",
+        _ => throw new InvalidOperationException("Estado de envío desconocido.")
+    };
 }
 
 internal static class ShipmentTime

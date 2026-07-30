@@ -51,7 +51,11 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
         customer.Property(item => item.ContactDetails).HasMaxLength(500);
 
         var shipment = modelBuilder.Entity<Shipment>();
-        shipment.ToTable("shipments", table => table.HasCheckConstraint("ck_shipments_planned_dates", "\"PlannedDeliveryAt\" IS NULL OR \"PlannedDeliveryAt\" >= \"PlannedPickupAt\""));
+        shipment.ToTable("shipments", table =>
+        {
+            table.HasCheckConstraint("ck_shipments_planned_dates", "\"PlannedDeliveryAt\" IS NULL OR \"PlannedDeliveryAt\" >= \"PlannedPickupAt\"");
+            table.HasCheckConstraint("ck_shipments_actual_dates", "\"ActualDeliveryAt\" IS NULL OR \"ActualPickupAt\" IS NULL OR \"ActualDeliveryAt\" >= \"ActualPickupAt\"");
+        });
         shipment.HasKey(item => item.Id);
         shipment.Property(item => item.Reference).HasMaxLength(50).IsRequired();
         shipment.Property(item => item.Origin).HasMaxLength(160).IsRequired();

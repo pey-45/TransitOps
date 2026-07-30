@@ -13,11 +13,14 @@ namespace TransitOps.Tests.Controllers;
 public sealed class ShipmentsControllerTests
 {
     [Theory]
-    [InlineData("GET")]
-    [InlineData("POST")]
-    public async Task Endpoints_require_authentication(string method)
+    [InlineData("GET", "/api/v1/shipments")]
+    [InlineData("POST", "/api/v1/shipments")]
+    [InlineData("PUT", "/api/v1/shipments/00000000-0000-0000-0000-000000000001/assignment")]
+    [InlineData("DELETE", "/api/v1/shipments/00000000-0000-0000-0000-000000000001/assignment")]
+    [InlineData("POST", "/api/v1/shipments/00000000-0000-0000-0000-000000000001/status")]
+    public async Task Endpoints_require_authentication(string method, string path)
     {
-        using var factory = Factory(); using var request = new HttpRequestMessage(new HttpMethod(method), "/api/v1/shipments"); if (method == "POST") request.Content = JsonContent.Create(ValidPayload());
+        using var factory = Factory(); using var request = new HttpRequestMessage(new HttpMethod(method), path); if (method is "POST" or "PUT") request.Content = JsonContent.Create(new { });
         using var response = await factory.CreateClient().SendAsync(request); Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -67,6 +70,42 @@ public sealed class ShipmentsControllerTests
         var customer = new Customer { Name = "Old", IsActive = false }; using var factory = Factory(db => db.Customers.Add(customer)); using var client = await Client(factory);
         var response = await client.PostAsJsonAsync("/api/v1/shipments", new { reference = "A", origin = "O", destination = "D", plannedPickupAt = "2026-08-01T08:00:00", customerId = customer.Id });
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode); Assert.Equal("shipment_customer_not_found", (await Json(response))["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Complete_operation_flow_assigns_starts_delivers_and_blocks_terminal_changes()
+    {
+        using var factory = Factory(); using var client = await Client(factory);
+        var vehicle = await Json(await client.PostAsJsonAsync("/api/v1/vehicles", new { licensePlate = "1234 ABC", loadCapacity = 10000 })); var vehicleId = vehicle["data"]!["id"]!.GetValue<string>();
+        var driver = await Json(await client.PostAsJsonAsync("/api/v1/drivers", new { name = "Ana", licenseNumber = "L-1" })); var driverId = driver["data"]!["id"]!.GetValue<string>();
+        var created = await Json(await client.PostAsJsonAsync("/api/v1/shipments", ValidPayload())); var shipmentId = created["data"]!["id"]!.GetValue<string>();
+        var assignedResponse = await client.PutAsJsonAsync($"/api/v1/shipments/{shipmentId}/assignment", new { vehicleId, driverId }); var assigned = await Json(assignedResponse);
+        Assert.Equal(HttpStatusCode.OK, assignedResponse.StatusCode); Assert.Equal("1234 ABC", assigned["data"]!["vehiclePlate"]!.GetValue<string>()); Assert.Equal("Ana", assigned["data"]!["driverName"]!.GetValue<string>());
+        var started = await Json(await client.PostAsJsonAsync($"/api/v1/shipments/{shipmentId}/status", new { status = "in_progress" })); Assert.NotNull(started["data"]!["actualPickupAt"]);
+        var delivered = await Json(await client.PostAsJsonAsync($"/api/v1/shipments/{shipmentId}/status", new { status = "delivered" })); Assert.Equal("delivered", delivered["data"]!["status"]!.GetValue<string>()); Assert.NotNull(delivered["data"]!["actualDeliveryAt"]);
+        var terminal = await client.PostAsJsonAsync($"/api/v1/shipments/{shipmentId}/status", new { status = "cancelled" }); Assert.Equal(HttpStatusCode.Conflict, terminal.StatusCode); Assert.Equal("shipment_status_terminal", (await Json(terminal))["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Operation_bodies_use_the_common_validation_contract()
+    {
+        var shipment = new Shipment { Reference = "A", Origin = "O", Destination = "D", PlannedPickupAt = new DateTime(2026, 8, 1, 8, 0, 0, DateTimeKind.Utc) }; using var factory = Factory(db => db.Shipments.Add(shipment)); using var client = await Client(factory);
+        foreach (var body in new object[] { new { status = "foo" }, new { } })
+        {
+            var response = await client.PostAsJsonAsync($"/api/v1/shipments/{shipment.Id}/status", body); var json = await Json(response); Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); Assert.Equal("validation_error", json["error"]!["code"]!.GetValue<string>()); Assert.NotNull(json["error"]!["details"]!["Status"]);
+        }
+        var malformed = await client.PutAsJsonAsync($"/api/v1/shipments/{shipment.Id}/assignment", new { vehicleId = "not-a-guid", driverId = Guid.NewGuid() }); Assert.Equal(HttpStatusCode.BadRequest, malformed.StatusCode);
+    }
+
+    [Fact]
+    public async Task Assignment_rejects_a_resource_occupied_by_another_open_shipment()
+    {
+        var vehicle = new Vehicle { LicensePlate = "BUSY" }; var driver = new Driver { Name = "Ana", LicenseNumber = "L" }; using var factory = Factory(db => db.AddRange(vehicle, driver)); using var client = await Client(factory);
+        var first = await Json(await client.PostAsJsonAsync("/api/v1/shipments", ValidPayload("OWNER"))); var firstId = first["data"]!["id"]!.GetValue<string>();
+        var second = await Json(await client.PostAsJsonAsync("/api/v1/shipments", ValidPayload("TARGET"))); var secondId = second["data"]!["id"]!.GetValue<string>();
+        Assert.Equal(HttpStatusCode.OK, (await client.PutAsJsonAsync($"/api/v1/shipments/{firstId}/assignment", new { vehicleId = vehicle.Id, driverId = driver.Id })).StatusCode);
+        var conflict = await client.PutAsJsonAsync($"/api/v1/shipments/{secondId}/assignment", new { vehicleId = vehicle.Id, driverId = driver.Id }); var json = await Json(conflict);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode); Assert.Equal("shipment_vehicle_busy", json["error"]!["code"]!.GetValue<string>()); Assert.Contains("OWNER", json["error"]!["message"]!.GetValue<string>());
     }
 
     private static object ValidPayload(string reference = "REF-1", string date = "2026-08-01T08:00:00Z") => new { reference, origin = "Madrid", destination = "Barcelona", plannedPickupAt = date };

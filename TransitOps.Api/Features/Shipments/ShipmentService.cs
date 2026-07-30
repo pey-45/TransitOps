@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
@@ -13,18 +14,11 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
         var pageSize = query.PageSize ?? 20;
         var pickupFrom = ShipmentTime.Utc(query.PickupFrom);
         var pickupTo = ShipmentTime.Utc(query.PickupTo);
-        var items = dbContext.Shipments.AsNoTracking().Include(item => item.Customer).AsQueryable();
+        var items = dbContext.Shipments.AsNoTracking().AsQueryable();
 
         if (query.Status is not null)
         {
-            var status = query.Status switch
-            {
-                "planned" => ShipmentStatus.Planned,
-                "in_progress" => ShipmentStatus.InProgress,
-                "delivered" => ShipmentStatus.Delivered,
-                "cancelled" => ShipmentStatus.Cancelled,
-                _ => throw new ApiException(400, "shipment_status_invalid", "El estado indicado no es válido.")
-            };
+            var status = ShipmentStatuses.Parse(query.Status);
             items = items.Where(item => item.Status == status);
         }
         if (pickupFrom.HasValue) items = items.Where(item => item.PlannedPickupAt >= pickupFrom.Value);
@@ -35,18 +29,28 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
 
         var totalCount = await items.CountAsync(cancellationToken);
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
-        var results = page > totalPages
-            ? []
-            : await items.OrderBy(item => item.PlannedPickupAt).ThenBy(item => item.Reference)
-                .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        return new(results.Select(Map).ToList(), page, pageSize, totalCount, totalPages);
+        if (page > totalPages) return new([], page, pageSize, totalCount, totalPages);
+
+        var results = await items.OrderBy(item => item.PlannedPickupAt).ThenBy(item => item.Reference)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(item => new
+            {
+                Item = item,
+                CustomerName = dbContext.Customers.Where(value => value.Id == item.CustomerId)
+                    .Select(value => value.Name).FirstOrDefault(),
+                VehiclePlate = dbContext.Vehicles.Where(value => value.Id == item.VehicleId)
+                    .Select(value => value.LicensePlate).FirstOrDefault(),
+                DriverName = dbContext.Drivers.Where(value => value.Id == item.DriverId)
+                    .Select(value => value.Name).FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+        return new(results.Select(value => Map(value.Item, value.CustomerName, value.VehiclePlate, value.DriverName)).ToList(),
+            page, pageSize, totalCount, totalPages);
     }
 
     public async Task<ShipmentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var item = await dbContext.Shipments.AsNoTracking().Include(item => item.Customer)
-            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
-        return item is null ? null : Map(item);
+        return await Detail(id, cancellationToken);
     }
 
     public async Task<ShipmentResponse> CreateAsync(UpsertShipmentRequest request, CancellationToken cancellationToken)
@@ -88,11 +92,58 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
         item.Notes = normalized.Notes;
         item.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var customerName = item.CustomerId.HasValue
-            ? await dbContext.Customers.AsNoTracking().Where(value => value.Id == item.CustomerId.Value)
-                .Select(value => value.Name).SingleAsync(cancellationToken)
+        return (await Detail(id, cancellationToken))!;
+    }
+
+    public async Task<ShipmentResponse> AssignAsync(Guid id, AssignShipmentRequest request, CancellationToken cancellationToken)
+    {
+        var item = await Existing(id, cancellationToken);
+        EnsureAssignable(item);
+        if (!request.VehicleId.HasValue || !request.DriverId.HasValue)
+            throw new ApiException(400, "shipment_assignment_incomplete", "Hay que indicar vehículo y conductor.");
+
+        var vehicle = await EnsureVehicle(request.VehicleId.Value, cancellationToken);
+        var driver = await EnsureDriver(request.DriverId.Value, cancellationToken);
+        await EnsureVehicleNotBusy(id, request.VehicleId.Value, cancellationToken);
+        await EnsureDriverNotBusy(id, request.DriverId.Value, cancellationToken);
+
+        item.VehicleId = request.VehicleId.Value;
+        item.DriverId = request.DriverId.Value;
+        item.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var warning = vehicle.LoadCapacity.HasValue && item.EstimatedLoad.HasValue &&
+                      vehicle.LoadCapacity.Value < item.EstimatedLoad.Value
+            ? $"La capacidad del vehículo ({FormatLoad(vehicle.LoadCapacity.Value)} kg) es inferior a la carga estimada ({FormatLoad(item.EstimatedLoad.Value)} kg)."
             : null;
-        return Map(item) with { CustomerName = customerName };
+        return Map(item, vehiclePlate: vehicle.LicensePlate, driverName: driver.Name, capacityWarning: warning);
+    }
+
+    public async Task<ShipmentResponse> UnassignAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await Existing(id, cancellationToken);
+        EnsureAssignable(item);
+        if (!item.VehicleId.HasValue && !item.DriverId.HasValue) return Map(item);
+        item.VehicleId = null;
+        item.DriverId = null;
+        item.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Map(item);
+    }
+
+    public async Task<ShipmentResponse> ChangeStatusAsync(Guid id, ChangeShipmentStatusRequest request, CancellationToken cancellationToken)
+    {
+        var item = await Existing(id, cancellationToken);
+        var target = ShipmentStatuses.Parse(request.Status);
+        EnsureTransition(item, target);
+
+        var now = DateTime.UtcNow;
+        if (target == ShipmentStatus.InProgress) item.ActualPickupAt = now;
+        if (target == ShipmentStatus.Delivered) item.ActualDeliveryAt = now;
+        item.Status = target;
+        item.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return (await Detail(id, cancellationToken))!;
     }
 
     private static UpsertShipmentRequest Normalize(UpsertShipmentRequest request)
@@ -125,20 +176,104 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
             throw new ApiException(409, "shipment_customer_not_found", "El cliente indicado no existe o está dado de baja.");
     }
 
+    private async Task<VehicleAssignment> EnsureVehicle(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Vehicles.AsNoTracking().Where(item => item.Id == id && item.IsActive)
+            .Select(item => new VehicleAssignment { LicensePlate = item.LicensePlate, LoadCapacity = item.LoadCapacity })
+            .SingleOrDefaultAsync(cancellationToken)
+        ?? throw new ApiException(409, "shipment_vehicle_not_found", "El vehículo indicado no existe o está dado de baja.");
+
+    private async Task<DriverAssignment> EnsureDriver(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Drivers.AsNoTracking().Where(item => item.Id == id && item.IsActive)
+            .Select(item => new DriverAssignment { Name = item.Name })
+            .SingleOrDefaultAsync(cancellationToken)
+        ?? throw new ApiException(409, "shipment_driver_not_found", "El conductor indicado no existe o está dado de baja.");
+
+    private async Task EnsureVehicleNotBusy(Guid shipmentId, Guid vehicleId, CancellationToken cancellationToken)
+    {
+        var conflict = await dbContext.Shipments.AsNoTracking()
+            .Where(item => item.Id != shipmentId && item.VehicleId == vehicleId &&
+                (item.Status == ShipmentStatus.Planned || item.Status == ShipmentStatus.InProgress))
+            .Select(item => item.Reference).FirstOrDefaultAsync(cancellationToken);
+        if (conflict is not null)
+            throw new ApiException(409, "shipment_vehicle_busy", $"El vehículo ya está asignado al envío {conflict}.");
+    }
+
+    private async Task EnsureDriverNotBusy(Guid shipmentId, Guid driverId, CancellationToken cancellationToken)
+    {
+        var conflict = await dbContext.Shipments.AsNoTracking()
+            .Where(item => item.Id != shipmentId && item.DriverId == driverId &&
+                (item.Status == ShipmentStatus.Planned || item.Status == ShipmentStatus.InProgress))
+            .Select(item => item.Reference).FirstOrDefaultAsync(cancellationToken);
+        if (conflict is not null)
+            throw new ApiException(409, "shipment_driver_busy", $"El conductor ya está asignado al envío {conflict}.");
+    }
+
+    private static void EnsureAssignable(Shipment item)
+    {
+        if (item.Status != ShipmentStatus.Planned)
+            throw new ApiException(409, "shipment_not_assignable", "Solo se puede asignar mientras el envío está planificado.");
+    }
+
+    private static void EnsureTransition(Shipment item, ShipmentStatus target)
+    {
+        if (item.Status is ShipmentStatus.Delivered or ShipmentStatus.Cancelled)
+            throw new ApiException(409, "shipment_status_terminal", "Un envío entregado o cancelado no puede cambiar de estado.");
+        if (item.Status == ShipmentStatus.Planned && target == ShipmentStatus.InProgress &&
+            (!item.VehicleId.HasValue || !item.DriverId.HasValue))
+            throw new ApiException(409, "shipment_assignment_required", "Para poner el envío en curso hay que asignar vehículo y conductor.");
+
+        var valid = (item.Status, target) switch
+        {
+            (ShipmentStatus.Planned, ShipmentStatus.InProgress) => true,
+            (ShipmentStatus.Planned, ShipmentStatus.Cancelled) => true,
+            (ShipmentStatus.InProgress, ShipmentStatus.Delivered) => true,
+            (ShipmentStatus.InProgress, ShipmentStatus.Cancelled) => true,
+            _ => false
+        };
+        if (!valid)
+            throw new ApiException(409, "shipment_status_transition_invalid", "La transición de estado solicitada no es válida.");
+    }
+
+    private async Task<ShipmentResponse?> Detail(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await dbContext.Shipments.AsNoTracking().Where(item => item.Id == id)
+            .Select(item => new
+            {
+                Item = item,
+                CustomerName = dbContext.Customers.Where(value => value.Id == item.CustomerId)
+                    .Select(value => value.Name).FirstOrDefault(),
+                VehiclePlate = dbContext.Vehicles.Where(value => value.Id == item.VehicleId)
+                    .Select(value => value.LicensePlate).FirstOrDefault(),
+                DriverName = dbContext.Drivers.Where(value => value.Id == item.DriverId)
+                    .Select(value => value.Name).FirstOrDefault()
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        return result is null ? null : Map(result.Item, result.CustomerName, result.VehiclePlate, result.DriverName);
+    }
+
     private async Task<Shipment> Existing(Guid id, CancellationToken cancellationToken) =>
         await dbContext.Shipments.Include(item => item.Customer).SingleOrDefaultAsync(item => item.Id == id, cancellationToken)
         ?? throw new ApiException(404, "shipment_not_found", "El envío no existe.");
 
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static ShipmentResponse Map(Shipment item) => new(item.Id, item.Reference, item.Origin, item.Destination,
-        item.PlannedPickupAt, item.PlannedDeliveryAt, item.CustomerId, item.Customer?.Name, item.EstimatedLoad,
-        item.Notes, item.Status switch
-        {
-            ShipmentStatus.Planned => "planned",
-            ShipmentStatus.InProgress => "in_progress",
-            ShipmentStatus.Delivered => "delivered",
-            ShipmentStatus.Cancelled => "cancelled",
-            _ => throw new InvalidOperationException("Estado de envío desconocido.")
-        }, item.VehicleId, item.DriverId, item.CreatedAt, item.UpdatedAt);
+    private static string FormatLoad(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static ShipmentResponse Map(Shipment item, string? customerName = null, string? vehiclePlate = null,
+        string? driverName = null, string? capacityWarning = null) =>
+        new(item.Id, item.Reference, item.Origin, item.Destination, item.PlannedPickupAt, item.PlannedDeliveryAt,
+            item.CustomerId, customerName ?? item.Customer?.Name, item.EstimatedLoad, item.Notes,
+            ShipmentStatuses.Token(item.Status), item.VehicleId, item.DriverId, vehiclePlate, driverName,
+            item.ActualPickupAt, item.ActualDeliveryAt, capacityWarning, item.CreatedAt, item.UpdatedAt);
+
+    private sealed class VehicleAssignment
+    {
+        public required string LicensePlate { get; init; }
+        public decimal? LoadCapacity { get; init; }
+    }
+
+    private sealed class DriverAssignment
+    {
+        public required string Name { get; init; }
+    }
 }
