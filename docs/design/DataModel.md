@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Este diseño cubre el dominio completo definido en `docs/Requirements.md`. El Sprint 1 implementó y migró `AppUser`; el Sprint 2 incorporó `Vehicle`, `Driver` y `Customer`. `Shipment` y `ShipmentEvent` se incorporarán mediante migraciones incrementales en los sprints correspondientes.
+Este diseño cubre el dominio completo definido en `docs/Requirements.md`. El Sprint 1 implementó y migró `AppUser`; el Sprint 2 incorporó `Vehicle`, `Driver` y `Customer`; el Sprint 3 incorporó `Shipment`. `ShipmentEvent` se incorporará mediante una migración incremental en su sprint.
 
 ```mermaid
 erDiagram
@@ -53,6 +53,7 @@ erDiagram
     }
     SHIPMENT {
       uuid id PK
+      string reference UK
       string origin
       string destination
       datetime planned_pickup_at
@@ -82,7 +83,7 @@ erDiagram
 
 - `AppUser`: usuario interno con rol `Admin` u `Operator`. La contraseña solo se guarda como hash. `IsActive` aplica la baja lógica exigida por RNF-03.
 - `Vehicle`, `Driver` y `Customer`: catálogos con baja lógica. Las unicidades funcionales solo afectan a registros activos y se reforzarán en servicio y base de datos al implementar cada catálogo.
-- `Shipment`: agregado operativo con estado `Planned`, `InProgress`, `Delivered` o `Cancelled`. Cliente, carga estimada, vehículo, conductor y entrega prevista son opcionales. Conserva las relaciones históricas aunque el catálogo relacionado se desactive.
+- `Shipment`: agregado operativo con referencia única global y estado `Planned`, `InProgress`, `Delivered` o `Cancelled`. No usa `IsActive`: su ciclo se expresa mediante el estado. Cliente, carga estimada, vehículo, conductor y entrega prevista son opcionales; sus claves foráneas usan `RESTRICT` para conservar relaciones históricas aunque el catálogo se desactive. Las fechas de negocio se normalizan y persisten en UTC.
 - `ShipmentEvent`: historial inmutable del envío, ordenado por `OccurredAt`, siempre vinculado al usuario que lo registró. Tipos previstos: creación, asignación, salida, punto de control, incidencia, entrega y cancelación.
 
 ## Restricciones principales

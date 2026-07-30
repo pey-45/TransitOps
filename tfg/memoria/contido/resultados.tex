@@ -4,4 +4,6 @@ El Sprint 1 entrega el primer resultado demostrable: desde un navegador se puede
 
 El incremento también reduce riesgo futuro. El modelo de datos completo hace visibles las relaciones y restricciones antes de construir catálogos; el contrato de error evita tratamientos distintos por módulo; la migración, los contenedores y la CI establecen un camino repetible que los sprints posteriores ampliarán.
 
-Todavía no procede evaluar la utilidad operacional completa, pues no se han implementado vehículos, conductores, clientes ni envíos. Esa evaluación se actualizará con métricas de cobertura funcional, defectos y resultados de los cuatro flujos al final del Sprint 7.
+Los Sprints 2 y 3 convierten ese esqueleto en una herramienta operativa demostrable. Ya se mantienen vehículos, conductores y clientes sin perder los registros dados de baja, y se crean, consultan y editan envíos asociados a esos datos. El listado paginado y sus filtros persistentes permiten localizar trabajo por estado, fecha y recursos; la normalización UTC evita que la misma operación cambie de significado entre navegador, API y PostgreSQL.
+
+Todavía no procede evaluar la utilidad operacional completa: faltan la asignación efectiva de recursos, las transiciones, los eventos, la administración y los indicadores. Esa evaluación se actualizará con métricas de cobertura funcional, defectos y resultados de los cuatro flujos al final del Sprint 7.

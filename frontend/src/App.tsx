@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage'
 import { VehicleDetailPage, VehicleFormPage, VehicleListPage } from './pages/vehicles/VehiclePages'
 import { DriverDetailPage, DriverFormPage, DriverListPage } from './pages/drivers/DriverPages'
 import { CustomerDetailPage, CustomerFormPage, CustomerListPage } from './pages/customers/CustomerPages'
+import { ShipmentDetailPage, ShipmentFormPage, ShipmentListPage } from './pages/shipments/ShipmentPages'
 
 export function AppRoutes() {
   return (
@@ -15,6 +16,10 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/envios" element={<ShipmentListPage />} />
+          <Route path="/envios/nuevo" element={<ShipmentFormPage />} />
+          <Route path="/envios/:id" element={<ShipmentDetailPage />} />
+          <Route path="/envios/:id/editar" element={<ShipmentFormPage />} />
           <Route path="/vehiculos" element={<VehicleListPage />} />
           <Route path="/vehiculos/nuevo" element={<VehicleFormPage />} />
           <Route path="/vehiculos/:id" element={<VehicleDetailPage />} />

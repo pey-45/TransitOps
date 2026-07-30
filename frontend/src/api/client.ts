@@ -19,6 +19,22 @@ export interface Customer {
   id: string; name: string; contactDetails: string | null; isActive: boolean; createdAt: string; updatedAt: string
 }
 export interface CustomerInput { name: string; contactDetails?: string }
+export type ShipmentStatus = 'planned' | 'in_progress' | 'delivered' | 'cancelled'
+export interface Page<T> { items: T[]; page: number; pageSize: number; totalCount: number; totalPages: number }
+export interface Shipment {
+  id: string; reference: string; origin: string; destination: string; plannedPickupAt: string
+  plannedDeliveryAt: string | null; customerId: string | null; customerName: string | null
+  estimatedLoad: number | null; notes: string | null; status: ShipmentStatus
+  vehicleId: string | null; driverId: string | null; createdAt: string; updatedAt: string
+}
+export interface ShipmentInput {
+  reference: string; origin: string; destination: string; plannedPickupAt: string
+  plannedDeliveryAt?: string; customerId?: string; estimatedLoad?: number; notes?: string
+}
+export interface ShipmentFilters {
+  status?: ShipmentStatus; pickupFrom?: string; pickupTo?: string; customerId?: string
+  vehicleId?: string; driverId?: string; page?: number; pageSize?: number
+}
 
 export class ApiClientError extends Error {
   readonly code: string
@@ -84,3 +100,15 @@ export const getCustomer = (id: string) => request<Customer>(`/api/v1/customers/
 export const createCustomer = (input: CustomerInput) => request<Customer>('/api/v1/customers', { method: 'POST', body: JSON.stringify(input) })
 export const updateCustomer = (id: string, input: CustomerInput) => request<Customer>(`/api/v1/customers/${id}`, { method: 'PUT', body: JSON.stringify(input) })
 export const deactivateCustomer = (id: string) => request<void>(`/api/v1/customers/${id}`, { method: 'DELETE' })
+
+function query(params: ShipmentFilters) {
+  const search = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') search.set(key, String(value)) })
+  const value = search.toString()
+  return value ? `?${value}` : ''
+}
+
+export const listShipments = (filters: ShipmentFilters = {}) => request<Page<Shipment>>(`/api/v1/shipments${query(filters)}`)
+export const getShipment = (id: string) => request<Shipment>(`/api/v1/shipments/${id}`)
+export const createShipment = (input: ShipmentInput) => request<Shipment>('/api/v1/shipments', { method: 'POST', body: JSON.stringify(input) })
+export const updateShipment = (id: string, input: ShipmentInput) => request<Shipment>(`/api/v1/shipments/${id}`, { method: 'PUT', body: JSON.stringify(input) })

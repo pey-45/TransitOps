@@ -49,7 +49,7 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - Frontend: active Vite + React + TypeScript SPA in `frontend/`, integrated with the backend REST API.
 - Frontend test stack: Vitest + React Testing Library.
 - Operational direction: Docker/Docker Compose for local reproducibility. Deployment target and CI/CD depth are deliberately lightweight and decided later in the roadmap; do not assume AWS, ECS, or Terraform going forward.
-- Current priority: continue from the completed Sprints 1 and 2 into Sprint 3, preserving the iterative full-cycle approach (design, implementation, tests) for each slice.
+- Current priority: continue from the completed Sprints 1–3 into Sprint 4, preserving the iterative full-cycle approach (design, implementation, tests) for each slice.
 
 ## Session Start Checklist
 

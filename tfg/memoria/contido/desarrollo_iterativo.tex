@@ -15,14 +15,38 @@ Docker Compose orquesta base de datos, API y web; la API aplica migraciones al a
 \label{fig:login-compose}
 \end{figure}
 
-\section{Sprints 2 a 8}
+\section{Sprint 2: catálogos operativos}
 
-\subsection*{Sprint 2 --- Catálogos}
-% TODO(Sprint 2): sustituir por diseño, implementación, pruebas y resultado reales.
-Pendiente de completar vehículos, conductores y clientes.
-\subsection*{Sprint 3 --- Envíos y filtros}
-% TODO(Sprint 3)
-Pendiente de completar el CRUD y la visibilidad operativa.
+El segundo incremento incorporó vehículos, conductores y clientes como tres rebanadas coherentes. Cada catálogo dispone de listado, detalle, alta, edición y baja lógica tanto en la API como en la SPA. Los identificadores de negocio de vehículos y conductores se normalizan y son únicos entre registros activos, de modo que una baja conserva el historial y permite reutilizar el identificador.
+
+La migración \texttt{AddCatalogTables} llevó el diseño a PostgreSQL sin alterar la autenticación existente. Los formularios reutilizan el contrato común de validación y muestran los conflictos junto al flujo que los origina. El cierre dejó 29 pruebas backend y 7 frontend correctas y verificó el flujo real a través de Nginx, API y PostgreSQL.
+
+\section{Sprint 3: envíos y visibilidad operativa}
+
+El tercer incremento añadió el agregado \texttt{Shipment}. Cada envío tiene una referencia única global, origen, destino y recogida prevista obligatorios; puede asociar cliente, entrega prevista, carga estimada y notas. Nace siempre planificado y no admite borrado: el ciclo de estados se abordará en el incremento siguiente. Las claves foráneas restrictivas preservan los vínculos históricos con los catálogos.
+
+La API normaliza referencias y fechas antes de persistir o filtrar. Los instantes se almacenan como UTC en \texttt{timestamp with time zone}; las entradas sin zona se interpretan según el contrato como UTC y las que incluyen desplazamiento conservan el instante. La regla que impide una entrega anterior a la recogida se comprueba en el contrato HTTP, el servicio y la base de datos.
+
+La SPA ofrece alta, edición, detalle y una tabla paginada. Los filtros de estado, rango de recogida, vehículo y conductor viven en la URL. El formulario convierte de forma explícita entre \texttt{datetime-local} y UTC, muestra los errores por campo y conserva la asociación visible al editar un envío cuyo cliente ya fue dado de baja.
+
+La automatización del cierre alcanzó 45 pruebas backend y 13 frontend, con compilaciones de producción y análisis estático correctos.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/envios-filtrados-sprint3}
+\caption{Listado de envíos con filtros de estado y fecha persistidos en la URL}
+\label{fig:envios-filtrados-s3}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/envio-detalle-sprint3}
+\caption{Detalle de un envío planificado con cliente y carga estimada}
+\label{fig:envio-detalle-s3}
+\end{figure}
+
+\clearpage
+\section{Sprints 4 a 8}
 \subsection*{Sprint 4 --- Asignación y ciclo de vida}
 % TODO(Sprint 4)
 Pendiente de completar reglas de recursos, capacidad y estados.

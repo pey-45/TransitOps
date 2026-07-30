@@ -9,6 +9,7 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,5 +49,21 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
         customer.HasKey(item => item.Id);
         customer.Property(item => item.Name).HasMaxLength(160).IsRequired();
         customer.Property(item => item.ContactDetails).HasMaxLength(500);
+
+        var shipment = modelBuilder.Entity<Shipment>();
+        shipment.ToTable("shipments", table => table.HasCheckConstraint("ck_shipments_planned_dates", "\"PlannedDeliveryAt\" IS NULL OR \"PlannedDeliveryAt\" >= \"PlannedPickupAt\""));
+        shipment.HasKey(item => item.Id);
+        shipment.Property(item => item.Reference).HasMaxLength(50).IsRequired();
+        shipment.Property(item => item.Origin).HasMaxLength(160).IsRequired();
+        shipment.Property(item => item.Destination).HasMaxLength(160).IsRequired();
+        shipment.Property(item => item.Notes).HasMaxLength(500);
+        shipment.Property(item => item.EstimatedLoad).HasPrecision(12, 2);
+        shipment.Property(item => item.Status).HasConversion<short>();
+        shipment.HasIndex(item => item.Reference).IsUnique();
+        shipment.HasIndex(item => item.Status);
+        shipment.HasIndex(item => item.PlannedPickupAt);
+        shipment.HasOne(item => item.Customer).WithMany().HasForeignKey(item => item.CustomerId).OnDelete(DeleteBehavior.Restrict);
+        shipment.HasOne<Vehicle>().WithMany().HasForeignKey(item => item.VehicleId).OnDelete(DeleteBehavior.Restrict);
+        shipment.HasOne<Driver>().WithMany().HasForeignKey(item => item.DriverId).OnDelete(DeleteBehavior.Restrict);
     }
 }

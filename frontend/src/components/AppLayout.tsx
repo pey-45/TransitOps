@@ -9,6 +9,7 @@ export function AppLayout() {
         <Link className="brand" to="/">TransitOps</Link>
         <nav aria-label="Navegación principal">
           <NavLink to="/" end>Inicio</NavLink>
+          <NavLink to="/envios">Envíos</NavLink>
           <NavLink to="/vehiculos">Vehículos</NavLink>
           <NavLink to="/conductores">Conductores</NavLink>
           <NavLink to="/clientes">Clientes</NavLink>

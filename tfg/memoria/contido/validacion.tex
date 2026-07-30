@@ -21,6 +21,25 @@ Navegación adaptada al rol administrador & Frontend & Correcto \\
 
 La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de build de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16. Las pruebas funcionales de sistema crecerán con cada flujo y se consolidarán en el Sprint 7.
 
+\clearpage
+\begin{table}[htbp]
+\centering
+\caption{Validación acumulada de los Sprints 2 y 3}
+\begin{tabular}{p{5.8cm}p{2.4cm}p{2.5cm}}
+\hline Comportamiento & Capa & Resultado \\ \hline
+CRUD y baja lógica de los tres catálogos & Backend/Frontend & Correcto \\
+Unicidad y reutilización tras baja & Backend & Correcto \\
+Alta, consulta y edición de envíos & Backend/Frontend & Correcto \\
+Normalización UTC de formatos Z, sin zona y con offset & Backend & Correcto \\
+Regla de fechas y errores por campo & Backend/Frontend & Correcto \\
+Filtros combinables y paginación estable & Backend/Frontend & Correcto \\
+Cliente activo y conservación del vínculo histórico & Backend & Correcto \\
+\hline
+\end{tabular}
+\end{table}
+
+Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 añadió 16 y 6 respectivamente, elevando el total a 45 pruebas backend y 13 frontend, todas correctas junto con el lint y las compilaciones de producción.
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.4\textwidth]{imaxes/ci-verde}

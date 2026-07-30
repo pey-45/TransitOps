@@ -110,6 +110,9 @@ Crear un envío, verlo en el listado, filtrarlo por estado/fecha/vehículo/condu
 - Se cumplen los criterios de aceptación de RF-08 y RF-12.
 - El envío arranca siempre en estado "planificado".
 
+**Cierre (2026-07-26)**
+Sprint implementado en una sesión de trabajo. Se añadió la entidad y migración incremental de envíos, con referencia única global, relaciones históricas restrictivas, fechas UTC, validación de fechas y cliente activo; API autenticada de alta, consulta, edición y listado filtrado/paginado; SPA con filtros persistentes en URL, paginación, detalle y formulario con conversión horaria segura. Se añadieron 16 pruebas backend y 6 frontend; la validación final dejó 45 pruebas backend y 13 frontend en verde, además de lint, builds de producción y flujo real mediante Nginx y PostgreSQL correctos.
+
 ## Sprint 4 · Operación del Envío (Asignación y Ciclo de Estados)
 
 **Objetivo**
