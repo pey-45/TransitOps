@@ -60,7 +60,10 @@ public class Program
         builder.Services.AddScoped<IVehicleService, VehicleService>();
         builder.Services.AddScoped<IDriverService, DriverService>();
         builder.Services.AddScoped<ICustomerService, CustomerService>();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<ICurrentUser, CurrentUser>();
         builder.Services.AddScoped<IShipmentService, ShipmentService>();
+        builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
 
         builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy =>
             policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])

@@ -87,6 +87,29 @@ internal static class ShipmentStatuses
     };
 }
 
+internal static class ShipmentEventTypes
+{
+    public static ShipmentEventType Parse(string? value) => value switch
+    {
+        "checkpoint" => ShipmentEventType.Checkpoint,
+        "incident" => ShipmentEventType.Incident,
+        _ => throw new ApiException(400, "shipment_event_type_invalid", "El tipo de evento indicado no es válido.")
+    };
+
+    public static string Token(ShipmentEventType value) => value switch
+    {
+        ShipmentEventType.Created => "created",
+        ShipmentEventType.Assigned => "assigned",
+        ShipmentEventType.Unassigned => "unassigned",
+        ShipmentEventType.Departed => "departed",
+        ShipmentEventType.Checkpoint => "checkpoint",
+        ShipmentEventType.Incident => "incident",
+        ShipmentEventType.Delivered => "delivered",
+        ShipmentEventType.Cancelled => "cancelled",
+        _ => throw new InvalidOperationException("Tipo de evento de envío desconocido.")
+    };
+}
+
 internal static class ShipmentTime
 {
     public static DateTime Utc(DateTime value) => value.Kind switch

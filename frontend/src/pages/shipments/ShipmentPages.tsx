@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  ApiClientError, assignShipment, changeShipmentStatus, createShipment, getShipment, listCustomers,
-  listDrivers, listShipments, listVehicles, unassignShipment, updateShipment, type Customer,
-  type Driver, type Page, type Shipment, type ShipmentInput, type ShipmentStatus,
-  type ValidationDetails, type Vehicle,
+  ApiClientError, assignShipment, changeShipmentStatus, createShipment, createShipmentEvent,
+  getShipment, listCustomers, listDrivers, listShipmentEvents, listShipments, listVehicles,
+  unassignShipment, updateShipment, type Customer, type Driver, type Page, type Shipment,
+  type ShipmentEvent, type ShipmentEventInput, type ShipmentEventType, type ShipmentInput,
+  type ShipmentStatus, type ValidationDetails, type Vehicle,
 } from '../../api/client'
 import { BackLink, DetailList, Empty, FormField, Loading, PageHeader } from '../../components/CatalogUi'
 import { ErrorAlert } from '../../components/ErrorAlert'
@@ -116,25 +117,32 @@ export function ShipmentFormPage() {
 }
 
 export function ShipmentDetailPage() {
-  const { id } = useParams(); const [item, setItem] = useState<Shipment | null>(null); const [vehicles, setVehicles] = useState<Vehicle[]>([]); const [drivers, setDrivers] = useState<Driver[]>([])
+  const { id } = useParams(); const [item, setItem] = useState<Shipment | null>(null); const [vehicles, setVehicles] = useState<Vehicle[]>([]); const [drivers, setDrivers] = useState<Driver[]>([]); const [events, setEvents] = useState<ShipmentEvent[]>([])
   const [vehicleId, setVehicleId] = useState(''); const [driverId, setDriverId] = useState(''); const [error, setError] = useState(''); const [warning, setWarning] = useState('')
-  const [loading, setLoading] = useState(true); const [pending, setPending] = useState(false)
+  const [loading, setLoading] = useState(true); const [pending, setPending] = useState(false); const [eventPending, setEventPending] = useState(false)
+  const [eventFormOpen, setEventFormOpen] = useState(false); const [eventType, setEventType] = useState<ShipmentEventInput['eventType']>('checkpoint')
+  const [eventAt, setEventAt] = useState(() => toLocalInput(new Date().toISOString())); const [eventLocation, setEventLocation] = useState(''); const [eventNotes, setEventNotes] = useState('')
+  const [eventDateError, setEventDateError] = useState(''); const [eventDetails, setEventDetails] = useState<ValidationDetails>()
   useEffect(() => {
     if (!id) return
-    Promise.all([getShipment(id), listVehicles(), listDrivers()]).then(([shipment, activeVehicles, activeDrivers]) => {
-      setItem(shipment); setVehicles(activeVehicles); setDrivers(activeDrivers); setVehicleId(shipment.vehicleId ?? ''); setDriverId(shipment.driverId ?? '')
+    Promise.all([getShipment(id), listVehicles(), listDrivers(), listShipmentEvents(id)]).then(([shipment, activeVehicles, activeDrivers, history]) => {
+      setItem(shipment); setVehicles(activeVehicles); setDrivers(activeDrivers); setEvents(history); setVehicleId(shipment.vehicleId ?? ''); setDriverId(shipment.driverId ?? '')
     }).catch(reason => setError(errorMessage(reason))).finally(() => setLoading(false))
   }, [id])
 
+  async function refreshEvents() {
+    if (id) setEvents(await listShipmentEvents(id))
+  }
+
   async function assign(event: FormEvent) {
     event.preventDefault(); if (!id || !vehicleId || !driverId) return; setPending(true); setError(''); setWarning('')
-    try { const saved = await assignShipment(id, { vehicleId, driverId }); setItem(saved); setWarning(saved.capacityWarning ?? '') }
+    try { const saved = await assignShipment(id, { vehicleId, driverId }); setItem(saved); setWarning(saved.capacityWarning ?? ''); await refreshEvents() }
     catch (reason) { setError(errorMessage(reason)) } finally { setPending(false) }
   }
 
   async function unassign() {
     if (!id) return; setPending(true); setError(''); setWarning('')
-    try { const saved = await unassignShipment(id); setItem(saved); setVehicleId(''); setDriverId('') }
+    try { const saved = await unassignShipment(id); setItem(saved); setVehicleId(''); setDriverId(''); await refreshEvents() }
     catch (reason) { setError(errorMessage(reason)) } finally { setPending(false) }
   }
 
@@ -142,8 +150,26 @@ export function ShipmentDetailPage() {
     if (!id) return
     if ((status === 'delivered' || status === 'cancelled') && !window.confirm(status === 'delivered' ? '¿Marcar este envío como entregado? Esta acción no se puede deshacer.' : '¿Cancelar este envío? Esta acción no se puede deshacer.')) return
     setPending(true); setError(''); setWarning('')
-    try { setItem(await changeShipmentStatus(id, status)) }
+    try { setItem(await changeShipmentStatus(id, status)); await refreshEvents() }
     catch (reason) { setError(errorMessage(reason)) } finally { setPending(false) }
+  }
+
+  async function registerEvent(event: FormEvent) {
+    event.preventDefault(); if (!id) return; setError(''); setEventDateError(''); setEventDetails(undefined)
+    let occurredAt: string | undefined
+    if (eventAt) {
+      const date = new Date(eventAt)
+      if (Number.isNaN(date.getTime())) { setEventDateError('Indica una fecha válida.'); return }
+      if (date.getTime() > Date.now() + eventFutureToleranceMs) { setEventDateError('La fecha del evento no puede estar en el futuro.'); return }
+      occurredAt = date.toISOString()
+    }
+    const input: ShipmentEventInput = { eventType, ...(occurredAt ? { occurredAt } : {}), ...(eventLocation.trim() ? { location: eventLocation } : {}), ...(eventNotes.trim() ? { notes: eventNotes } : {}) }
+    setEventPending(true)
+    try {
+      const created = await createShipmentEvent(id, input); setEvents(current => orderEvents([...current, created])); setEventLocation(''); setEventNotes(''); setEventAt(toLocalInput(new Date().toISOString())); setEventFormOpen(false)
+    } catch (reason) {
+      setError(errorMessage(reason)); if (reason instanceof ApiClientError) setEventDetails(reason.details)
+    } finally { setEventPending(false) }
   }
 
   const inactiveVehicle = item?.vehicleId && !vehicles.some(vehicle => vehicle.id === item.vehicleId)
@@ -164,5 +190,24 @@ export function ShipmentDetailPage() {
       {item.status === 'in_progress' && <div className="operation-actions"><button type="button" disabled={pending} onClick={() => transition('delivered')}>Marcar entregado</button><button className="danger" type="button" disabled={pending} onClick={() => transition('cancelled')}>Cancelar envío</button></div>}
       {(item.status === 'delivered' || item.status === 'cancelled') && <p className="hint">El envío está en un estado final y ya no puede cambiar.</p>}
     </section>
+    <section className="history-panel" aria-labelledby="shipment-history"><div className="history-heading"><div><p className="eyebrow">Trazabilidad</p><h2 id="shipment-history">Historial de eventos</h2></div><button type="button" aria-expanded={eventFormOpen} onClick={() => setEventFormOpen(open => !open)}>{eventFormOpen ? 'Cerrar formulario' : 'Registrar evento'}</button></div>
+      {eventFormOpen && <form className="catalog-form event-form" onSubmit={registerEvent}>
+        <div className="form-grid"><FormField id="eventType" label="Tipo de evento" error={fieldErrors(eventDetails, 'EventType')}><select id="eventType" value={eventType} onChange={event => setEventType(event.target.value as ShipmentEventInput['eventType'])}><option value="checkpoint">Punto de control</option><option value="incident">Incidencia</option></select></FormField><FormField id="eventAt" label="Fecha y hora" error={[...(fieldErrors(eventDetails, 'OccurredAt') ?? []), ...(eventDateError ? [eventDateError] : [])]}><input id="eventAt" type="datetime-local" value={eventAt} onChange={event => setEventAt(event.target.value)} /></FormField></div>
+        <FormField id="eventLocation" label="Ubicación (opcional)" error={fieldErrors(eventDetails, 'Location')}><input id="eventLocation" maxLength={160} value={eventLocation} onChange={event => setEventLocation(event.target.value)} /></FormField>
+        <FormField id="eventNotes" label="Notas (opcional)" error={fieldErrors(eventDetails, 'Notes')}><textarea id="eventNotes" maxLength={500} value={eventNotes} onChange={event => setEventNotes(event.target.value)} /></FormField>
+        <div className="form-actions"><button type="submit" disabled={eventPending}>{eventPending ? 'Guardando…' : 'Guardar evento'}</button><button className="secondary" type="button" disabled={eventPending} onClick={() => setEventFormOpen(false)}>Cancelar</button></div>
+      </form>}
+      {events.length === 0 ? <Empty>Este envío todavía no tiene eventos registrados.</Empty> : <ol className="timeline">{events.map(shipmentEvent => {
+        const manual = shipmentEvent.eventType === 'checkpoint' || shipmentEvent.eventType === 'incident'
+        return <li key={shipmentEvent.id} className={`${manual ? 'event-manual' : 'event-system'} event-${shipmentEvent.eventType}`}><div className="event-title"><span className="event-type">{eventLabel(shipmentEvent.eventType)}</span>{shipmentEvent.location && <strong>{shipmentEvent.location}</strong>}</div>{shipmentEvent.notes && <p>{shipmentEvent.notes}</p>}<p className="event-meta">{formatDate(shipmentEvent.occurredAt)} · {shipmentEvent.recordedByUsername ?? 'Sistema'} · {manual ? 'Manual' : 'Automático'}</p></li>
+      })}</ol>}
+    </section>
   </>}</section>
 }
+function eventLabel(type: ShipmentEventType) {
+  return { created: 'Creación', assigned: 'Asignación', unassigned: 'Asignación retirada', departed: 'Salida', checkpoint: 'Punto de control', incident: 'Incidencia', delivered: 'Entrega', cancelled: 'Cancelación' }[type]
+}
+function orderEvents(events: ShipmentEvent[]) {
+  return [...events].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt) || left.createdAt.localeCompare(right.createdAt))
+}
+const eventFutureToleranceMs = 2 * 60_000

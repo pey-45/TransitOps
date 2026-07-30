@@ -3,7 +3,7 @@
     "name": "TransitOps API",
     "_postman_id": "b3f2a6e0-5b1a-4a2a-9d3a-transitops0001",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos y operación de envíos con filtros, asignación y ciclo de estados (Sprints 1–4). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
+    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos, operación de envíos e historial de eventos (Sprints 1–5). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
   },
   "auth": {
     "type": "bearer",
@@ -504,6 +504,27 @@
             "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/status", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "status" ] },
             "description": "Transiciones permitidas: planned → in_progress/cancelled e in_progress → delivered/cancelled. Los estados finales no se reabren."
           }
+        },
+        {
+          "name": "Historial del envío",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/events", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "events" ] },
+            "description": "Devuelve el historial inmutable completo, ordenado por occurredAt y createdAt, con el usuario que registró cada evento. Incluye las trazas automáticas de creación, asignación y ciclo de estado."
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] } } ]
+        },
+        {
+          "name": "Registrar evento",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"eventType\": \"checkpoint\",\n  \"occurredAt\": \"2026-07-31T08:00:00Z\",\n  \"location\": \"Punto de control A-6\",\n  \"notes\": \"Paso sin incidencias\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/events", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "shipments", "{{shipmentId}}", "events" ] },
+            "description": "Registra un evento manual asociado al usuario del token. Solo se admiten eventType=checkpoint o eventType=incident: creación, asignación y cambios de estado están reservados al sistema para impedir que el cliente falsee la traza. occurredAt es opcional y, si se omite, se usa la hora actual."
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 201\", () => pm.response.to.have.status(201));" ] } } ]
         }
       ]
     },

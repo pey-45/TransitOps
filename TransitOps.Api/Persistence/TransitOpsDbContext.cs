@@ -10,6 +10,7 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<ShipmentEvent> ShipmentEvents => Set<ShipmentEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,5 +70,20 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
         shipment.HasOne(item => item.Customer).WithMany().HasForeignKey(item => item.CustomerId).OnDelete(DeleteBehavior.Restrict);
         shipment.HasOne<Vehicle>().WithMany().HasForeignKey(item => item.VehicleId).OnDelete(DeleteBehavior.Restrict);
         shipment.HasOne<Driver>().WithMany().HasForeignKey(item => item.DriverId).OnDelete(DeleteBehavior.Restrict);
+
+        var shipmentEvent = modelBuilder.Entity<ShipmentEvent>();
+        shipmentEvent.ToTable("shipment_events");
+        shipmentEvent.HasKey(item => item.Id);
+        shipmentEvent.Property(item => item.EventType).HasConversion<short>();
+        shipmentEvent.Property(item => item.Location).HasMaxLength(160);
+        shipmentEvent.Property(item => item.Notes).HasMaxLength(500);
+        shipmentEvent.HasIndex(item => new { item.ShipmentId, item.OccurredAt });
+        shipmentEvent.HasIndex(item => item.EventType);
+        shipmentEvent.HasOne(item => item.Shipment).WithMany()
+            .HasForeignKey(item => item.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+        shipmentEvent.HasOne(item => item.RecordedByUser).WithMany()
+            .HasForeignKey(item => item.RecordedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -58,6 +58,25 @@ Proyección de matrícula y conductor en PostgreSQL & Integración & Correcto \\
 
 El cierre del Sprint 4 elevó el total a 74 pruebas backend y 19 frontend. Además de las suites, se ejecutó el flujo integrado mediante Nginx, API y PostgreSQL 16: se verificaron la migración, las proyecciones SQL, el aviso de capacidad, el conflicto que identifica el envío ocupante y el bloqueo visual de un estado final. La prueba en navegador descubrió además un caso de fecha inválida que podía dejar el formulario pendiente; se corrigió y quedó cubierto por una prueba de regresión.
 
+\begin{table}[htbp]
+\centering
+\caption{Validación del Sprint 5}
+\begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
+\hline Comportamiento & Capa & Resultado \\ \hline
+Alta y consulta inmutable por envío & Backend/Frontend & Correcto \\
+Actor obtenido del claim \texttt{sub} & Backend/HTTP & Correcto \\
+Normalización UTC y tolerancia de futuro & Backend/Frontend & Correcto \\
+Orden total por ocurrencia y creación & Backend/PostgreSQL & Correcto \\
+Eventos automáticos en la misma operación & Backend/Integración & Correcto \\
+Tipos del sistema bloqueados para el cliente & Backend/HTTP & Correcto \\
+Inserción retroactiva sin recargar historial & Frontend & Correcto \\
+Refresco tras asignación o transición & Frontend & Correcto \\
+\hline
+\end{tabular}
+\end{table}
+
+El Sprint 5 elevó el total a 96 pruebas backend y 24 frontend. Las pruebas de controlador verifican la asociación del evento con el usuario real del token, no solo con un doble; las de servicio comprueban el orden estable, el aislamiento entre envíos y que una transición rechazada no deja rastro. Lint y compilaciones de producción permanecieron correctos.
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.4\textwidth]{imaxes/ci-verde}

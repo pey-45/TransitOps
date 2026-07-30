@@ -37,6 +37,16 @@ export interface ShipmentFilters {
   status?: ShipmentStatus; pickupFrom?: string; pickupTo?: string; customerId?: string
   vehicleId?: string; driverId?: string; page?: number; pageSize?: number
 }
+export type ShipmentEventType = 'created' | 'assigned' | 'unassigned' | 'departed'
+  | 'checkpoint' | 'incident' | 'delivered' | 'cancelled'
+export interface ShipmentEvent {
+  id: string; shipmentId: string; eventType: ShipmentEventType; occurredAt: string
+  location: string | null; notes: string | null; recordedByUserId: string | null
+  recordedByUsername: string | null; createdAt: string
+}
+export interface ShipmentEventInput {
+  eventType: 'checkpoint' | 'incident'; occurredAt?: string; location?: string; notes?: string
+}
 
 export class ApiClientError extends Error {
   readonly code: string
@@ -117,3 +127,5 @@ export const updateShipment = (id: string, input: ShipmentInput) => request<Ship
 export const assignShipment = (id: string, input: { vehicleId: string; driverId: string }) => request<Shipment>(`/api/v1/shipments/${id}/assignment`, { method: 'PUT', body: JSON.stringify(input) })
 export const unassignShipment = (id: string) => request<Shipment>(`/api/v1/shipments/${id}/assignment`, { method: 'DELETE' })
 export const changeShipmentStatus = (id: string, status: ShipmentStatus) => request<Shipment>(`/api/v1/shipments/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) })
+export const listShipmentEvents = (shipmentId: string) => request<ShipmentEvent[]>(`/api/v1/shipments/${shipmentId}/events`)
+export const createShipmentEvent = (shipmentId: string, input: ShipmentEventInput) => request<ShipmentEvent>(`/api/v1/shipments/${shipmentId}/events`, { method: 'POST', body: JSON.stringify(input) })

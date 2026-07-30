@@ -157,6 +157,9 @@ Registrar eventos (salida, punto de control, incidencia, etc.) sobre un envío y
 **Definición de hecho**
 - Se cumplen los criterios de aceptación de RF-11.
 
+**Cierre (2026-07-31)**
+Sprint implementado en una sesión de trabajo. Se añadió el historial inmutable con tipos automáticos y manuales, actor obtenido de la identidad autenticada, fecha de ocurrencia separada de la fecha de registro, migración incremental y API anidada; la SPA incorporó una línea de tiempo cronológica y alta de puntos de control/incidencias sin recargar. La validación final dejó 96 pruebas backend y 24 frontend en verde, además de lint, builds y un flujo Docker/PostgreSQL/navegador correctos, incluido un envío anterior a la migración con historial vacío. Con RF-11 quedan implementados todos los requisitos de prioridad alta.
+
 ## Sprint 6 · Administración e Indicadores
 
 **Objetivo**

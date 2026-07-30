@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Persistence;
+using TransitOps.Api.Security;
 
 namespace TransitOps.Api.Features.Shipments;
 
-public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentService
+public sealed class ShipmentService(
+    TransitOpsDbContext dbContext,
+    ICurrentUser currentUser) : IShipmentService
 {
     public async Task<ShipmentPageResponse> GetAllAsync(ListShipmentsQuery query, CancellationToken cancellationToken)
     {
@@ -71,6 +74,7 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
             Status = ShipmentStatus.Planned
         };
         dbContext.Shipments.Add(item);
+        RecordAutomatic(item.Id, ShipmentEventType.Created);
         await dbContext.SaveChangesAsync(cancellationToken);
         if (item.CustomerId.HasValue) await dbContext.Entry(item).Reference(value => value.Customer).LoadAsync(cancellationToken);
         return Map(item);
@@ -110,6 +114,10 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
         item.VehicleId = request.VehicleId.Value;
         item.DriverId = request.DriverId.Value;
         item.UpdatedAt = DateTime.UtcNow;
+        RecordAutomatic(
+            item.Id,
+            ShipmentEventType.Assigned,
+            $"Vehículo {vehicle.LicensePlate} · Conductor {driver.Name}");
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var warning = vehicle.LoadCapacity.HasValue && item.EstimatedLoad.HasValue &&
@@ -127,6 +135,7 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
         item.VehicleId = null;
         item.DriverId = null;
         item.UpdatedAt = DateTime.UtcNow;
+        RecordAutomatic(item.Id, ShipmentEventType.Unassigned);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Map(item);
     }
@@ -135,13 +144,14 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
     {
         var item = await Existing(id, cancellationToken);
         var target = ShipmentStatuses.Parse(request.Status);
-        EnsureTransition(item, target);
+        var eventType = EnsureTransition(item, target);
 
         var now = DateTime.UtcNow;
         if (target == ShipmentStatus.InProgress) item.ActualPickupAt = now;
         if (target == ShipmentStatus.Delivered) item.ActualDeliveryAt = now;
         item.Status = target;
         item.UpdatedAt = now;
+        RecordAutomatic(item.Id, eventType, occurredAt: now);
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await Detail(id, cancellationToken))!;
     }
@@ -214,7 +224,7 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
             throw new ApiException(409, "shipment_not_assignable", "Solo se puede asignar mientras el envío está planificado.");
     }
 
-    private static void EnsureTransition(Shipment item, ShipmentStatus target)
+    private static ShipmentEventType EnsureTransition(Shipment item, ShipmentStatus target)
     {
         if (item.Status is ShipmentStatus.Delivered or ShipmentStatus.Cancelled)
             throw new ApiException(409, "shipment_status_terminal", "Un envío entregado o cancelado no puede cambiar de estado.");
@@ -222,16 +232,14 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
             (!item.VehicleId.HasValue || !item.DriverId.HasValue))
             throw new ApiException(409, "shipment_assignment_required", "Para poner el envío en curso hay que asignar vehículo y conductor.");
 
-        var valid = (item.Status, target) switch
+        return (item.Status, target) switch
         {
-            (ShipmentStatus.Planned, ShipmentStatus.InProgress) => true,
-            (ShipmentStatus.Planned, ShipmentStatus.Cancelled) => true,
-            (ShipmentStatus.InProgress, ShipmentStatus.Delivered) => true,
-            (ShipmentStatus.InProgress, ShipmentStatus.Cancelled) => true,
-            _ => false
+            (ShipmentStatus.Planned, ShipmentStatus.InProgress) => ShipmentEventType.Departed,
+            (ShipmentStatus.Planned, ShipmentStatus.Cancelled) => ShipmentEventType.Cancelled,
+            (ShipmentStatus.InProgress, ShipmentStatus.Delivered) => ShipmentEventType.Delivered,
+            (ShipmentStatus.InProgress, ShipmentStatus.Cancelled) => ShipmentEventType.Cancelled,
+            _ => throw new ApiException(409, "shipment_status_transition_invalid", "La transición de estado solicitada no es válida.")
         };
-        if (!valid)
-            throw new ApiException(409, "shipment_status_transition_invalid", "La transición de estado solicitada no es válida.");
     }
 
     private async Task<ShipmentResponse?> Detail(Guid id, CancellationToken cancellationToken)
@@ -256,6 +264,20 @@ public sealed class ShipmentService(TransitOpsDbContext dbContext) : IShipmentSe
         ?? throw new ApiException(404, "shipment_not_found", "El envío no existe.");
 
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private void RecordAutomatic(
+        Guid shipmentId,
+        ShipmentEventType eventType,
+        string? notes = null,
+        DateTime? occurredAt = null) =>
+        dbContext.ShipmentEvents.Add(new ShipmentEvent
+        {
+            ShipmentId = shipmentId,
+            EventType = eventType,
+            OccurredAt = occurredAt ?? DateTime.UtcNow,
+            Notes = notes,
+            RecordedByUserId = currentUser.Id
+        });
 
     private static string FormatLoad(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 

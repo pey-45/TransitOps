@@ -102,10 +102,34 @@ La migración \texttt{AddShipmentOperation} añadió las dos fechas reales y una
 \end{figure}
 
 \clearpage
-\section{Sprints 5 a 8}
-\subsection*{Sprint 5 --- Eventos}
-% TODO(Sprint 5)
-Pendiente de completar la trazabilidad de sucesos e incidencias.
+\section{Sprint 5: trazabilidad de eventos}
+
+El quinto incremento completó el historial inmutable de cada envío. La entidad \texttt{ShipmentEvent} distingue la fecha en que sucedió un hecho (\texttt{OccurredAt}) de la fecha en que se registró (\texttt{CreatedAt}). Así, una incidencia puede anotarse más tarde sin falsear su hora real. El backend crea automáticamente los eventos de creación, asignación, retirada de asignación, salida, entrega y cancelación; el cliente HTTP solo puede solicitar puntos de control e incidencias, lo que impide insertar una entrega ficticia en la traza.
+
+RN-09 introdujo por primera vez la identidad del actor en la capa de aplicación. El JWT conserva el identificador en el claim \texttt{sub}; en vez de repetir su lectura en cada controlador o acoplar los servicios a \texttt{HttpContext}, se definió la abstracción mínima \texttt{ICurrentUser}. Su implementación web usa \texttt{IHttpContextAccessor} y los tests la sustituyen por un doble trivial. La alternativa de pasar un \texttt{Guid} por todas las firmas era explícita, pero habría propagado una preocupación transversal por cada acción de envío; leer directamente el contexto dentro del servicio habría impedido aislarlo en pruebas.
+
+Los eventos automáticos se añaden al mismo contexto antes del único \texttt{SaveChangesAsync} de la operación. En consecuencia, la modificación del envío y su traza se confirman en la misma transacción implícita: no puede quedar una salida sin evento ni un evento de una transición rechazada. Se prefirieron llamadas explícitas a un helper privado frente a eventos de dominio, interceptores o un bus, porque el tamaño del dominio no justifica ocultar este efecto lateral.
+
+La API representa el historial como subrecurso \texttt{/shipments/\{id\}/events}, sin edición, borrado ni paginación. La consulta ordena por fecha de ocurrencia y desempata por fecha de creación, proyectando también el nombre de usuario. La migración \texttt{AddShipmentEvents} añadió un índice compuesto para ese patrón de lectura y un índice por tipo que podrá reutilizar el resumen estadístico del Sprint 6.
+
+La SPA integra una línea de tiempo en el detalle. Los eventos automáticos forman la espina dorsal y los manuales se diferencian visualmente; las incidencias reciben énfasis rojo. El formulario permite indicar una fecha pasada, transforma \texttt{datetime-local} a UTC y rechaza fechas futuras con dos minutos de tolerancia. Tras el alta inserta la respuesta en su posición cronológica sin recargar; tras una acción operativa vuelve a consultar el historial para incorporar el evento automático.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/historial-eventos-sprint5}
+\caption{Línea de tiempo con eventos automáticos y manuales del Sprint 5}
+\label{fig:historial-s5}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.78\textwidth]{imaxes/registro-evento-sprint5}
+\caption{Formulario de registro de un evento manual}
+\label{fig:registro-evento-s5}
+\end{figure}
+
+\clearpage
+\section{Sprints 6 a 8}
 \subsection*{Sprint 6 --- Administración y resumen}
 % TODO(Sprint 6)
 Pendiente de completar usuarios, contraseña propia y estadísticas.

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
-import type { Shipment } from './api/client'
+import type { Shipment, ShipmentEvent } from './api/client'
 import { AuthProvider } from './auth/AuthContext'
 
 const session = {
@@ -131,6 +131,7 @@ describe('envíos', () => {
   }
   const vehicles = [{ id: 'vehicle-1', licensePlate: '1234 ABC', internalCode: null, brand: null, model: null, loadCapacity: 10000, isActive: true, createdAt: '2026-07-26', updatedAt: '2026-07-26' }]
   const drivers = [{ id: 'driver-1', name: 'Ana', licenseNumber: 'L-1', employeeCode: null, contactDetails: null, isActive: true, createdAt: '2026-07-26', updatedAt: '2026-07-26' }]
+  const createdEvent: ShipmentEvent = { id: 'event-created', shipmentId: 'shipment-1', eventType: 'created', occurredAt: '2026-07-26T00:00:00Z', location: null, notes: null, recordedByUserId: null, recordedByUsername: null, createdAt: '2026-07-26T00:00:00Z' }
 
   function response(data: unknown, ok = true, status = 200) { return Promise.resolve({ ok, status, json: async () => data }) }
   function listMock(totalPages = 2) {
@@ -142,9 +143,11 @@ describe('envíos', () => {
       throw new Error(`Unexpected URL ${url}`)
     })
   }
-  function operationMock(current = shipment, saved = current) {
+  function operationMock(current = shipment, saved = current, history: ShipmentEvent[] = [], manualCreated?: ShipmentEvent) {
     return vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      if (url.endsWith('/api/v1/shipments/shipment-1/events') && init?.method === 'POST') return response({ data: manualCreated ?? createdEvent, requestId: 'event-created' }, true, 201)
+      if (url.endsWith('/api/v1/shipments/shipment-1/events') && !init?.method) return response({ data: history, requestId: 'events' })
       if (url.endsWith('/api/v1/shipments/shipment-1/assignment')) return response({ data: saved, requestId: 'assignment' })
       if (url.endsWith('/api/v1/shipments/shipment-1/status')) return response({ data: saved, requestId: 'status' })
       if (url.endsWith('/api/v1/shipments/shipment-1') && !init?.method) return response({ data: current, requestId: 'detail' })
@@ -179,6 +182,7 @@ describe('envíos', () => {
     localStorage.setItem('transitops.session', JSON.stringify(session)); const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input); if (url.endsWith('/customers')) return response({ data: [], requestId: 'customers' })
       if (url.endsWith('/shipments') && init?.method === 'POST') return response({ data: shipment, requestId: 'created' }, true, 201)
+      if (url.endsWith('/shipments/shipment-1/events')) return response({ data: [], requestId: 'events' })
       if (url.endsWith('/shipments/shipment-1')) return response({ data: shipment, requestId: 'detail' })
       if (url.endsWith('/vehicles')) return response({ data: [], requestId: 'vehicles' })
       if (url.endsWith('/drivers')) return response({ data: [], requestId: 'drivers' })
@@ -244,5 +248,40 @@ describe('envíos', () => {
     localStorage.setItem('transitops.session', JSON.stringify(session)); const fetchMock = operationMock(inProgress, delivered); vi.stubGlobal('fetch', fetchMock); renderAt('/envios/shipment-1'); const user = userEvent.setup(); const button = await screen.findByRole('button', { name: 'Marcar entregado' })
     await user.click(button); expect(fetchMock.mock.calls.filter(call => String(call[0]).endsWith('/status'))).toHaveLength(0)
     await user.click(button); await waitFor(() => expect(fetchMock.mock.calls.filter(call => String(call[0]).endsWith('/status'))).toHaveLength(1)); const statusCall = fetchMock.mock.calls.find(call => String(call[0]).endsWith('/status')); expect(statusCall?.[1]?.method).toBe('POST'); expect(JSON.parse(String(statusCall?.[1]?.body))).toEqual({ status: 'delivered' }); expect(confirm).toHaveBeenCalledTimes(2)
+  })
+
+  it('renders the chronological event timeline with user and system actors', async () => {
+    const incident: ShipmentEvent = { ...createdEvent, id: 'event-incident', eventType: 'incident', occurredAt: '2026-07-27T10:00:00Z', notes: 'Retraso por avería', recordedByUserId: 'user-1', recordedByUsername: 'ana', createdAt: '2026-07-27T10:05:00Z' }
+    localStorage.setItem('transitops.session', JSON.stringify(session)); vi.stubGlobal('fetch', operationMock(shipment, shipment, [createdEvent, incident])); renderAt('/envios/shipment-1')
+    expect(await screen.findByRole('heading', { name: 'Historial de eventos' })).toBeInTheDocument(); expect(screen.getByText('Creación')).toBeInTheDocument(); expect(screen.getByText('Incidencia')).toBeInTheDocument()
+    expect(screen.getByText(/Sistema · Automático/)).toBeInTheDocument(); expect(screen.getByText(/ana · Manual/)).toBeInTheDocument(); expect(screen.getByText('Retraso por avería')).toBeInTheDocument()
+  })
+
+  it('registers a manual event with ISO time and omitted empty fields without reloading history', async () => {
+    const manual: ShipmentEvent = { ...createdEvent, id: 'event-manual', eventType: 'incident', occurredAt: new Date().toISOString(), recordedByUserId: 'user-1', recordedByUsername: 'admin', createdAt: new Date().toISOString() }
+    localStorage.setItem('transitops.session', JSON.stringify(session)); const fetchMock = operationMock(shipment, shipment, [createdEvent], manual); vi.stubGlobal('fetch', fetchMock); renderAt('/envios/shipment-1'); const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Registrar evento' })); await user.selectOptions(screen.getByLabelText('Tipo de evento'), 'incident'); const localTime = (screen.getByLabelText('Fecha y hora') as HTMLInputElement).value; await user.click(screen.getByRole('button', { name: 'Guardar evento' }))
+    expect(await screen.findByText('Incidencia')).toBeInTheDocument(); const post = fetchMock.mock.calls.find(call => String(call[0]).endsWith('/events') && call[1]?.method === 'POST'); const body = JSON.parse(String(post?.[1]?.body))
+    expect(body).toEqual({ eventType: 'incident', occurredAt: new Date(localTime).toISOString() }); expect(fetchMock.mock.calls.filter(call => String(call[0]).endsWith('/events') && !call[1]?.method)).toHaveLength(1)
+  })
+
+  it('inserts a backdated manual event in its chronological position', async () => {
+    const earlier: ShipmentEvent = { ...createdEvent, id: 'event-earlier', eventType: 'checkpoint', occurredAt: '2026-07-25T10:00:00Z', location: 'León', recordedByUserId: 'user-1', recordedByUsername: 'admin', createdAt: '2026-07-30T10:00:00Z' }
+    localStorage.setItem('transitops.session', JSON.stringify(session)); vi.stubGlobal('fetch', operationMock(shipment, shipment, [createdEvent], earlier)); renderAt('/envios/shipment-1'); const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Registrar evento' })); fireEvent.change(screen.getByLabelText('Fecha y hora'), { target: { value: '2026-07-25T10:00' } }); await user.click(screen.getByRole('button', { name: 'Guardar evento' }))
+    await screen.findByText('León'); const entries = screen.getAllByRole('listitem'); expect(entries[0]).toHaveTextContent('Punto de control'); expect(entries[1]).toHaveTextContent('Creación')
+  })
+
+  it('blocks a future event locally without calling the API', async () => {
+    localStorage.setItem('transitops.session', JSON.stringify(session)); const fetchMock = operationMock(); vi.stubGlobal('fetch', fetchMock); renderAt('/envios/shipment-1'); const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Registrar evento' })); const future = new Date(Date.now() + 24 * 60 * 60_000); const localFuture = new Date(future.getTime() - future.getTimezoneOffset() * 60_000).toISOString().slice(0, 16); fireEvent.change(screen.getByLabelText('Fecha y hora'), { target: { value: localFuture } }); await user.click(screen.getByRole('button', { name: 'Guardar evento' }))
+    expect(screen.getByText('La fecha del evento no puede estar en el futuro.')).toBeInTheDocument(); expect(fetchMock.mock.calls.filter(call => String(call[0]).endsWith('/events') && call[1]?.method === 'POST')).toHaveLength(0)
+  })
+
+  it('refreshes automatic events after an operation action', async () => {
+    const assigned: Shipment = { ...shipment, vehicleId: 'vehicle-1', driverId: 'driver-1', vehiclePlate: '1234 ABC', driverName: 'Ana' }
+    localStorage.setItem('transitops.session', JSON.stringify(session)); const fetchMock = operationMock(shipment, assigned, [createdEvent]); vi.stubGlobal('fetch', fetchMock); renderAt('/envios/shipment-1'); const user = userEvent.setup()
+    await user.selectOptions(await screen.findByLabelText('Vehículo'), 'vehicle-1'); await user.selectOptions(screen.getByLabelText('Conductor'), 'driver-1'); await user.click(screen.getByRole('button', { name: 'Asignar' }))
+    await waitFor(() => expect(fetchMock.mock.calls.filter(call => String(call[0]).endsWith('/events') && !call[1]?.method)).toHaveLength(2))
   })
 })
