@@ -1,0 +1,66 @@
+import { expect, type APIRequestContext, type APIResponse, type Page } from '@playwright/test'
+
+export const admin = {
+  username: 'e2e.admin',
+  email: 'e2e.admin@transitops.test',
+  password: 'E2eAdminPass!2026',
+}
+
+interface Envelope<T> {
+  data: T
+}
+
+interface LoginData {
+  accessToken?: string
+}
+
+interface UserData {
+  id: string
+  username: string
+}
+
+export function unique(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+export async function loginThroughUi(page: Page, username: string, password: string) {
+  await page.goto('/login')
+  await page.getByLabel('Usuario').fill(username)
+  await page.getByLabel('Contraseña').fill(password)
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
+  await expect(page.getByRole('heading', { name: `Hola, ${username}` })).toBeVisible()
+}
+
+export async function loginApi(request: APIRequestContext, username: string, password: string) {
+  const response = await request.post('/api/v1/auth/login', { data: { username, password } })
+  await expectApi(response, 200)
+  const payload = await response.json() as Envelope<LoginData>
+  return payload.data.accessToken
+    ? { Authorization: `Bearer ${payload.data.accessToken}` }
+    : {}
+}
+
+export async function createOperatorApi(
+  request: APIRequestContext,
+  username: string,
+  password: string,
+) {
+  const headers = await loginApi(request, admin.username, admin.password)
+  const response = await request.post('/api/v1/users', {
+    headers,
+    data: {
+      username,
+      email: `${username}@transitops.test`,
+      password,
+      role: 'operator',
+    },
+  })
+  await expectApi(response, 201)
+  return (await response.json() as Envelope<UserData>).data
+}
+
+export async function expectApi(response: APIResponse, status: number) {
+  if (response.status() !== status) {
+    throw new Error(`API ${response.url()} devolvió ${response.status()}: ${await response.text()}`)
+  }
+}

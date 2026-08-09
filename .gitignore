@@ -386,3 +386,5 @@ override.tf.json
 
 # TransitOps active frontend build output
 frontend/dist/
+frontend/playwright-report/
+frontend/test-results/

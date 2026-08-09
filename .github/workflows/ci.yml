@@ -49,3 +49,45 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run test
+
+  e2e:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: transitops_e2e
+      POSTGRES_USER: transitops
+      POSTGRES_PASSWORD: transitops_e2e
+      POSTGRES_PORT: 5433
+      JWT_SIGNING_KEY: transitops-e2e-signing-key-with-at-least-32-characters
+      BOOTSTRAP_TOKEN: transitops-bootstrap-local-only
+      E2E_BOOTSTRAP_TOKEN: transitops-bootstrap-local-only
+      E2E_BASE_URL: http://127.0.0.1:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - run: docker compose up --build --detach
+      - name: Esperar a la aplicación
+        run: |
+          timeout 120 bash -c 'until curl --fail --silent http://127.0.0.1:8080/api/v1/health >/dev/null && curl --fail --silent http://127.0.0.1:5173 >/dev/null; do sleep 2; done'
+      - working-directory: frontend
+        run: npm run test:e2e
+      - name: Diagnóstico del stack
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Trazas de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: frontend/test-results/
+          if-no-files-found: ignore
+      - if: always()
+        run: docker compose down --volumes
