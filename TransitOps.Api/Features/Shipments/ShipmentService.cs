@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Persistence;
@@ -118,7 +119,17 @@ public sealed class ShipmentService(
             item.Id,
             ShipmentEventType.Assigned,
             $"Vehículo {vehicle.LicensePlate} · Conductor {driver.Name}");
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+        {
+            var conflict = MapAssignmentConflict(exception);
+            if (conflict is null)
+                throw;
+            throw conflict;
+        }
 
         var warning = vehicle.LoadCapacity.HasValue && item.EstimatedLoad.HasValue &&
                       vehicle.LoadCapacity.Value < item.EstimatedLoad.Value
@@ -216,6 +227,25 @@ public sealed class ShipmentService(
             .Select(item => item.Reference).FirstOrDefaultAsync(cancellationToken);
         if (conflict is not null)
             throw new ApiException(409, "shipment_driver_busy", $"El conductor ya está asignado al envío {conflict}.");
+    }
+
+    private static ApiException? MapAssignmentConflict(DbUpdateException exception)
+    {
+        if (exception.InnerException is not PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgres)
+            return null;
+
+        return postgres.ConstraintName switch
+        {
+            TransitOpsDbContext.OpenShipmentVehicleIndex => new ApiException(
+                409,
+                "shipment_vehicle_busy",
+                "El vehículo ya está asignado a otro envío."),
+            TransitOpsDbContext.OpenShipmentDriverIndex => new ApiException(
+                409,
+                "shipment_driver_busy",
+                "El conductor ya está asignado a otro envío."),
+            _ => null
+        };
     }
 
     private static void EnsureAssignable(Shipment item)

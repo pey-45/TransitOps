@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Auth;
@@ -11,6 +12,8 @@ public sealed class UserService(
     TransitOpsDbContext dbContext,
     IPasswordHasher<AppUser> passwordHasher) : IUserService
 {
+    private const long LastAdminLockKey = 2026080701;
+
     public async Task<IReadOnlyList<UserResponse>> GetAllAsync(
         ListUsersQuery query,
         CancellationToken cancellationToken)
@@ -68,12 +71,15 @@ public sealed class UserService(
         if (user.Role == role)
             return Map(user);
 
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
         if (role == UserRole.Operator)
             await EnsureNotLastAdmin(user, cancellationToken);
 
         user.Role = role;
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+            await transaction.CommitAsync(cancellationToken);
         return Map(user);
     }
 
@@ -88,12 +94,15 @@ public sealed class UserService(
         if (user.IsActive == isActive)
             return Map(user);
 
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
         if (!isActive)
             await EnsureNotLastAdmin(user, cancellationToken);
 
         user.IsActive = isActive;
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+            await transaction.CommitAsync(cancellationToken);
         return Map(user);
     }
 
@@ -106,6 +115,13 @@ public sealed class UserService(
         if (user.Role != UserRole.Admin || !user.IsActive)
             return;
 
+        if (dbContext.Database.IsRelational())
+        {
+            await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock({LastAdminLockKey})",
+                cancellationToken);
+        }
+
         if (!await dbContext.AppUsers.AnyAsync(
                 item => item.Id != user.Id && item.IsActive && item.Role == UserRole.Admin,
                 cancellationToken))
@@ -116,6 +132,11 @@ public sealed class UserService(
                 "No se puede dejar la aplicación sin ningún administrador activo.");
         }
     }
+
+    private async Task<IDbContextTransaction?> BeginTransactionAsync(CancellationToken cancellationToken) =>
+        dbContext.Database.IsRelational()
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
 
     private static UserResponse Map(AppUser user) => new(
         user.Id,

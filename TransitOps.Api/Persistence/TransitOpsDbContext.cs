@@ -5,6 +5,9 @@ namespace TransitOps.Api.Persistence;
 
 public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> options) : DbContext(options)
 {
+    public const string OpenShipmentVehicleIndex = "UX_shipments_open_VehicleId";
+    public const string OpenShipmentDriverIndex = "UX_shipments_open_DriverId";
+
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Driver> Drivers => Set<Driver>();
@@ -67,6 +70,14 @@ public sealed class TransitOpsDbContext(DbContextOptions<TransitOpsDbContext> op
         shipment.HasIndex(item => item.Reference).IsUnique();
         shipment.HasIndex(item => item.Status);
         shipment.HasIndex(item => item.PlannedPickupAt);
+        shipment.HasIndex(item => item.VehicleId)
+            .IsUnique()
+            .HasDatabaseName(OpenShipmentVehicleIndex)
+            .HasFilter("\"VehicleId\" IS NOT NULL AND \"Status\" IN (0, 1)");
+        shipment.HasIndex(item => item.DriverId)
+            .IsUnique()
+            .HasDatabaseName(OpenShipmentDriverIndex)
+            .HasFilter("\"DriverId\" IS NOT NULL AND \"Status\" IN (0, 1)");
         shipment.HasOne(item => item.Customer).WithMany().HasForeignKey(item => item.CustomerId).OnDelete(DeleteBehavior.Restrict);
         shipment.HasOne<Vehicle>().WithMany().HasForeignKey(item => item.VehicleId).OnDelete(DeleteBehavior.Restrict);
         shipment.HasOne<Driver>().WithMany().HasForeignKey(item => item.DriverId).OnDelete(DeleteBehavior.Restrict);

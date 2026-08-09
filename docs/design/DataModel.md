@@ -92,7 +92,8 @@ erDiagram
 
 - La entrega prevista no puede preceder a la recogida (RN-06).
 - Solo recursos activos pueden participar en nuevas asignaciones (RN-03), sin doble reserva en envíos no terminados (RN-04).
-- RN-04 se comprueba en el servicio mediante una consulta sobre otros envíos `Planned` o `InProgress`, excluyendo el envío actual. No se usa un índice único filtrado: la regla es operativa y puede evolucionar, y el volumen previsto no justifica convertirla todavía en una restricción PostgreSQL. La ventana entre comprobación y escritura bajo concurrencia simultánea queda registrada para revisión en el Sprint 7.
+- RN-04 se comprueba primero en el servicio mediante una consulta sobre otros envíos `Planned` o `InProgress`, excluyendo el envío actual, para devolver un conflicto descriptivo. PostgreSQL garantiza además la regla bajo concurrencia mediante dos índices únicos parciales: uno para `VehicleId` y otro para `DriverId`, ambos limitados a estados abiertos y valores no nulos. Si dos asignaciones superan simultáneamente la comprobación previa, la violación `23505` se traduce al mismo contrato 409.
+- RN-12 se protege en el servicio y, para PostgreSQL, serializa las operaciones que podrían eliminar el último administrador activo con un `pg_advisory_xact_lock` mantenido dentro de la transacción. Así, dos bajas o cambios de rol concurrentes vuelven a evaluar la regla en orden y no pueden dejar la aplicación sin administradores.
 - La capacidad insuficiente genera aviso, no bloqueo (RN-05).
 - El envío solo pasa a curso con vehículo y conductor, y un estado terminal no se revierte (RN-07/RN-08).
 - Las bajas de catálogos y usuarios son lógicas y no eliminan historial (RN-15/RNF-03). El único borrado en cascada modelado es `Shipment` → `ShipmentEvent`; la API no permite borrar envíos y, si esa política cambiase, no quedarían eventos huérfanos.
