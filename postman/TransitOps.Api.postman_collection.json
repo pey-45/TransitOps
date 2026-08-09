@@ -3,14 +3,9 @@
     "name": "TransitOps API",
     "_postman_id": "b3f2a6e0-5b1a-4a2a-9d3a-transitops0001",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación, catálogos, operación y trazabilidad de envíos, administración de usuarios e indicadores (Sprints 1–6). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
+    "description": "Colección de la API de TransitOps (ASP.NET Core, base path /api/v1). Cubre autenticación mediante cookie de mismo origen, catálogos, operación y trazabilidad de envíos, administración de usuarios e indicadores (Sprints 1–7). Todas las respuestas siguen el envoltorio { \"data\": ..., \"requestId\": ... } salvo /health."
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      { "key": "token", "value": "{{accessToken}}", "type": "string" }
-    ]
-  },
+  "auth": { "type": "noauth" },
   "event": [
     {
       "listen": "prerequest",
@@ -30,7 +25,6 @@
     { "key": "bootstrapUsername", "value": "admin", "type": "string" },
     { "key": "bootstrapEmail", "value": "admin@transitops.local", "type": "string" },
     { "key": "bootstrapPassword", "value": "Admin!12345678", "type": "string" },
-    { "key": "accessToken", "value": "", "type": "string" },
     { "key": "runId", "value": "", "type": "string" },
     { "key": "vehicleId", "value": "", "type": "string" },
     { "key": "driverId", "value": "", "type": "string" },
@@ -127,7 +121,7 @@
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "v1", "auth", "login" ]
             },
-            "description": "Autentica y devuelve un JWT en data.accessToken. Se guarda automáticamente en la variable de colección accessToken para el resto de peticiones (Authorization: Bearer {{accessToken}})."
+            "description": "Autentica, devuelve el usuario y la caducidad en el cuerpo, y establece la cookie HttpOnly transitops_session. Postman conserva la cookie en su jar y la envía automáticamente en las peticiones posteriores."
           },
           "event": [
             {
@@ -137,11 +131,17 @@
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
                   "const payload = pm.response.json();",
-                  "pm.test(\"Devuelve accessToken Bearer\", () => {",
-                  "  pm.expect(payload.data.tokenType).to.eql(\"Bearer\");",
-                  "  pm.expect(payload.data.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "pm.test(\"Devuelve usuario y caducidad sin exponer el JWT\", () => {",
+                  "  pm.expect(payload.data.user.username).to.eql(pm.variables.get(\"bootstrapUsername\"));",
+                  "  pm.expect(payload.data.expiresAt).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(payload.data).not.to.have.property(\"accessToken\");",
                   "});",
-                  "pm.collectionVariables.set(\"accessToken\", payload.data.accessToken);"
+                  "pm.test(\"Establece la cookie HttpOnly de mismo origen\", () => {",
+                  "  const setCookie = (pm.response.headers.get(\"Set-Cookie\") || \"\").toLowerCase();",
+                  "  pm.expect(setCookie).to.include(\"transitops_session=\");",
+                  "  pm.expect(setCookie).to.include(\"httponly\");",
+                  "  pm.expect(setCookie).to.include(\"samesite=strict\");",
+                  "});"
                 ]
               }
             }
@@ -157,7 +157,7 @@
               "host": [ "{{baseUrl}}" ],
               "path": [ "api", "v1", "auth", "session" ]
             },
-            "description": "Requiere Bearer con policy 'operational' (admin u operator). Devuelve data.username y data.role."
+            "description": "Requiere la cookie de sesión con policy 'operational' (admin u operator). Devuelve data.username y data.role."
           },
           "event": [
             {
@@ -203,6 +203,38 @@
           ]
         },
         {
+          "name": "Login con Contraseña Temporal",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrapUsername}}\",\n  \"password\": \"{{temporaryPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "auth", "login" ]
+            },
+            "description": "Renueva la cookie después del cambio de contraseña, que invalida inmediatamente la sesión anterior."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Restaurar Contraseña Propia",
           "request": {
             "method": "POST",
@@ -220,6 +252,38 @@
               "path": [ "api", "v1", "auth", "password" ]
             },
             "description": "Restaura la contraseña local después de ejecutar la petición anterior."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restablecer Sesión Original",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrapUsername}}\",\n  \"password\": \"{{bootstrapPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "auth", "login" ]
+            },
+            "description": "Obtiene una sesión válida después de restaurar la contraseña original para continuar el recorrido de la colección."
           },
           "event": [
             {

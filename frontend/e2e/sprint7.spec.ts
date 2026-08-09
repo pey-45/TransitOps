@@ -119,10 +119,9 @@ test('Flujo 3 · un operador ejecuta un envío de principio a fin', async ({ pag
 test('Flujo 4 · la baja impide el acceso y conserva el historial', async ({ page, request }) => {
   const username = unique('inactive')
   await createOperatorApi(request, username, initialPassword)
-  const operatorHeaders = await loginApi(request, username, initialPassword)
+  await loginApi(request, username, initialPassword)
   const reference = unique('HISTORY').toUpperCase()
   const shipmentResponse = await request.post('/api/v1/shipments', {
-    headers: operatorHeaders,
     data: {
       reference,
       origin: 'Bilbao',

@@ -10,10 +10,6 @@ interface Envelope<T> {
   data: T
 }
 
-interface LoginData {
-  accessToken?: string
-}
-
 interface UserData {
   id: string
   username: string
@@ -34,10 +30,6 @@ export async function loginThroughUi(page: Page, username: string, password: str
 export async function loginApi(request: APIRequestContext, username: string, password: string) {
   const response = await request.post('/api/v1/auth/login', { data: { username, password } })
   await expectApi(response, 200)
-  const payload = await response.json() as Envelope<LoginData>
-  return payload.data.accessToken
-    ? { Authorization: `Bearer ${payload.data.accessToken}` }
-    : {}
 }
 
 export async function createOperatorApi(
@@ -45,9 +37,8 @@ export async function createOperatorApi(
   username: string,
   password: string,
 ) {
-  const headers = await loginApi(request, admin.username, admin.password)
+  await loginApi(request, admin.username, admin.password)
   const response = await request.post('/api/v1/users', {
-    headers,
     data: {
       username,
       email: `${username}@transitops.test`,
