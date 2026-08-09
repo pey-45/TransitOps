@@ -1,0 +1,14 @@
+[Unit]
+Description=Actualizar el despliegue de TransitOps
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/transitops
+ExecStart=/opt/transitops/scripts/deploy.sh
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target

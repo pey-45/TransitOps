@@ -10,9 +10,11 @@ Es el sprint más grande del proyecto con diferencia. Los seis anteriores se cer
 
 | Tema | Decisión |
 | --- | --- |
-| Destino de despliegue | VM Ubuntu Server con Docker Compose en la máquina del autor (Hyper-V). Modo puente para acceso LAN (RNF-05) |
+| Destino de despliegue | VM Ubuntu Server con Docker Compose en la máquina del autor (Hyper-V) |
 | Evidencia de despliegue | **Vídeo**, no servicio permanentemente vivo. Solo tiene que funcionar el rato de grabarlo |
 | Entrada pública y TLS | **Túnel de Cloudflare** (`cloudflared` como contenedor). Termina el TLS, así que **Caddy se elimina**: sin ACME, sin volumen de certificados y sin puertos que redirigir en el router |
+| Superficie de red | **Ninguna. El compose de despliegue no publica ningún puerto**: el túnel es el único camino de acceso y el diagnóstico se hace desde dentro de la VM por SSH. Sustituye a la idea previa de modo puente para LAN, que el túnel cumple mejor (RNF-05 pide «desde cualquier ordenador de la oficina con conexión a internet», que es literalmente una URL HTTPS pública) |
+| Cookie `Secure` | **Siempre activo** en el entorno desplegado, condicionado al **entorno** (desarrollo vs desplegado) y nunca al esquema de la petición. Un login por HTTP falla cerrado en lugar de crear una sesión insegura |
 | CI | GitHub Actions, runners `ubuntu-latest`. Ya existe y está verde |
 | CD | **Basado en pull**: Actions publica imágenes en GHCR; la VM hace `pull`. Actions no puede alcanzar la VM tras el NAT, y la existencia de la imagen *es* la prueba de que CI pasó |
 | Repositorio y paquetes | **Ambos públicos.** La VM baja imágenes sin credenciales y no hay `docker login`. Descarta definitivamente los runners autoalojados |
@@ -113,9 +115,10 @@ El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de
 **Objetivo.** La aplicación corriendo en la VM mediante un procedimiento repetible, con la entrega automatizada hasta el registro.
 
 - **`docker-compose.deploy.yml`** nuevo y **autocontenido** (no un override del actual): **cuatro servicios** — `db`, `api`, `web` y `cloudflared` — con `image:` desde GHCR en lugar de `build:`. Mezclar `build:` e `image:` en Compose tiene semántica sorprendente; un fichero aparte se documenta y se defiende mejor.
-  - **No publicar el puerto de PostgreSQL.** Hoy `docker-compose.yml` lo expone en `POSTGRES_PORT` para desarrollo; en la VM la base queda accesible solo desde la red interna de Compose. Endurecimiento de RNF-02 a coste cero.
-  - `web` publica 80 en la VM para el acceso LAN; `cloudflared` lo alcanza por nombre de servicio en la red interna.
-- **`cloudflared` como terminador TLS.** Conecta hacia fuera, así que **no hay que redirigir ningún puerto en el router**. Un *quick tunnel* da un `*.trycloudflare.com` efímero sin cuenta ni dominio, suficiente porque el despliegue no necesita sobrevivir a la grabación. Sustituye a Caddy: sin ACME, sin volumen de certificados y sin límites de emisión.
+  - **Ningún puerto publicado, tampoco el de PostgreSQL.** Hoy `docker-compose.yml` expone la base en `POSTGRES_PORT` para desarrollo; en la VM no se publica nada en absoluto: `db`, `api` y `web` hablan solo por la red interna de Compose y `cloudflared` conecta hacia fuera. Sin superficie HTTP externa que quede a medias.
+  - **Diagnóstico desde dentro de la VM** por SSH: `docker compose exec -T web wget -qO- http://127.0.0.1/api/v1/health` y `docker compose ps`. Aísla el fallo — si el stack responde dentro y el túnel no, el problema está en el túnel, sin publicar un puerto ni siquiera en loopback.
+- **`cloudflared` como terminador TLS y único camino de acceso.** Conecta hacia fuera, así que **no hay que redirigir ningún puerto en el router**. Un *quick tunnel* da un `*.trycloudflare.com` efímero sin cuenta ni dominio, suficiente porque el despliegue no necesita sobrevivir a la grabación. Sustituye a Caddy: sin ACME, sin volumen de certificados y sin límites de emisión.
+  - Consecuencia para la cookie: como el TLS se termina en Cloudflare, la API recibe la petición **como HTTP** por la red interna. Por eso `Secure` se condiciona al **entorno** y no al esquema: un `Secure` dependiente del esquema dejaría de ponerse justo en el único camino funcional, y arreglarlo exigiría `X-Forwarded-Proto` (que `frontend/nginx.conf` hoy no propaga), `UseForwardedHeaders` y `KnownProxies`.
 - **Job de publicación** en `ci.yml`, condicionado a que CI pase y a `main`/etiqueta: construye ambas imágenes y las sube a GHCR etiquetadas por **SHA de commit** más `latest`. Usa `GITHUB_TOKEN` con `permissions: packages: write` → **ni un secreto que gestionar**, coherente con la regla de `AGENTS.md`. Con repositorio y paquetes públicos, la VM baja sin `docker login`.
 - **`scripts/deploy.sh`** en la VM: `pull`, `up -d`, verificar `/api/v1/health`, registrar el digest desplegado. Más una unidad y un *timer* de systemd (`OnBootSec` + `OnUnitActiveSec=5min`) que invocan **el mismo script**.
 - **Monitorización mínima:** healthchecks de contenedor, políticas de reinicio, y el health check del script. Nada de escala CloudWatch.
@@ -123,7 +126,7 @@ El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de
 
 **Reparto de ejecución.** Se entrega el material completo —compose de despliegue, `deploy.sh`, unidad y timer, job de CI y `docs/Deployment.md`—; el autor crea la VM en Hyper-V, sigue el documento y graba. Crear la VM requiere elevación de todos modos, y así `docs/Deployment.md` queda validado por alguien que lo sigue de cero, que es exactamente lo que exige la definición de hecho.
 
-**Vídeo.** Grabar **por la URL del túnel, no por la IP de LAN**: la cookie `Secure` necesita HTTPS, y en LAN el acceso es HTTP plano. En una sola pieza: `deploy.sh` a mano (se ve el `pull`, los contenedores reemplazados y el health check pasando), luego `systemctl list-timers` y `journalctl -u transitops-deploy` para evidenciar la vía automática, y después los cuatro flujos en el navegador. En pantalla, el SHA desplegado, para que la evidencia quede atada a un commit.
+**Vídeo.** Grabar **por la URL del túnel**, que es el único camino de acceso. En una sola pieza: `deploy.sh` a mano (se ve el `pull`, los contenedores reemplazados y el health check pasando), luego `systemctl list-timers` y `journalctl -u transitops-deploy` para evidenciar la vía automática, y después los cuatro flujos en el navegador. En pantalla, el SHA desplegado, para que la evidencia quede atada a un commit.
 
 **Cierre.** Los cuatro flujos funcionando en el entorno desplegado; despliegue reproducible siguiendo `docs/Deployment.md` desde una VM recién creada.
 
@@ -161,8 +164,9 @@ Criterios objetivos de cierre de sprint:
 4. Un token emitido antes de un cambio de contraseña, una desactivación o un cambio de rol deja de ser válido.
 5. Recargar la página mantiene la sesión mediante `/auth/me`, y la cookie no es legible desde `document.cookie`.
 6. `docs/Deployment.md` reproducible desde una VM recién creada, sin pasos ocultos.
-7. Los cuatro flujos ejecutados en el entorno desplegado, grabados por la URL del túnel.
-8. Ningún requisito de prioridad alta roto.
+7. Los cuatro flujos ejecutados en el entorno desplegado, grabados por la URL del túnel, único camino de acceso.
+8. El compose de despliegue no publica ningún puerto, y un intento de login por HTTP falla cerrado.
+9. Ningún requisito de prioridad alta roto.
 
 **Prerrequisitos de máquina que faltan hoy:** no hay **Node** instalado (solo copias empotradas en Visual Studio y otro runtime) y `frontend/node_modules` no existe, así que el frontend no se puede construir ni probar. `dotnet` 10.0.302 y Docker Desktop sí están (Docker en `%LOCALAPPDATA%\Programs\DockerDesktop`, fuera del PATH de la shell). Hyper-V no se pudo consultar sin elevación.
 
@@ -173,7 +177,8 @@ Criterios objetivos de cierre de sprint:
 | El refactor de sesión rompe muchas pruebas de frontend | Es la razón de que los E2E vayan antes; ejecutarlos entre cada paso de S7.3 |
 | El filtro del índice depende de cómo persista el enum `Status` | Verificarlo en el snapshot del modelo antes de escribir la migración |
 | El advisory lock rompe las pruebas en memoria | Guardarlo con `Database.IsRelational()`, patrón ya existente en `Program.cs:113` |
-| La cookie `Secure` no funciona por HTTP en la LAN | Grabar por la URL del túnel; flag condicionado al entorno para desarrollo local |
+| `Secure` condicionado al esquema se caería tras el túnel | Condicionarlo al entorno, no al esquema. Evita tener que propagar `X-Forwarded-Proto` y configurar `KnownProxies` |
+| Si el túnel cae, no hay camino alternativo de acceso | El diagnóstico desde el contenedor `web` demuestra que el stack está sano con independencia del túnel; reiniciar `cloudflared` da una URL nueva sin debilitar la superficie de red |
 | El hostname del *quick tunnel* es efímero | Irrelevante: el despliegue no necesita sobrevivir a la grabación. Un hostname estable exigiría cuenta de Cloudflare y dominio propio |
 | Repositorio público | Ningún secreto en ficheros versionados (ya es regla de `AGENTS.md`); runners autoalojados descartados por seguridad |
 | `npm audit --fix` rompe el build | Triar primero; son casi seguro devDependencies, así que la urgencia es baja |

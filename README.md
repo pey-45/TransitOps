@@ -8,7 +8,7 @@ This is the Final Degree Project (TFG) of the Bachelor's in Computer Engineering
 
 Reference date: August 8, 2026.
 
-Sprints 1–6 are implemented and RF-01…RF-14 are integrated. The greenfield application combines an ASP.NET Core/PostgreSQL API with a React/TypeScript SPA: authenticated catalogs and shipment CRUD, filtered operational visibility, joint resource assignment, lifecycle transitions, immutable event traceability, admin-only user management with last-admin protection, self-service password changes, and an at-a-glance operational summary. Backend and frontend tests, Docker Compose and CI keep the increment reproducible. The TFG thesis has also been consolidated through Sprint 6 with the resulting design, four source-controlled diagrams, supporting references and a regenerated PDF. Sprint 7 is the next priority: hardening, system testing and lightweight deployment.
+Sprints 1–6 are implemented and RF-01…RF-14 are integrated. Sprint 7 has added PostgreSQL-backed concurrency guarantees, four Playwright system flows, dependency remediation, secure invalidatable sessions, and the complete material for a lightweight pull-based deployment. Backend, frontend, E2E tests, Docker Compose and CI keep the increment reproducible. The deployment assets target an Ubuntu VM reached only through a temporary HTTPS Cloudflare tunnel; executing the documented procedure and recording its evidence remain the final S7 validation step.
 
 The earlier AWS-oriented direction remains archived as a read-only reference; the active solution is independent and lives at the repository root.
 
@@ -59,7 +59,7 @@ The functional scope is defined in [docs/Requirements.md](docs/Requirements.md),
 - Vitest + React Testing Library — frontend tests
 - Docker / Docker Compose — local reproducibility
 - GitHub Actions — CI
-- Deployment target — to be decided during the deployment sprint; intentionally not a Terraform-managed cloud platform this time
+- Deployment target — Ubuntu Server VM + Docker Compose + outbound Cloudflare quick tunnel; intentionally lightweight and not Terraform-managed
 
 The stack is intentionally kept the same as the previous iteration, so the archived reference implementation is directly consultable.
 
@@ -74,6 +74,7 @@ Development follows an iterative, incremental approach organized in sprints, as 
 - Sprint roadmap: [docs/Roadmap.md](docs/Roadmap.md)
 - Data model: [docs/design/DataModel.md](docs/design/DataModel.md)
 - Integration architecture: [docs/design/IntegrationArchitecture.md](docs/design/IntegrationArchitecture.md)
+- Deployment procedure: [docs/Deployment.md](docs/Deployment.md)
 - Stable agent instructions: [AGENTS.md](AGENTS.md)
 - Evolving project context and decision log: [CONTEXT.md](CONTEXT.md)
 - Archived materials (previous direction + previous-iteration reference code): [archive/README.md](archive/README.md)
@@ -118,4 +119,4 @@ npm run dev
 
 ## Testing
 
-Backend tests are organized by responsibility: `TransitOps.Tests/Services/` verifies service business behavior directly, `TransitOps.Tests/Controllers/` verifies HTTP contracts and authorization, and `TransitOps.Tests/Support/` contains shared test infrastructure. CI runs backend build/tests and migration validation, plus frontend lint/build/tests.
+Backend tests are organized by responsibility: `TransitOps.Tests/Services/` verifies service business behavior directly, `TransitOps.Tests/Controllers/` verifies HTTP contracts and authorization, and `TransitOps.Tests/Support/` contains shared test infrastructure. CI runs backend build/tests and migration validation, frontend lint/build/tests, and the four Playwright flows over the integrated Compose stack. After all checks pass on `main` or a tag, CI publishes SHA- and `latest`-tagged API/web images to GHCR for the VM to pull.

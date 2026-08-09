@@ -24,3 +24,9 @@ Los éxitos usan `{ "data": ..., "requestId": "..." }`. Los fallos usan `{ "erro
 ## Arranque inicial
 
 `POST /api/v1/auth/bootstrap-admin` requiere `X-Bootstrap-Token` configurado fuera del código. Solo crea un administrador si no existe otro administrador activo. A partir de ese momento el endpoint devuelve conflicto y los usuarios se gestionarán mediante RF-04.
+
+## Despliegue accesible
+
+El despliegue de demostración usa cuatro servicios en una VM Ubuntu: PostgreSQL, API, Nginx/SPA y `cloudflared`. Ninguno publica puertos en el host. `cloudflared` establece una conexión saliente y ofrece una URL HTTPS temporal; desde ahí reenvía a Nginx por la red privada de Compose, que a su vez enruta `/api` a ASP.NET Core. El diagnóstico se ejecuta por SSH dentro del contenedor web, no mediante una entrada HTTP alternativa.
+
+La API se ejecuta en entorno `Production`, de modo que la cookie siempre conserva `Secure` aunque Cloudflare termine TLS antes del tramo HTTP privado. GitHub Actions publica imágenes de API y web en GHCR solo después de superar compilación, pruebas y E2E. La VM aplica un modelo pull mediante un único script invocado manualmente o por un timer de systemd; el script valida salud y registra SHA y digest desplegados.
