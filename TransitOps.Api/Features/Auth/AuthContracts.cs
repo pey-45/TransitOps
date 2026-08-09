@@ -16,11 +16,12 @@ public sealed record ChangePasswordRequest(
     [Required, StringLength(128, MinimumLength = 10)] string NewPassword);
 
 public sealed record UserResponse(Guid Id, string Username, string Email, string Role, bool IsActive);
-public sealed record LoginResponse(string AccessToken, string TokenType, DateTime ExpiresAt, UserResponse User);
+public sealed record LoginResponse(DateTime ExpiresAt, UserResponse User);
+public sealed record LoginResult(string Token, DateTime ExpiresAt, UserResponse User);
 
 public interface IAuthService
 {
     Task<UserResponse> BootstrapAsync(BootstrapAdminRequest request, string? token, CancellationToken cancellationToken);
-    Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
+    Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
     Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken);
 }

@@ -24,6 +24,9 @@ test('Flujo 1 · arranca el primer administrador y bloquea un segundo bootstrap'
 
   await loginThroughUi(page, admin.username, admin.password)
   await expect(page.getByRole('link', { name: 'Usuarios' })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.cookie)).not.toContain('transitops_session')
+  await page.reload()
+  await expect(page.getByRole('heading', { name: `Hola, ${admin.username}` })).toBeVisible()
 })
 
 test('Flujo 2 · un administrador crea un operador que accede y cambia su contraseña', async ({ page }) => {

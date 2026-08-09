@@ -18,7 +18,7 @@ export function AppLayout() {
         <div className="account">
           <span>{session?.user.username} · {session?.user.role === 'admin' ? 'Administrador' : 'Operador'}</span>
           <Link className="account-link" to="/cambiar-contrasena">Cambiar contraseña</Link>
-          <button className="secondary" type="button" onClick={logout}>Cerrar sesión</button>
+          <button className="secondary" type="button" onClick={() => void logout()}>Cerrar sesión</button>
         </div>
       </header>
       <main><Outlet /></main>

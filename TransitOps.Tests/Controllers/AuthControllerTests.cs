@@ -1,8 +1,8 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using TransitOps.Api.Domain;
+using TransitOps.Api.Security;
 using TransitOps.Tests.Support;
 
 namespace TransitOps.Tests.Controllers;
@@ -30,17 +30,23 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
-    public async Task Login_returns_token_with_common_response_contract()
+    public async Task Login_sets_an_http_only_strict_cookie_without_exposing_the_token()
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
 
         var response = await Login(client);
         var payload = await ReadJson(response);
+        var cookie = Assert.Single(response.Headers.GetValues("Set-Cookie"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.False(string.IsNullOrWhiteSpace(payload["data"]?["accessToken"]?.GetValue<string>()));
+        Assert.Null(payload["data"]?["accessToken"]);
+        Assert.Null(payload["data"]?["tokenType"]);
         Assert.Equal("operator", payload["data"]?["user"]?["role"]?.GetValue<string>());
+        Assert.Contains($"{AuthSession.CookieName}=", cookie);
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=strict", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secure", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.False(string.IsNullOrWhiteSpace(payload["requestId"]?.GetValue<string>()));
     }
 
@@ -73,10 +79,7 @@ public sealed class AuthControllerTests
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
-        var login = await ReadJson(await Login(client));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            login["data"]?["accessToken"]?.GetValue<string>());
+        (await Login(client)).EnsureSuccessStatusCode();
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/password", new
         {
@@ -86,7 +89,9 @@ public sealed class AuthControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True((await ReadJson(response))["data"]?["changed"]?.GetValue<bool>());
-        client.DefaultRequestHeaders.Authorization = null;
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/api/v1/auth/me")).StatusCode);
         var newLogin = await client.PostAsJsonAsync("/api/v1/auth/login", new
         {
             username = "operator",
@@ -100,10 +105,7 @@ public sealed class AuthControllerTests
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
-        var login = await ReadJson(await Login(client));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            login["data"]?["accessToken"]?.GetValue<string>());
+        (await Login(client)).EnsureSuccessStatusCode();
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/password", new
         {
@@ -120,10 +122,7 @@ public sealed class AuthControllerTests
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
-        var login = await ReadJson(await Login(client));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            login["data"]?["accessToken"]?.GetValue<string>());
+        (await Login(client)).EnsureSuccessStatusCode();
 
         var response = await client.GetAsync("/api/v1/auth/session");
         var payload = await ReadJson(response);
@@ -131,6 +130,37 @@ public sealed class AuthControllerTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("operator", payload["data"]?["username"]?.GetValue<string>());
         Assert.Equal("operator", payload["data"]?["role"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Me_rehydrates_the_full_user_from_the_cookie()
+    {
+        using var factory = FactoryWithOperator();
+        using var client = factory.CreateClient();
+        (await Login(client)).EnsureSuccessStatusCode();
+
+        var response = await client.GetAsync("/api/v1/auth/me");
+        var payload = await ReadJson(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("operator", payload["data"]?["user"]?["username"]?.GetValue<string>());
+        Assert.Equal("operator", payload["data"]?["user"]?["role"]?.GetValue<string>());
+        Assert.False(string.IsNullOrWhiteSpace(payload["data"]?["expiresAt"]?.GetValue<string>()));
+    }
+
+    [Fact]
+    public async Task Logout_expires_the_cookie_and_removes_access()
+    {
+        using var factory = FactoryWithOperator();
+        using var client = factory.CreateClient();
+        (await Login(client)).EnsureSuccessStatusCode();
+
+        var logout = await client.PostAsync("/api/v1/auth/logout", null);
+        var cookie = Assert.Single(logout.Headers.GetValues("Set-Cookie"));
+
+        Assert.Equal(HttpStatusCode.OK, logout.StatusCode);
+        Assert.Contains($"{AuthSession.CookieName}=", cookie);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/auth/me")).StatusCode);
     }
 
     private static TransitOpsApiFactory FactoryWithOperator() => new(db =>

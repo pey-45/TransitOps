@@ -1,7 +1,7 @@
 export type Role = 'admin' | 'operator'
 export interface User { id: string; username: string; email: string; role: Role; isActive: boolean }
 export interface UserInput { username: string; email: string; password: string; role: Role }
-export interface Session { accessToken: string; tokenType: string; expiresAt: string; user: User }
+export interface Session { expiresAt: string; user: User }
 interface ApiResponse<T> { data: T; requestId: string }
 export type ValidationDetails = Record<string, string[]>
 interface ErrorBody { error?: { code?: string; message?: string; details?: ValidationDetails }; requestId?: string }
@@ -71,24 +71,13 @@ export class ApiClientError extends Error {
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? ''
-const STORAGE_KEY = 'transitops.session'
-
-function getAccessToken(): string | null {
-  try {
-    return (JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Session | null)?.accessToken ?? null
-  } catch {
-    return null
-  }
-}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getAccessToken()
   const headers = new Headers(options.headers)
   if (options.body) headers.set('Content-Type', 'application/json')
-  if (token) headers.set('Authorization', `Bearer ${token}`)
   let response: Response
   try {
-    response = await fetch(`${API_URL}${path}`, { ...options, headers })
+    response = await fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'same-origin' })
   } catch {
     throw new ApiClientError('No se pudo conectar con el servidor.')
   }
@@ -103,6 +92,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export function login(username: string, password: string): Promise<Session> {
   return request('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
 }
+export const getCurrentSession = () => request<Session>('/api/v1/auth/me')
+export const logout = () => request<{ loggedOut: boolean }>('/api/v1/auth/logout', { method: 'POST' })
 
 export const listVehicles = () => request<Vehicle[]>('/api/v1/vehicles')
 export const getVehicle = (id: string) => request<Vehicle>(`/api/v1/vehicles/${id}`)

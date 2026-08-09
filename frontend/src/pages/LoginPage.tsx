@@ -5,7 +5,7 @@ import { useAuth } from '../auth/auth-state'
 import { ErrorAlert } from '../components/ErrorAlert'
 
 export function LoginPage() {
-  const { session, login } = useAuth()
+  const { session, loading, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [username, setUsername] = useState('')
@@ -13,6 +13,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
+  if (loading) return <main className="login-page"><p role="status">Comprobando sesión…</p></main>
   if (session) return <Navigate to="/" replace />
 
   async function submit(event: FormEvent) {

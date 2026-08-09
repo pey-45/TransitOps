@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransitOps.Api.Common;
@@ -8,7 +11,7 @@ namespace TransitOps.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService, IWebHostEnvironment environment) : ControllerBase
 {
     [AllowAnonymous]
     [HttpPost("bootstrap-admin")]
@@ -26,7 +29,40 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var session = await authService.LoginAsync(request, cancellationToken);
-        return Ok(ApiResponse<LoginResponse>.Success(session, HttpContext.TraceIdentifier));
+        Response.Cookies.Append(
+            AuthSession.CookieName,
+            session.Token,
+            AuthSession.CookieOptions(session.ExpiresAt, SecureCookie));
+        return Ok(ApiResponse<LoginResponse>.Success(
+            new LoginResponse(session.ExpiresAt, session.User),
+            HttpContext.TraceIdentifier));
+    }
+
+    [Authorize(Policy = Policies.Operational)]
+    [HttpGet("me")]
+    public ActionResult<ApiResponse<LoginResponse>> Me()
+    {
+        var id = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var expiresAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(
+            User.FindFirstValue(JwtRegisteredClaimNames.Exp)!,
+            CultureInfo.InvariantCulture)).UtcDateTime;
+        var user = new UserResponse(
+            id,
+            User.Identity!.Name!,
+            User.FindFirstValue(JwtRegisteredClaimNames.Email)!,
+            User.FindFirstValue("role")!,
+            true);
+        return Ok(ApiResponse<LoginResponse>.Success(
+            new LoginResponse(expiresAt, user),
+            HttpContext.TraceIdentifier));
+    }
+
+    [AllowAnonymous]
+    [HttpPost("logout")]
+    public ActionResult<ApiResponse<object>> Logout()
+    {
+        Response.Cookies.Delete(AuthSession.CookieName, AuthSession.DeleteOptions(SecureCookie));
+        return Ok(ApiResponse<object>.Success(new { loggedOut = true }, HttpContext.TraceIdentifier));
     }
 
     [Authorize(Policy = Policies.Operational)]
@@ -46,4 +82,6 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         await authService.ChangePasswordAsync(request, cancellationToken);
         return Ok(ApiResponse<object>.Success(new { changed = true }, HttpContext.TraceIdentifier));
     }
+
+    private bool SecureCookie => !environment.IsDevelopment() && !environment.IsEnvironment("Testing");
 }

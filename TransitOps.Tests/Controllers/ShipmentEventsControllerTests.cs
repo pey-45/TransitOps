@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using TransitOps.Api.Domain;
@@ -70,6 +69,6 @@ public sealed class ShipmentEventsControllerTests
 
     private static Shipment Shipment(string reference) => new() { Reference = reference, Origin = "A", Destination = "B", PlannedPickupAt = DateTime.UtcNow.AddDays(1) };
     private static TransitOpsApiFactory Factory(Action<TransitOpsDbContext>? seed = null) => new(db => { db.AppUsers.Add(TransitOpsApiFactory.CreateUser("operator", "SecurePass!123", UserRole.Operator)); seed?.Invoke(db); });
-    private static async Task<HttpClient> Client(TransitOpsApiFactory factory) { var client = factory.CreateClient(); var login = await Json(await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "operator", password = "SecurePass!123" })); client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login["data"]!["accessToken"]!.GetValue<string>()); return client; }
+    private static async Task<HttpClient> Client(TransitOpsApiFactory factory) { var client = factory.CreateClient(); (await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "operator", password = "SecurePass!123" })).EnsureSuccessStatusCode(); return client; }
     private static async Task<JsonNode> Json(HttpResponseMessage response) => JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
 }

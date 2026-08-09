@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
@@ -40,7 +41,7 @@ public sealed class AuthService(
         return MapUser(user);
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
+    public async Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         var username = request.Username.Trim();
         var user = await dbContext.AppUsers.SingleOrDefaultAsync(item => item.Username == username, cancellationToken);
@@ -49,7 +50,7 @@ public sealed class AuthService(
             throw new ApiException(401, "invalid_credentials", "El usuario o la contraseña no son válidos.");
 
         var expiresAt = DateTime.UtcNow.AddMinutes(jwtOptions.ExpirationMinutes);
-        return new LoginResponse(CreateToken(user, expiresAt), "Bearer", expiresAt, MapUser(user));
+        return new LoginResult(CreateToken(user, expiresAt), expiresAt, MapUser(user));
     }
 
     public async Task ChangePasswordAsync(
@@ -75,6 +76,7 @@ public sealed class AuthService(
         }
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        user.TokenVersion++;
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -90,6 +92,7 @@ public sealed class AuthService(
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("role", role),
+                new Claim(AuthSession.TokenVersionClaim, user.TokenVersion.ToString(CultureInfo.InvariantCulture)),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
             ],
             DateTime.UtcNow,

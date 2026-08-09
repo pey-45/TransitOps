@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using TransitOps.Api.Domain;
@@ -86,6 +85,31 @@ public sealed class UsersControllerTests
         Assert.True((await Json(response))["data"]?["isActive"]?.GetValue<bool>());
     }
 
+    [Theory]
+    [InlineData("activation")]
+    [InlineData("role")]
+    public async Task Deactivation_and_role_changes_invalidate_an_existing_session(string change)
+    {
+        var admin = TransitOpsApiFactory.CreateUser("admin", "SecurePass!123", UserRole.Admin);
+        var operatorUser = TransitOpsApiFactory.CreateUser("operator", "SecurePass!123", UserRole.Operator);
+        using var factory = new TransitOpsApiFactory(db => db.AppUsers.AddRange(admin, operatorUser));
+        using var operatorClient = await AuthenticatedClient(factory, "operator", "SecurePass!123");
+        using var adminClient = await AuthenticatedClient(factory, "admin", "SecurePass!123");
+
+        var response = change == "activation"
+            ? await adminClient.PutAsJsonAsync(
+                $"/api/v1/users/{operatorUser.Id}/activation",
+                new { isActive = false })
+            : await adminClient.PutAsJsonAsync(
+                $"/api/v1/users/{operatorUser.Id}/role",
+                new { role = "admin" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rejected = await operatorClient.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+        Assert.Equal("authentication_required", (await Json(rejected))["error"]?["code"]?.GetValue<string>());
+    }
+
     private static HttpRequestMessage Request(string method, string path)
     {
         var request = new HttpRequestMessage(new HttpMethod(method), path);
@@ -108,12 +132,9 @@ public sealed class UsersControllerTests
         string password)
     {
         var client = factory.CreateClient();
-        var login = await Json(await client.PostAsJsonAsync(
+        (await client.PostAsJsonAsync(
             "/api/v1/auth/login",
-            new { username, password }));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            login["data"]?["accessToken"]?.GetValue<string>());
+            new { username, password })).EnsureSuccessStatusCode();
         return client;
     }
     private static async Task<JsonNode> Json(HttpResponseMessage response) =>

@@ -1,35 +1,45 @@
-import { useMemo, useState, type PropsWithChildren } from 'react'
-import { login as requestLogin, type Session } from '../api/client'
+import { useEffect, useMemo, useState, type PropsWithChildren } from 'react'
+import {
+  getCurrentSession,
+  login as requestLogin,
+  logout as requestLogout,
+  type Session,
+} from '../api/client'
 import { AuthContext, type AuthValue } from './auth-state'
 
-const STORAGE_KEY = 'transitops.session'
-function storedSession(): Session | null {
-  try {
-    const session = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Session | null
-    if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
-      localStorage.removeItem(STORAGE_KEY)
-      return null
-    }
-    return session
-  } catch {
-    localStorage.removeItem(STORAGE_KEY)
-    return null
-  }
+interface AuthProviderProps extends PropsWithChildren {
+  initialSession?: Session | null
 }
 
-export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<Session | null>(storedSession)
+export function AuthProvider({ children, initialSession }: AuthProviderProps) {
+  const rehydrate = initialSession === undefined
+  const [session, setSession] = useState<Session | null>(initialSession ?? null)
+  const [loading, setLoading] = useState(rehydrate)
+
+  useEffect(() => {
+    if (!rehydrate) return
+    let ignore = false
+    getCurrentSession()
+      .then(current => { if (!ignore) setSession(current) })
+      .catch(() => { if (!ignore) setSession(null) })
+      .finally(() => { if (!ignore) setLoading(false) })
+    return () => { ignore = true }
+  }, [rehydrate])
+
   const value = useMemo<AuthValue>(() => ({
     session,
+    loading,
     login: async (username, password) => {
       const next = await requestLogin(username, password)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
       setSession(next)
     },
-    logout: () => {
-      localStorage.removeItem(STORAGE_KEY)
-      setSession(null)
+    logout: async () => {
+      try {
+        await requestLogout()
+      } finally {
+        setSession(null)
+      }
     },
-  }), [session])
+  }), [loading, session])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

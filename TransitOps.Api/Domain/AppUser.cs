@@ -8,6 +8,7 @@ public sealed class AppUser
     public required string PasswordHash { get; set; }
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
+    public int TokenVersion { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

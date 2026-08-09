@@ -3,8 +3,9 @@ import type { Session } from '../api/client'
 
 export interface AuthValue {
   session: Session | null
+  loading: boolean
   login: (username: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthValue | null>(null)

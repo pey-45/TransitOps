@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using TransitOps.Api.Domain;
@@ -95,9 +94,8 @@ public sealed class CatalogControllerTests
     private static async Task<HttpClient> AuthenticatedClient(TransitOpsApiFactory factory)
     {
         var client = factory.CreateClient();
-        var login = await ReadJson(await client.PostAsJsonAsync("/api/v1/auth/login", new
-            { username = "operator", password = "SecurePass!123" }));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login["data"]?["accessToken"]?.GetValue<string>());
+        (await client.PostAsJsonAsync("/api/v1/auth/login", new
+            { username = "operator", password = "SecurePass!123" })).EnsureSuccessStatusCode();
         return client;
     }
 

@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -92,6 +93,39 @@ public class Program
             };
             options.Events = new JwtBearerEvents
             {
+                OnMessageReceived = context =>
+                {
+                    if (context.Request.Cookies.TryGetValue(AuthSession.CookieName, out var token) &&
+                        !string.IsNullOrWhiteSpace(token))
+                    {
+                        context.Token = token;
+                    }
+                    else
+                    {
+                        context.NoResult();
+                    }
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = async context =>
+                {
+                    var principal = context.Principal;
+                    if (!Guid.TryParse(principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId) ||
+                        !int.TryParse(
+                            principal?.FindFirst(AuthSession.TokenVersionClaim)?.Value,
+                            out var tokenVersion))
+                    {
+                        context.Fail("La sesión no contiene los claims requeridos.");
+                        return;
+                    }
+
+                    var database = context.HttpContext.RequestServices.GetRequiredService<TransitOpsDbContext>();
+                    var currentVersion = await database.AppUsers.AsNoTracking()
+                        .Where(user => user.Id == userId && user.IsActive)
+                        .Select(user => (int?)user.TokenVersion)
+                        .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+                    if (currentVersion != tokenVersion)
+                        context.Fail("La sesión ha sido invalidada.");
+                },
                 OnChallenge = context =>
                 {
                     context.HandleResponse();

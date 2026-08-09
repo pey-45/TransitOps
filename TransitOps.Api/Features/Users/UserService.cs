@@ -76,6 +76,7 @@ public sealed class UserService(
             await EnsureNotLastAdmin(user, cancellationToken);
 
         user.Role = role;
+        user.TokenVersion++;
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null)
@@ -99,6 +100,8 @@ public sealed class UserService(
             await EnsureNotLastAdmin(user, cancellationToken);
 
         user.IsActive = isActive;
+        if (!isActive)
+            user.TokenVersion++;
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null)

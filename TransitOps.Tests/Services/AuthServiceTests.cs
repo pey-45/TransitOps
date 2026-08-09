@@ -111,12 +111,12 @@ public sealed class AuthServiceTests
         var response = await service.LoginAsync(
             new LoginRequest(" operator ", Password),
             CancellationToken.None);
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(response.AccessToken);
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(response.Token);
 
-        Assert.Equal("Bearer", response.TokenType);
         Assert.Equal("operator", response.User.Role);
         Assert.Equal("operator", jwt.Claims.Single(claim => claim.Type == "unique_name").Value);
         Assert.Equal("operator", jwt.Claims.Single(claim => claim.Type == "role").Value);
+        Assert.Equal("0", jwt.Claims.Single(claim => claim.Type == AuthSession.TokenVersionClaim).Value);
     }
 
     [Theory]
@@ -154,6 +154,8 @@ public sealed class AuthServiceTests
         var service = CreateService(db, currentUserId: user.Id);
 
         await service.ChangePasswordAsync(new ChangePasswordRequest(Password, "NewSecurePass!456"), default);
+
+        Assert.Equal(1, user.TokenVersion);
 
         var oldPassword = await Assert.ThrowsAsync<ApiException>(() =>
             service.LoginAsync(new LoginRequest("operator", Password), default));

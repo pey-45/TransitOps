@@ -106,6 +106,8 @@ public sealed class UserServiceTests
 
         Assert.False(deactivated.IsActive);
         Assert.Equal("operator", demoted.Role);
+        Assert.Equal(1, first.TokenVersion);
+        Assert.Equal(1, second.TokenVersion);
     }
 
     [Fact]
