@@ -1,38 +1,75 @@
 \chapter{Arquitectura}
 
-La solución separa una SPA, una \gls{api} REST y PostgreSQL. El navegador nunca accede directamente a persistencia: todas las reglas y autorizaciones se evalúan en la API.
+La solución aplica una separación cliente-servidor entre una \gls{spa}, una \gls{api} REST y PostgreSQL. El navegador nunca accede directamente a la persistencia: autenticación, autorización, validación y reglas de negocio se evalúan en la API. Esta frontera permite que la interfaz se concentre en interacción y presentación sin convertirse en una segunda fuente de reglas.
+
+La Figura~\ref{fig:architecture} representa tanto la integración lógica como la topología local reproducible. Nginx sirve los recursos estáticos generados por Vite y reenvía las solicitudes bajo \texttt{/api} al contenedor ASP.NET Core. La API accede a PostgreSQL mediante EF Core y la base de datos conserva sus ficheros en un volumen nombrado. Durante el desarrollo sin contenedores Vite sustituye a Nginx como proxy, pero mantiene el mismo contrato \gls{http}.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.82\textwidth}\centering
-\textbf{Navegador: React SPA}\\[8pt]
-$\downarrow$ \quad HTTPS / JSON / JWT \quad $\uparrow$\\[8pt]
-\textbf{ASP.NET Core REST API}\\[8pt]
-$\downarrow$ \quad Entity Framework Core \quad $\uparrow$\\[8pt]
-\textbf{PostgreSQL}
-\end{minipage}}
-\caption{Arquitectura de integración de TransitOps}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Latex,
+  service/.style={draw, rounded corners=2pt, minimum width=3.2cm, minimum height=1.35cm, align=center, fill=blue!6},
+  store/.style={draw, cylinder, shape border rotate=90, aspect=0.28, minimum width=2.8cm, minimum height=1.5cm, align=center, fill=green!7},
+  flow/.style={->, thick}
+]
+  \node[service, fill=gray!8] (browser) {Navegador\\React SPA};
+  \node[service, right=1.4cm of browser] (web) {\textbf{web}\\Nginx + estáticos};
+  \node[service, right=1.4cm of web] (api) {\textbf{api}\\ASP.NET Core};
+  \node[store, right=1.4cm of api] (db) {\textbf{db}\\PostgreSQL};
+  \node[store, below=1.1cm of db, fill=orange!10] (volume) {volumen\\\texttt{transitops-data}};
+
+  \draw[flow] (browser) -- node[midway, above=4pt, fill=white, inner sep=1pt]{\scriptsize HTTP} (web);
+  \draw[flow] (web) -- node[midway, above=4pt, fill=white, inner sep=1pt]{\scriptsize \texttt{/api} · JSON · JWT} (api);
+  \draw[flow] (api) -- node[midway, above=4pt, fill=white, inner sep=1pt]{\scriptsize EF Core} (db);
+  \draw[flow] (db) -- node[right]{persistencia} (volume);
+  \node[draw, dashed, rounded corners, fit=(web)(api)(db)(volume), inner sep=0.45cm,
+        label={[font=\bfseries]above:Docker Compose}] {};
+\end{tikzpicture}}
+\caption{Arquitectura de integración y ejecución local de TransitOps}
 \label{fig:architecture}
 \end{figure}
 
+\section{Organización del backend}
+
+El backend combina una organización por responsabilidad transversal con módulos por característica. \texttt{Domain/} contiene las entidades y enumeraciones sin depender de transporte HTTP; \texttt{Features/} agrupa contratos y servicios por capacidad ---autenticación, catálogos, envíos, usuarios e indicadores---; y \texttt{Controllers/} publica esas capacidades como recursos y acciones REST. Esta organización por característica mantiene próximos el contrato y la lógica que cambian juntos, sin introducir una jerarquía de capas artificialmente profunda.
+
+Las preocupaciones compartidas tienen límites visibles. \texttt{Persistence/} contiene el contexto EF Core, la factoría de diseño y las \glspl{migracion}; \texttt{Security/} configura roles, tokens y la identidad actual; \texttt{Middleware/} unifica errores, correlación y registro; y \texttt{Common/} reúne tipos de resultado y excepciones de aplicación. Los controladores permanecen delgados: traducen el protocolo y delegan, mientras que las reglas comprobables residen en servicios. Esta división permite probar las decisiones de negocio sin servidor y reservar las pruebas de controlador para políticas, códigos y forma de las respuestas.
+
 \section{Modelo de datos}
 
-El modelo completo se diseñó antes de implementar las rebanadas funcionales. \texttt{Shipment} referencia opcionalmente cliente, vehículo y conductor; \texttt{ShipmentEvent} referencia obligatoriamente el envío y el usuario autor. Los catálogos y usuarios usan \gls{baja-logica}; las relaciones históricas no se borran en cascada.
+El modelo completo se diseñó antes de implementar las rebanadas funcionales, pero se materializó de forma incremental. La Figura~\ref{fig:data-model} recoge las seis entidades actuales, sus claves principales y las cardinalidades relevantes. \texttt{Shipment} es el \gls{agregado} operativo central: referencia opcionalmente cliente, vehículo y conductor. \texttt{ShipmentEvent} pertenece obligatoriamente a un envío y puede conservar la identidad del usuario autor.
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.9\textwidth}\centering
-\begin{tabular}{ccl}
-Customer & $0..1 \longleftarrow *$ & Shipment \\
-Vehicle & $0..1 \longleftarrow *$ & Shipment \\
-Driver & $0..1 \longleftarrow *$ & Shipment \\
-Shipment & $1 \longleftarrow *$ & ShipmentEvent \\
-AppUser & $1 \longleftarrow *$ & ShipmentEvent \\
-\end{tabular}\\[10pt]
-\small AppUser, Vehicle, Driver y Customer conservan estado activo; Shipment contiene estado, fechas y carga estimada.
-\end{minipage}}
-\caption{Relaciones principales del modelo de datos completo}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Latex,
+  entity/.style={draw, rounded corners=1pt, align=left, inner sep=5pt, minimum width=3.2cm, fill=blue!4},
+  relation/.style={thick}
+]
+  \node[entity] (user) {\textbf{APP\_USER}\\\underline{Id : UUID}\\Username : UK\\Email : UK\\Role, IsActive};
+  \node[entity, right=1.6cm of user] (event) {\textbf{SHIPMENT\_EVENT}\\\underline{Id : UUID}\\ShipmentId : FK\\RecordedByUserId : FK\\Type, OccurredAt, CreatedAt};
+  \node[entity, right=1.6cm of event] (shipment) {\textbf{SHIPMENT}\\\underline{Id : UUID}\\Reference : UK\\Customer/Vehicle/DriverId : FK\\Status, fechas, carga};
+
+  \node[entity, below=1.8cm of shipment, xshift=-4.8cm] (customer) {\textbf{CUSTOMER}\\\underline{Id : UUID}\\Name, ContactDetails\\IsActive};
+  \node[entity, right=1.0cm of customer] (vehicle) {\textbf{VEHICLE}\\\underline{Id : UUID}\\LicensePlate, InternalCode\\LoadCapacity, IsActive};
+  \node[entity, right=1.0cm of vehicle] (driver) {\textbf{DRIVER}\\\underline{Id : UUID}\\LicenseNumber\\Name, IsActive};
+
+  \draw[relation] (user) -- node[above]{\footnotesize $1\;\;0..*$} (event);
+  \draw[relation] (event) -- node[above]{\footnotesize $0..*\;\;1$} (shipment);
+  \draw[relation] (customer.north) -- node[left]{\footnotesize $0..*\;\;0..1$} (shipment.south west);
+  \draw[relation] (vehicle.north) -- node[right]{\footnotesize $0..*\;\;0..1$} (shipment.south);
+  \draw[relation] (driver.north) -- node[right]{\footnotesize $0..*\;\;0..1$} (shipment.south east);
+\end{tikzpicture}}
+\caption{Modelo de datos implementado hasta el Sprint 6}
 \label{fig:data-model}
 \end{figure}
 
-El diseño detallado, con todos los atributos y restricciones, está versionado en \texttt{docs/design/DataModel.md}. La migración inicial materializa únicamente \texttt{app\_users}; las demás tablas se añadirán al implementar sus requisitos.
+Usuarios y catálogos emplean \gls{baja-logica}; los envíos expresan su vigencia mediante una \gls{maquina-estados}. Las claves foráneas desde el envío usan borrado restrictivo para conservar referencias históricas incluso si un recurso se desactiva. La relación envío--evento usa cascada como excepción deliberada: el evento no tiene sentido fuera del agregado, aunque la API actual tampoco ofrece borrado de envíos. Los nombres, atributos, índices y restricciones se documentan con mayor detalle en \texttt{docs/design/DataModel.md}.
+
+\section{Evolución del esquema}
+
+El esquema activo resulta de cinco migraciones EF Core ordenadas: \texttt{InitialCreate} crea \texttt{app\_users}; \texttt{AddCatalogTables} incorpora vehículos, conductores y clientes; \texttt{AddShipments} añade el agregado y sus relaciones; \texttt{AddShipmentOperation} agrega asignación, estados y fechas reales; y \texttt{AddShipmentEvents} materializa la traza inmutable. El Sprint 6 no necesitó una nueva migración porque la administración reutiliza \texttt{AppUser} y el resumen calcula agregados sobre datos existentes.
+
+Esta secuencia hace reproducible la evolución y mantiene cada incremento desplegable. Diseñar el modelo completo desde el inicio evitó contradicciones entre rebanadas; aplazar la creación física de tablas hasta que existía comportamiento que las utilizase evitó, a su vez, un esquema amplio sin pruebas ni interfaz asociada.

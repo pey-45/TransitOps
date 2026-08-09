@@ -1,8 +1,17 @@
 \chapter{Requisitos}
 
-Los actores son operador, administrador, público no identificado e instalador. Conductores y clientes son información del dominio, pero no usuarios del sistema. Los requisitos se formalizaron sin decisiones técnicas para separar el problema de la solución.
+\section{Elicitación y especificación}
 
-\begin{longtable}{p{1.2cm}p{9.8cm}p{1.8cm}}
+La fuente inicial es una entrevista simulada con Marta Souto, responsable de operaciones de una pyme ficticia de transporte. El formato conversacional obliga a partir de problemas y lenguaje del dominio: información dispersa, recursos duplicados, falta de historial y necesidad de una herramienta sencilla. No se preguntó qué framework o base de datos quería la clienta, porque esas son decisiones de solución.
+
+Las respuestas se consolidaron en \texttt{docs/ClientRequirements.md}. A partir de ellas se redactó \texttt{docs/Requirements.md} como especificación canónica no técnica. Cada requisito conserva un campo \emph{Origen} que apunta a la parte de la entrevista que lo justifica. Una revisión de coherencia añadió aspectos que la conversación exigía pero una primera redacción no hacía comprobables: carga estimada para que la capacidad tuviese uso, prevención de doble reserva, primer administrador, clientes y cambio de contraseña. La entrevista y la especificación se actualizaron juntas, sin inventar unicidades no solicitadas.
+
+Los actores son operador, administrador, público no identificado e instalador. Conductores y clientes son información del dominio, pero RN-16 aclara que no acceden a la aplicación. Esta distinción evita convertir por analogía cada persona registrada en una cuenta.
+
+\clearpage
+\section{Requisitos funcionales}
+
+\begin{longtable}{p{1.0cm}p{7.9cm}p{1.5cm}}
 \caption{Requisitos funcionales}\label{tab:rf}\\
 \hline ID & Descripción & Prioridad \\ \hline
 RF-01 & Acceso con usuario y contraseña y permisos por rol. & Alta \\
@@ -22,4 +31,29 @@ RF-14 & Resumen estadístico operativo. & Media \\
 \hline
 \end{longtable}
 
-Las dieciséis reglas de negocio concretan asignaciones, recursos activos, capacidad, fechas, transiciones, autoría de eventos, administración y bajas lógicas. Los seis requisitos no funcionales cubren facilidad de uso, acceso seguro, fiabilidad, trazabilidad, disponibilidad y rendimiento adecuado para una empresa con unas decenas de recursos. La especificación canónica y su origen se conservan en \texttt{docs/Requirements.md} y \texttt{docs/ClientRequirements.md}.
+Las prioridades orientan el orden, no eliminan alcance. Autenticación, operación básica, trazabilidad y claridad de errores forman la ruta crítica; clientes, autoservicio de contraseña, usuarios e indicadores completan después un producto utilizable. Al cierre del Sprint 6 todos los RF están integrados, aunque la validación de sistema global sigue pendiente.
+
+\section{Reglas de negocio}
+
+Las dieciséis RN concretan condiciones que una descripción funcional breve no debe dejar ambiguas. Se agrupan en cuatro áreas:
+
+\begin{itemize}
+  \item \textbf{Asignación y recursos (RN-01 a RN-05):} un envío mantiene una pareja vehículo--conductor; solo se modifica planificado; cliente y recursos deben estar activos; no se permite \gls{doble-reserva}; y una capacidad insuficiente avisa sin bloquear.
+  \item \textbf{Fechas, estados y traza (RN-06 a RN-09):} las fechas previstas son coherentes; iniciar requiere asignación; los estados finales no revierten; y cada evento pertenece a un envío y conserva autoría.
+  \item \textbf{Acceso y administración (RN-10 a RN-14):} solo el administrador gestiona cuentas; el bootstrap se limita al primero; siempre queda un administrador activo; un usuario inactivo no entra; y el cambio de contraseña exige confirmar la actual.
+  \item \textbf{Conservación y actores (RN-15 y RN-16):} las bajas de catálogo no borran historia, y conductores y clientes no son usuarios.
+\end{itemize}
+
+Las reglas actúan como puente entre lenguaje de negocio y criterios de prueba. Por ejemplo, RF-09 dice asignar recursos, mientras RN-02, RN-03, RN-04 y RN-05 determinan exactamente cuándo se acepta, rechaza o advierte. Esta separación reduce frases excesivamente largas y permite citar la misma regla desde diseño, servicio y matriz de trazabilidad.
+
+\section{Flujos de negocio}
+
+Cuatro recorridos reúnen requisitos sin añadir otros nuevos. El Flujo 1 instala el sistema y crea una sola vez al primer administrador. El Flujo 2 muestra cómo ese administrador crea un operador y cómo este accede y cambia su contraseña. El Flujo 3, representado técnicamente en la Figura~\ref{fig:secuencia-flujo3}, cubre el núcleo: mantener catálogos, crear un envío, asignar recursos disponibles, iniciarlo, registrar seguimiento y entregarlo o cancelarlo. El Flujo 4 desactiva una cuenta sin dejar el sistema sin administrador y conserva su historial.
+
+Los flujos sirven como casos narrativos para demostración y como base de las pruebas de sistema de Sprint 7. Complementan los criterios aislados: una aplicación puede aprobar cada endpoint y fallar al encadenarlos por problemas de sesión, navegación o datos. Por eso el cierre final exige ambos niveles.
+
+\section{Requisitos no funcionales y trazabilidad}
+
+RNF-01 exige facilidad de uso desde navegador; RNF-02, acceso seguro; RNF-03, fiabilidad y conservación; RNF-04, trazabilidad de eventos; RNF-05, disponibilidad compatible con la operativa; y RNF-06, rendimiento adecuado para una empresa con decenas de recursos. Son deliberadamente proporcionales al contexto: no se atribuyen objetivos de escala global a una pyme ficticia, pero tampoco se confunde ``pequeño'' con ausencia de seguridad o pruebas.
+
+La matriz del Apéndice~A enlaza grupos de requisitos con sprints, componentes y evidencia. Los planes de sprint amplían criterios; las suites los automatizan; y el roadmap registra el cierre. La validación final de RNF y los cuatro flujos permanece marcada para Sprint 7, manteniendo visible qué afirmaciones están demostradas y cuáles son todavía objetivo.

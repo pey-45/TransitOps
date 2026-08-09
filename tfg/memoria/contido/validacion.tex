@@ -27,12 +27,12 @@ La ejecución local al cierre del incremento produjo dieciséis pruebas backend,
 \caption{Validación acumulada de los Sprints 2 y 3}
 \begin{tabular}{p{5.8cm}p{2.4cm}p{2.5cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
-CRUD y baja lógica de los tres catálogos & Backend/Frontend & Correcto \\
+CRUD y baja lógica de los tres catálogos & Backend/\allowbreak Frontend & Correcto \\
 Unicidad y reutilización tras baja & Backend & Correcto \\
-Alta, consulta y edición de envíos & Backend/Frontend & Correcto \\
+Alta, consulta y edición de envíos & Backend/\allowbreak Frontend & Correcto \\
 Normalización UTC de formatos Z, sin zona y con offset & Backend & Correcto \\
-Regla de fechas y errores por campo & Backend/Frontend & Correcto \\
-Filtros combinables y paginación estable & Backend/Frontend & Correcto \\
+Regla de fechas y errores por campo & Backend/\allowbreak Frontend & Correcto \\
+Filtros combinables y paginación estable & Backend/\allowbreak Frontend & Correcto \\
 Cliente activo y conservación del vínculo histórico & Backend & Correcto \\
 \hline
 \end{tabular}
@@ -45,12 +45,12 @@ Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 aña
 \caption{Validación del Sprint 4}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
-Asignación conjunta y retirada idempotente & Backend/Frontend & Correcto \\
+Asignación conjunta y retirada idempotente & Backend/\allowbreak Frontend & Correcto \\
 Recursos activos y exclusión del propio envío & Backend & Correcto \\
-Anti-doble-reserva en estados abiertos & Backend/Sistema & Correcto \\
-Aviso no bloqueante de capacidad & Backend/Frontend & Correcto \\
-Transiciones válidas, inválidas y terminales & Backend/Frontend & Correcto \\
-Sellado UTC de recogida y entrega reales & Backend/PostgreSQL & Correcto \\
+Anti-doble-reserva en estados abiertos & Backend/\allowbreak Sistema & Correcto \\
+Aviso no bloqueante de capacidad & Backend/\allowbreak Frontend & Correcto \\
+Transiciones válidas, inválidas y terminales & Backend/\allowbreak Frontend & Correcto \\
+Sellado UTC de recogida y entrega reales & Backend/\allowbreak PostgreSQL & Correcto \\
 Proyección de matrícula y conductor en PostgreSQL & Integración & Correcto \\
 \hline
 \end{tabular}
@@ -63,12 +63,12 @@ El cierre del Sprint 4 elevó el total a 74 pruebas backend y 19 frontend. Adem�
 \caption{Validación del Sprint 5}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
-Alta y consulta inmutable por envío & Backend/Frontend & Correcto \\
-Actor obtenido del claim \texttt{sub} & Backend/HTTP & Correcto \\
-Normalización UTC y tolerancia de futuro & Backend/Frontend & Correcto \\
-Orden total por ocurrencia y creación & Backend/PostgreSQL & Correcto \\
-Eventos automáticos en la misma operación & Backend/Integración & Correcto \\
-Tipos del sistema bloqueados para el cliente & Backend/HTTP & Correcto \\
+Alta y consulta inmutable por envío & Backend/\allowbreak Frontend & Correcto \\
+Actor obtenido del claim \texttt{sub} & Backend/\allowbreak HTTP & Correcto \\
+Normalización UTC y tolerancia de futuro & Backend/\allowbreak Frontend & Correcto \\
+Orden total por ocurrencia y creación & Backend/\allowbreak PostgreSQL & Correcto \\
+Eventos automáticos en la misma operación & Backend/\allowbreak Integración & Correcto \\
+Tipos del sistema bloqueados para el cliente & Backend/\allowbreak HTTP & Correcto \\
 Inserción retroactiva sin recargar historial & Frontend & Correcto \\
 Refresco tras asignación o transición & Frontend & Correcto \\
 \hline
@@ -82,12 +82,12 @@ El Sprint 5 elevó el total a 96 pruebas backend y 24 frontend. Las pruebas de c
 \caption{Validación del Sprint 6}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
-Alta, listado y reactivación de usuarios & Backend/Frontend & Correcto \\
-Política administrativa y ruta directa de operador & HTTP/Frontend & Correcto \\
-Protección del último administrador & Backend/HTTP & Correcto \\
-Cambio efectivo de contraseña propia & Backend/HTTP/Frontend & Correcto \\
+Alta, listado y reactivación de usuarios & Backend/\allowbreak Frontend & Correcto \\
+Política administrativa y ruta directa de operador & HTTP/\allowbreak Frontend & Correcto \\
+Protección del último administrador & Backend/\allowbreak HTTP & Correcto \\
+Cambio efectivo de contraseña propia & Backend/\allowbreak HTTP/\allowbreak Frontend & Correcto \\
 Contadores completos, incluidos estados a cero & Backend & Correcto \\
-Actividad e incidencias con límites inclusivos & Backend/PostgreSQL & Correcto \\
+Actividad e incidencias con límites inclusivos & Backend/\allowbreak PostgreSQL & Correcto \\
 Fechas sin zona y periodo por defecto & PostgreSQL & Correcto \\
 Enlaces del panel hacia filtros operativos & Frontend & Correcto \\
 \hline

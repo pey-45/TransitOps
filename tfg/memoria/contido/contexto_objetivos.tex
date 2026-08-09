@@ -1,6 +1,10 @@
 \chapter{Contexto y objetivos}
 
-El trabajo se desarrolla como TFG del Grado en Ingeniería Informática, mención de Ingeniería del Software. Tras la modificación aprobada el 19 de junio de 2026, el objetivo dejó de ser una plataforma de infraestructura cloud para centrarse en el diseño y desarrollo integral de la aplicación. La implementación anterior se conserva como fuente de conocimiento, pero el producto activo se reconstruye desde cero para que cada incremento recorra realmente todas las capas.
+El trabajo se desarrolla como TFG del Grado en Ingeniería Informática de la Universidade da Coruña, en la mención de Ingeniería del Software. Su planteamiento actual procede de una modificación aprobada el 19 de junio de 2026. La propuesta anterior se centraba en infraestructura cloud y prácticas DevOps alrededor de una aplicación de transportes; la nueva dirección sitúa en primer plano el diseño y desarrollo integral de la propia aplicación y su ciclo de vida.
+
+El cambio no consistió en renombrar el mismo resultado. El material AWS, Terraform, despliegues y una implementación previa se trasladó íntegramente a \texttt{archive/\allowbreak cloud-phase/}. Ese archivo conserva decisiones, migraciones y pruebas como fuente de conocimiento, pero no forma parte del producto activo. La aplicación se reconstruye desde cero sobre el mismo dominio y stack para que los incrementos documentados sean reales: cada sprint parte de los requisitos actuales, decide su diseño, implementa todas las capas necesarias y verifica el resultado. Esta separación evita presentar como nuevo un desarrollo heredado y permite aprovechar experiencia sin perder rigor metodológico.
+
+La situación de partida combina dos necesidades. Desde el dominio, una empresa de transporte pequeña requiere visibilidad compartida y reglas que eviten inconsistencias. Desde el TFG, se necesita demostrar competencias de ingeniería más amplias que la programación de una capa: comprender a la parte interesada, delimitar alcance, justificar arquitectura, probar comportamiento, reproducir entornos y evaluar el producto. TransitOps une ambos objetivos en un caso suficientemente rico para contener estados, relaciones, roles y trazabilidad, pero bastante pequeño para completarlo.
 
 \section{Objetivo general}
 
@@ -9,12 +13,20 @@ Diseñar, construir, probar y desplegar una aplicación web mantenible que permi
 \section{Objetivos específicos}
 
 \begin{itemize}
-  \item Obtener y formalizar requisitos trazables desde una entrevista con la parte interesada.
-  \item Diseñar el dominio, las interfaces y una arquitectura separada de backend y frontend.
-  \item Implementar incrementos verticales utilizables, con autenticación y autorización desde el comienzo.
-  \item Automatizar pruebas de comportamiento en backend y frontend.
-  \item Garantizar ejecución local reproducible mediante contenedores e integración continua.
-  \item Desplegar el producto completo en un entorno accesible y evaluar los resultados.
+  \item Obtener necesidades mediante una entrevista simulada con una responsable del dominio y formalizarlas sin introducir prematuramente decisiones técnicas.
+  \item Mantener trazabilidad entre entrevista, RF-01 a RF-14, RN-01 a RN-16, flujos de negocio, diseño, implementación y pruebas.
+  \item Diseñar un dominio coherente, un contrato HTTP uniforme y una arquitectura separada de backend, frontend y persistencia.
+  \item Implementar incrementos verticales utilizables, con autenticación y autorización desde el comienzo, hasta cubrir el alcance funcional completo.
+  \item Automatizar pruebas de reglas en backend, contratos HTTP y comportamiento observable en frontend.
+  \item Garantizar ejecución local reproducible mediante Docker Compose, configuración externa y migraciones versionadas, sin secretos reales en el repositorio.
+  \item Desplegar el producto en un entorno accesible, ejecutar los cuatro flujos de sistema y analizar los resultados y limitaciones.
+  \item Elaborar documentación técnica y académica que permita reproducir decisiones y defender el proceso seguido.
 \end{itemize}
 
-El éxito se medirá por el cumplimiento de RF-01 a RF-14, la ejecución satisfactoria de los cuatro flujos de negocio, la ausencia de secretos en el repositorio y la posibilidad de reproducir build, pruebas y despliegue siguiendo documentación explícita.
+\section{Criterios de éxito y límites}
+
+Los criterios funcionales son el cumplimiento verificable de RF-01 a RF-14 y la ejecución satisfactoria de los cuatro flujos de negocio. En calidad, se exige build reproducible, suites automatizadas correctas, esquema migrable desde cero, autorización efectiva en servidor, errores comprensibles y conservación del historial. En operación, la aplicación debe poder levantarse siguiendo documentación explícita y sin incorporar credenciales reales a ficheros versionados.
+
+Hasta el Sprint 6 se han alcanzado los criterios funcionales a nivel de pruebas de componente e integración y de verificaciones manuales por rebanada. No se declara todavía el éxito final: faltan las pruebas \gls{e2e} consolidadas, el despliegue accesible y el análisis de endurecimiento del Sprint 7. Esta distinción evita confundir una cobertura funcional amplia con un cierre de sistema todavía pendiente.
+
+El trabajo no pretende optimizar rutas, procesar telemetría GPS, emitir facturas ni ofrecer un portal externo. Tampoco busca profundidad de infraestructura comparable a la propuesta archivada. CI, contenedores y despliegue son medios para reproducir y evaluar el producto; la aportación principal es la disciplina aplicada de ingeniería del software a todo su recorrido.

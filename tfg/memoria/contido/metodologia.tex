@@ -1,6 +1,14 @@
 \chapter{Metodología}
 
-Se adopta un proceso iterativo e incremental. La entrevista simulada con la responsable de operaciones constituye la fuente primaria; de ella se deriva la especificación funcional, y el roadmap distribuye los requisitos en ocho incrementos verticales. Cada sprint incluye diseño detallado, implementación de API e interfaz cuando corresponde, pruebas y actualización documental.
+Se adopta un proceso iterativo e incremental adaptado a un proyecto individual. La ingeniería del software comprende actividades relacionadas ---especificación, desarrollo, validación y evolución--- que no necesitan ejecutarse una única vez como fases estancas \cite{sommerville2016}. En TransitOps cada incremento recorre esas actividades para una capacidad acotada y deja una versión integrada.
+
+\section{De la necesidad al incremento}
+
+La entrevista simulada con una responsable de operaciones constituye la fuente primaria. Sus respuestas se transforman en requisitos funcionales, reglas de negocio, requisitos no funcionales y cuatro flujos. El roadmap agrupa después ese material en ocho sprints. La cadena entrevista $\rightarrow$ requisito $\rightarrow$ diseño $\rightarrow$ prueba conserva la razón de cada decisión y evita que el backlog sea una lista de ideas técnicas sin necesidad asociada.
+
+La unidad de planificación es la \gls{rebanada-vertical}. Por ejemplo, ``gestionar vehículos'' incluye entidad, migración, servicio, endpoint, pantallas y pruebas; no se planifica como una fase de todas las tablas seguida meses después por todas las interfaces. Una estrategia horizontal habría producido mucho código no demostrable hasta el final y habría retrasado el descubrimiento de incompatibilidades entre navegador, API y PostgreSQL. Las rebanadas pequeñas entregan evidencia y permiten reajustar la siguiente decisión.
+
+El Sprint 1 usa un \gls{walking-skeleton}: login y ruta protegida cruzan configuración, base de datos, API, proxy y SPA. Esa base no pretende anticipar toda la funcionalidad, sino retirar pronto los riesgos transversales. Los Sprints 2 a 6 añaden catálogos, envíos, operación, eventos y administración. Sprint 7 reúne endurecimiento, pruebas de sistema y despliegue; Sprint 8 cierra documentación y defensa.
 
 \begin{table}[htbp]
 \centering
@@ -19,6 +27,36 @@ Sprint & Incremento & Requisitos principales \\
 8 & Documentación y defensa & Cierre \\
 \hline
 \end{tabular}
+\label{tab:plan-incremental}
 \end{table}
 
-El modelo completo se diseña en el primer sprint para evitar decisiones locales incompatibles. Su implementación, sin embargo, se realiza mediante migraciones incrementales, conservando una entrega pequeña y demostrable. La definición de hecho de cada sprint exige build y pruebas en verde; los cambios relevantes se registran en el contexto del repositorio.
+\section{Diseño anticipado e implementación incremental}
+
+En Sprint 1 se diseñó el modelo conceptual completo. Esta visión reduce el riesgo de que cada rebanada invente nombres, cardinalidades o políticas de borrado incompatibles. Sin embargo, solo se migró \texttt{AppUser}; cada tabla posterior apareció cuando existían reglas, endpoints y pruebas que la utilizaban. El equilibrio es deliberado: arquitectura suficiente para orientar, implementación justa para demostrar.
+
+Las decisiones se registran en artefactos versionados. \texttt{docs/design/} conserva el modelo y la integración; cada \texttt{SprintNPlan.md} fija decisiones antes de implementar; \texttt{CONTEXT.md} mantiene un log fechado; y \texttt{docs/Roadmap.md} preserva cierres y evidencia. El código implementado prevalece sobre un plan si aparece una diferencia, y la documentación se corrige para describir el resultado real.
+
+\section{Definición de hecho}
+
+Un sprint no se considera terminado cuando el código ``parece funcionar''. Su definición de hecho exige:
+
+\begin{itemize}
+  \item requisitos y decisiones de alcance explícitos;
+  \item reglas situadas en la capa responsable y contrato HTTP coherente;
+  \item flujo de frontend completo cuando la capacidad es visible;
+  \item migración reproducible si cambia el esquema;
+  \item pruebas de comportamiento nuevas o actualizadas;
+  \item lint, builds y suites en verde;
+  \item verificación integrada proporcional al riesgo, incluida PostgreSQL real cuando importa;
+  \item actualización de roadmap, contexto, diseño y memoria con evidencia del incremento.
+\end{itemize}
+
+Esta lista aproxima una política de calidad repetible y evita cierres basados solo en percepción. La CI aporta una comprobación independiente, pero no sustituye las decisiones ni la inspección del flujo real. Capturas, recuentos de pruebas y verificaciones Docker registran lo observado en el momento del cierre.
+
+\section{Pruebas y gestión del riesgo}
+
+La estrategia combina pruebas rápidas de servicios, pruebas de controlador y pruebas de interfaz orientadas a comportamiento. Las reglas críticas se ejercitan donde viven; los contratos se verifican en el borde; y los recorridos completos se reservan para integración y Sprint 7. Esta pirámide evita depender exclusivamente de pruebas \gls{e2e} lentas sin renunciar a validar el sistema ensamblado.
+
+Cada sprint reduce primero su riesgo dominante. En catálogos fue la conservación tras baja; en envíos, fechas UTC y filtros; en operación, estados y reservas; en eventos, atomicidad y autoría; en administración, el último administrador. Las limitaciones no resueltas se registran, no se ocultan: concurrencia en RN-04 y RN-12, token no revocable y \texttt{localStorage} forman entradas concretas para el endurecimiento.
+
+No se aplican ceremonias de equipo que no aportan a un proyecto individual. La planificación, la revisión de alcance, la demostración mediante evidencia y la retrospectiva documental sí se mantienen, coherentes con la idea de adaptar el proceso al tamaño y a las personas \cite{cockburn2004}. El resultado es una metodología ligera, pero auditable.

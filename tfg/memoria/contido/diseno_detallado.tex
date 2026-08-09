@@ -1,15 +1,138 @@
 \chapter{Diseño detallado}
+\label{chap:diseno-detallado}
+
+Este capítulo describe las decisiones que forman el sistema tras los seis primeros incrementos. A diferencia de la crónica del Capítulo~\ref{chap:desarrollo-iterativo}, el orden no es temporal: cada sección presenta una capacidad, las alternativas consideradas y las invariantes que conserva.
 
 \section{Autenticación y autorización}
 
-El arranque recibe un secreto de instalación mediante la cabecera \texttt{X-Bootstrap-Token}. Antes de crear el usuario comprueba que no existe un administrador activo y almacena un hash de la contraseña. El login rechaza de forma indistinguible usuario inexistente, contraseña incorrecta y usuario inactivo para no revelar información de cuentas.
+El arranque controlado de RF-02 resuelve el problema circular de una instalación vacía: todavía no existe un administrador que pueda crear al primero. \texttt{POST /api/v1/auth/bootstrap-admin} recibe un secreto de instalación mediante la cabecera \texttt{X-Bootstrap-Token}, configurado fuera del código. Antes de crear la cuenta comprueba RN-11 ---que no exista ya un administrador activo--- y la unicidad global de usuario y correo. Se eligió un endpoint de uso único frente a credenciales sembradas porque no introduce una contraseña conocida en la imagen ni obliga a manipular directamente la base de datos.
 
-Un login válido emite un JWT firmado con identificador, nombre, correo, rol y caducidad. Las políticas \emph{operational} y \emph{admin} se aplican en el servidor. La SPA usa el rol devuelto para adaptar la navegación, pero esa adaptación visual no sustituye a la autorización de API.
+Las contraseñas se transforman con el componente adaptativo de ASP.NET Core Identity. El login aplica deliberadamente el mismo error a usuario inexistente, contraseña incorrecta y usuario inactivo para no revelar qué cuentas están registradas. Un acceso válido emite un \gls{jwt} firmado que contiene \texttt{sub}, nombre, correo, rol, identificador del token y caducidad. Firma, emisor, audiencia y tiempo de vida se validan en cada petición protegida.
 
-\section{Contrato uniforme}
+Las políticas \emph{Operational} y \emph{Admin} centralizan RN-01 y RN-10. La primera admite ambos roles internos; la segunda solo administradores. La SPA adapta rutas y navegación al rol para evitar acciones inútiles, pero esa visibilidad es una ayuda de uso, no un control de seguridad: los controladores vuelven a exigir la política correspondiente. Esta duplicidad aparente separa correctamente experiencia y autoridad.
 
-Una respuesta correcta contiene \texttt{data} y \texttt{requestId}. Un error contiene \texttt{error.code}, \texttt{error.message}, detalles opcionales y el mismo identificador. Middleware y eventos de autenticación garantizan esta forma para 400, 401, 403, 409 y 500. La interfaz traduce el mensaje a un aviso accesible con rol \texttt{alert}.
+El token es autocontenido y no se consulta la cuenta en cada solicitud. Por ello, una desactivación o un cambio de rol no invalida los claims ya emitidos hasta que el JWT caduque. Se aceptó esta ventana para evitar una lista de revocación o una consulta de sesión en cada llamada dentro de un sistema pequeño. El Sprint 7 deberá valorar si el riesgo requiere reducir la duración, introducir renovación/revocación o comprobar el estado de cuenta para operaciones sensibles.
 
-\section{Sesión en frontend}
+\section{Contrato uniforme de API}
 
-La sesión se conserva en \texttt{localStorage} y se descarta al expirar. Es una decisión pragmática para el Sprint 1, documentada con su riesgo frente a XSS. El endurecimiento del Sprint 7 evaluará cookie \texttt{HttpOnly} y una política de seguridad de contenidos. Los diseños de catálogos, envíos y operaciones se incorporarán en sus respectivos sprints.
+RF-13 exige que un fallo sea comprensible para quien opera y tratable de forma estable por el frontend. Las respuestas correctas envuelven el resultado en \texttt{data} y añaden \texttt{requestId}. Los errores incluyen \texttt{error.code}, \texttt{error.message}, detalles opcionales y el mismo identificador de correlación. El código es estable para la interfaz; el mensaje se presenta a la persona; el identificador enlaza la incidencia con los registros del servidor.
+
+Un middleware común traduce excepciones de aplicación y fallos inesperados. Los eventos del manejador JWT completan la misma forma para 401 y 403, que de otro modo quedarían fuera del flujo MVC. La API mantiene así un contrato único para validación (400), ausencia (404), conflicto de reglas (409), autenticación, autorización y error interno. Se descartó devolver directamente excepciones o formatos distintos por controlador porque obligaría a cada pantalla a conocer particularidades de infraestructura.
+
+En la SPA, el cliente HTTP interpreta el sobre, conserva detalles de validación y convierte el error en un modelo común. Los formularios sitúan los problemas de campo junto al control y muestran el resumen con rol accesible \texttt{alert}. Un conflicto operativo ---por ejemplo, recurso ocupado--- no se confunde con un problema de red; y un aviso que no impide la operación, como la capacidad, usa otro canal visual.
+
+\section{Sesión en el frontend}
+
+El Sprint 1 conserva token, identidad y caducidad en \texttt{localStorage}. El contexto de autenticación reconstruye la sesión al arrancar, la descarta cuando ha expirado y adjunta \texttt{Authorization: Bearer} mediante el cliente HTTP. Una ruta protegida impide renderizar páginas privadas sin sesión; \texttt{AdminRoute} añade la restricción visual de administración.
+
+Esta elección hizo verificable el \gls{walking-skeleton} sin servidor de sesiones ni flujo de renovación, pero aumenta el impacto de una vulnerabilidad \gls{xss}: JavaScript ejecutado en el origen puede leer el token. No se presenta como diseño definitivo. El Sprint 7 comparará una cookie \texttt{HttpOnly}, que reduce la exposición del token pero exige tratar CSRF y ajustar el contrato, junto con una \gls{csp} estricta y el endurecimiento de dependencias. Hasta tomar esa decisión se evita dispersar el acceso al almacenamiento: el contexto y el cliente concentran el posible cambio.
+
+\section{Catálogos: baja lógica y unicidad}
+
+Vehículos, conductores y clientes implementan RF-05, RF-06 y RF-07 con un patrón común: listado de activos, detalle, alta, edición y desactivación. RN-15 y RNF-03 impiden que una baja destruya información que ya participa en operaciones. Por eso \texttt{DELETE} expresa una acción de negocio reversible en los datos ---cambiar \texttt{IsActive}--- y no un borrado físico. Las consultas ordinarias ocultan inactivos, mientras que las proyecciones históricas pueden seguir resolviendo sus etiquetas.
+
+No todos los campos merecen la misma regla de identidad. La matrícula y el código interno identifican funcionalmente un vehículo; el número de carné identifica a un conductor. El servicio normaliza matrícula, códigos y carné a mayúsculas, recorta textos y convierte cadenas opcionales vacías en nulo antes de comprobar conflictos. La validación temprana produce mensajes de dominio y la base de datos refuerza el resultado con \glspl{indice-filtrado} sobre filas activas. La combinación evita tanto carreras triviales como diferencias de representación.
+
+La unicidad solo entre activos permite reutilizar un identificador tras una baja, decisión acordada para los catálogos. No se aplicó a nombre de cliente ni código de empleado porque la entrevista no los declaró únicos. Tampoco se aplica a credenciales de usuario, cuya identidad histórica requiere unicidad global. Estas diferencias evitan imponer reglas inventadas por comodidad técnica.
+
+Las relaciones desde \texttt{Shipment} usan \texttt{RESTRICT}: desactivar no afecta a la clave y un eventual borrado físico no podría dejar un envío sin su referencia original. Para crear o cambiar una asociación, en cambio, el servicio exige que el cliente o recurso esté activo. Esta asimetría satisface a la vez RN-03 ---solo activos en operaciones nuevas--- y RN-15 ---historial conservado---.
+
+La interfaz reutiliza estructura de lista, detalle y formulario, pero no una abstracción genérica que ocultase diferencias de campos y mensajes. Se prefirió repetición pequeña y explícita: tres módulos fáciles de seguir y adaptar frente a un metacomponente de formularios prematuro. Los flujos comparten el cliente, el contrato de error y las convenciones visuales.
+
+\section{Envíos: identificación, fechas y consultas}
+
+\texttt{Shipment} concentra RF-08 y RF-12. Su referencia se recorta, se transforma a mayúsculas y permanece única de forma global, incluso cuando el envío ha terminado, porque es el identificador utilizado en comunicación y trazabilidad. A diferencia de los catálogos, el envío no tiene baja lógica ni endpoint de borrado: su situación se expresa por estado y su historial debe permanecer consultable.
+
+Origen, destino y recogida prevista son obligatorios. Cliente, entrega prevista, carga estimada y notas son opcionales para permitir planificar con información incompleta. RN-06 impide que la entrega prevista preceda a la recogida; se comprueba en la petición, en el servicio tras normalizar y mediante una restricción \gls{sql}. La defensa en profundidad proporciona un error útil en el borde y protege la invariante frente a escrituras futuras que no recorran ese borde.
+
+Las fechas de negocio se modelan como instantes \gls{utc} y PostgreSQL las almacena como \texttt{timestamp with time zone}. El normalizador acepta valores con sufijo \texttt{Z}, con desplazamiento explícito o sin zona. En el último caso el contrato interpreta UTC en vez de la zona local del servidor, eliminando resultados distintos entre equipos. La SPA convierte explícitamente entre los controles \texttt{datetime-local} y UTC; mostrar hora local es una responsabilidad de presentación y no altera el instante persistido.
+
+La consulta admite filtros combinables por estado, intervalo de recogida, cliente, vehículo y conductor. Los filtros se aplican antes del recuento y la paginación. El orden por recogida prevista y, como desempate, referencia produce páginas estables: sin un segundo criterio dos filas simultáneas podrían cambiar de página entre consultas equivalentes. Si la página pedida supera el total se devuelve vacía con los metadatos solicitados, conducta predecible para la SPA.
+
+Los filtros del listado viven en la URL. Esto permite recargar, usar navegación atrás y compartir una vista operativa sin crear estado paralelo. Al editar, el backend devuelve la proyección del cliente incluso si ya está inactivo y la interfaz lo conserva como opción actual; no permite seleccionarlo para un envío nuevo, pero tampoco fuerza a borrar una relación histórica al modificar otro campo.
+
+\section{Operación: asignación y ciclo de vida}
+
+La operación de RF-09 y RF-10 se diseñó mediante acciones explícitas: \texttt{PUT /shipments/\{id\}/assignment}, \texttt{DELETE} sobre esa asignación y \texttt{POST /shipments/\{id\}/status}. Se descartó permitir que el \gls{crud} general editase \texttt{VehicleId}, \texttt{DriverId} o \texttt{Status}: una actualización genérica facilitaría saltarse precondiciones y no expresaría la intención en el contrato.
+
+La asignación es conjunta y solo se modifica mientras el envío está planificado. Vehículo y conductor forman una única decisión operativa; si falta uno, toda la solicitud falla y no existe un estado parcial creado por el servidor. Antes de escribir se verifica RN-03 y se consulta si cualquiera de los recursos participa en otro envío \emph{Planned} o \emph{InProgress}, excluyendo el actual. Así se aplica RN-04 y se permite sustituir un solo recurso enviando de nuevo la pareja completa.
+
+La regla de \gls{doble-reserva} permanece en el servicio y no en un índice único filtrado. El predicado depende del estado de otra entidad operativa, puede evolucionar hacia franjas temporales y el volumen previsto no justificó una estructura específica de PostgreSQL. Existe, por tanto, una ventana entre consulta y escritura: dos solicitudes simultáneas podrían observar disponibilidad y confirmar ambas. El Sprint 7 debe evaluar una transacción con aislamiento adecuado, bloqueo o una restricción equivalente. Declarar esta limitación evita atribuir a la implementación una garantía de concurrencia que todavía no ofrece.
+
+RN-05 tiene semántica de aviso, no de prohibición. Si carga estimada y capacidad están informadas y la segunda es menor, la asignación se guarda y la respuesta contiene \texttt{capacityWarning}. No se persiste un booleano derivado, que quedaría obsoleto al cambiar carga o vehículo, ni se usa un diálogo de confirmación de dos pasos que duplicaría la operación. La advertencia es transitoria y visualmente distinta de un conflicto.
+
+La \gls{maquina-estados} de la Figura~\ref{fig:maquina-estados-s4} constituye una lista cerrada. Desde \emph{Planned} se puede iniciar o cancelar; iniciar exige ambos recursos. Desde \emph{InProgress} se puede entregar o cancelar. \emph{Delivered} y \emph{Cancelled} son terminales, conforme a RN-07 y RN-08. Al iniciar se sella \texttt{ActualPickupAt}; al entregar, \texttt{ActualDeliveryAt}; ambos valores proceden del reloj UTC del servidor, no del cliente, para que el registro efectivo no dependa del equipo del operador.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  state/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1cm, align=center, fill=blue!6},
+  terminal/.style={state, double, fill=gray!10},
+  transition/.style={->, thick}
+]
+  \node[state] (planned) {Planificado};
+  \node[state, right=2.1cm of planned] (progress) {En curso};
+  \node[terminal, right=2.1cm of progress] (delivered) {Entregado};
+  \node[terminal, below=1.8cm of progress] (cancelled) {Cancelado};
+  \draw[transition] (planned) -- node[above, align=center]{iniciar\\\scriptsize requiere recursos} (progress);
+  \draw[transition] (progress) -- node[above]{entregar} (delivered);
+  \draw[transition] (planned) -- node[below left]{cancelar} (cancelled);
+  \draw[transition] (progress) -- node[right]{cancelar} (cancelled);
+\end{tikzpicture}
+\caption{Máquina de estados cerrada del envío}
+\label{fig:maquina-estados-s4}
+\end{figure}
+
+El Flujo 3 de requisitos reúne estas decisiones en un recorrido completo. La Figura~\ref{fig:secuencia-flujo3} muestra la secuencia lógica; cada mutación se valida en API y se confirma junto con su traza. No pretende detallar todas las respuestas HTTP, sino hacer visible qué componente asume cada responsabilidad.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Latex, font=\small]
+  \node[draw, rounded corners, minimum width=2.4cm] (op) at (0,0) {Operador};
+  \node[draw, rounded corners, minimum width=2.4cm] (spa) at (3.4,0) {React SPA};
+  \node[draw, rounded corners, minimum width=2.4cm] (api) at (6.8,0) {API};
+  \node[draw, rounded corners, minimum width=2.4cm] (db) at (10.2,0) {PostgreSQL};
+  \foreach \n in {op,spa,api,db} {\draw[dashed] (\n.south) -- ++(0,-12.1);}
+
+  \draw[->] (0,-1.0) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 1. credenciales} (3.4,-1.0);
+  \draw[->] (3.4,-1.9) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 2. login} (6.8,-1.9);
+  \draw[->] (6.8,-2.8) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 3. verificar hash} (10.2,-2.8);
+  \draw[->] (6.8,-3.7) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 4. JWT + usuario} (3.4,-3.7);
+  \draw[->] (3.4,-4.6) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 5. crear envío} (6.8,-4.6);
+  \draw[->] (6.8,-5.5) -- node[above=2pt, fill=white, inner sep=1pt, align=center]{\scriptsize 6. envío +\\\scriptsize evento Created} (10.2,-5.5);
+  \draw[->] (3.4,-6.4) -- node[above=2pt, fill=white, inner sep=1pt, align=center]{\scriptsize 7. asignar vehículo\\\scriptsize y conductor} (6.8,-6.4);
+  \draw[->] (6.8,-7.3) -- node[above=2pt, fill=white, inner sep=1pt, align=center]{\scriptsize 8. validar y guardar\\\scriptsize + Assigned} (10.2,-7.3);
+  \draw[->] (3.4,-8.2) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 9. iniciar} (6.8,-8.2);
+  \draw[->] (6.8,-9.1) -- node[above=2pt, fill=white, inner sep=1pt, align=center]{\scriptsize 10. sellar recogida\\\scriptsize + Departed} (10.2,-9.1);
+  \draw[->] (3.4,-10.0) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 11. checkpoint/incidencia} (6.8,-10.0);
+  \draw[->] (6.8,-10.9) -- node[above=2pt, fill=white, inner sep=1pt]{\scriptsize 12. evento manual} (10.2,-10.9);
+  \draw[->] (3.4,-11.8) -- node[above=2pt, fill=white, inner sep=1pt, align=center]{\scriptsize 13. entregar y\\\scriptsize consultar historial} (6.8,-11.8);
+\end{tikzpicture}
+\caption{Secuencia resumida del Flujo 3: ejecución integral de un envío}
+\label{fig:secuencia-flujo3}
+\end{figure}
+
+\section{Trazabilidad: historial inmutable}
+
+RF-11 modela la traza como subrecurso \texttt{/shipments/\{id\}/events}. La API solo permite alta y consulta: no hay edición ni borrado. Corregir silenciosamente un hecho destruiría el valor probatorio del historial; una rectificación futura debería registrarse como un nuevo evento, no reescribir el anterior.
+
+\texttt{OccurredAt} representa cuándo sucedió el hecho de negocio y \texttt{CreatedAt} cuándo se anotó. La separación permite registrar tarde una incidencia sin falsear su momento. Las consultas ordenan primero por ocurrencia y después por creación, criterio estable que produce una cronología coherente incluso con eventos retrospectivos. Las fechas manuales futuras se rechazan con una tolerancia pequeña para diferencias de reloj.
+
+Los tipos \emph{Created}, \emph{Assigned}, \emph{Unassigned}, \emph{Departed}, \emph{Delivered} y \emph{Cancelled} están reservados al sistema. La petición pública solo acepta \emph{Checkpoint} e \emph{Incident}; así un cliente no puede fabricar una transición histórica sin cambiar el estado real. Las operaciones de envío añaden su evento automático al mismo contexto antes de un único \texttt{SaveChangesAsync}. La transacción implícita confirma ambos cambios o ninguno, preservando consistencia sin introducir un bus de eventos, interceptores o infraestructura desproporcionada.
+
+RN-09 exige autoría. \texttt{ICurrentUser} encapsula la lectura del claim \texttt{sub}: los servicios dependen de una identidad mínima y las pruebas sustituyen el contexto web con facilidad. Se prefirió esta abstracción frente a leer \texttt{HttpContext} dentro del dominio o propagar un identificador por todas las firmas. \texttt{RecordedByUserId} admite nulo para trazas técnicas sin actor, aunque las operaciones autenticadas actuales registran al usuario.
+
+La relación del evento con el usuario es restrictiva y conserva el autor aunque se desactive. La relación con el envío usa cascada como única excepción al criterio general, porque el evento forma parte del agregado y no tiene vida independiente. Dado que no existe borrado de envíos, la cascada funciona hoy como protección estructural y no como comportamiento accesible.
+
+\section{Administración e indicadores}
+
+RF-04 se publica tras la política real \emph{Admin}. El servicio permite listar activos o incluir inactivos, consultar por identificador, crear, cambiar rol y cambiar activación. Los inactivos permanecen direccionables para hacer posible la reactivación. No existe borrado ni reutilización de nombre o correo: a diferencia de matrícula o carné, las credenciales identifican a quien pudo originar eventos y su unicidad es global.
+
+RN-12 impide dejar la aplicación sin administración. Antes de desactivar a un administrador activo o degradarlo, una guarda busca otro administrador activo. La misma regla cubre ambos caminos y una operación sin cambio conserva la \gls{idempotencia}: devuelve el estado actual sin mutar. Existe una carrera análoga a RN-04 si dos administradores se degradan simultáneamente y cada transacción observa al otro. Se documenta para resolverla en Sprint 7 mediante serialización, bloqueo o una estrategia transaccional; una comprobación de servicio por sí sola no garantiza el invariante bajo concurrencia.
+
+RF-03 y RN-14 permiten cambiar la contraseña propia, no la de terceros. La abstracción \texttt{ICurrentUser} localiza la cuenta activa; después se verifica la contraseña actual y se exige que la nueva sea distinta antes de volver a calcular el hash. La respuesta no devuelve hash ni nueva credencial. El JWT vigente no se sustituye, decisión coherente con la autenticación sin estado y su limitación temporal ya descrita.
+
+RF-14 resume dos clases de información que no deben confundirse. Los contadores de envíos por estado son globales y describen la situación actual. La actividad de vehículos y conductores se limita a un periodo por \texttt{PlannedPickupAt}; las incidencias usan \texttt{OccurredAt}. Sin parámetros, el intervalo termina en el instante actual y comienza treinta días antes; si solo se indica fin, se conservan treinta días hacia atrás. Un rango invertido produce 400.
+
+El resumen se calcula mediante agregaciones y proyecciones, no mediante una tabla de métricas que pudiera desincronizarse. Las etiquetas de recursos se resuelven sin exigir que sigan activos, preservando el significado histórico. La SPA explica qué cifras son globales y cuáles dependen del periodo; los contadores de estado enlazan al listado con el filtro correspondiente. Se aceptó el coste de consulta porque el contexto esperado es una empresa con decenas de recursos. Medición e índices adicionales pertenecen al endurecimiento si las pruebas revelan una necesidad real.

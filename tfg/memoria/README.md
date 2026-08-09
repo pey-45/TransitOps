@@ -4,7 +4,7 @@ Esta carpeta contiene la memoria del Trabajo Fin de Grado de Pablo Manzanares L�
 
 `Diseño y desarrollo de una aplicación de gestión de transportes: ciclo de vida completo del software`.
 
-El fichero principal es `memoria_tfg.tex`. La estructura combina capítulos por fase del ciclo de vida con un capítulo de desarrollo iterativo; el Sprint 1 contiene resultados reales y S2--S8 mantienen placeholders explícitos hasta su ejecución.
+El fichero principal es `memoria_tfg.tex`. La estructura combina capítulos por fase del ciclo de vida con un capítulo de desarrollo iterativo. Los Sprints 1--6 contienen diseño, implementación, pruebas y resultados reales; los Sprints 7--8 permanecen identificados como trabajo pendiente hasta su ejecución.
 
 ## Estructura
 

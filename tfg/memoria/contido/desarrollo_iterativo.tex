@@ -1,4 +1,5 @@
 \chapter{Desarrollo iterativo}
+\label{chap:desarrollo-iterativo}
 
 \section{Sprint 1: cimientos y esqueleto autenticado}
 
@@ -54,23 +55,6 @@ La capacidad insuficiente sigue una semántica distinta a la de los errores: la 
 
 La máquina de estados adopta una política cerrada: solo se permiten las cuatro transiciones dibujadas en la Figura~\ref{fig:maquina-estados-s4}. Entrar en curso requiere los dos recursos y sella la recogida real en UTC; entregar sella la entrega real. Entregado y cancelado son terminales, y ninguna operación devuelve el envío a planificado.
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.86\textwidth}
-\centering
-\begin{tabular}{ccccc}
-Planificado & $\longrightarrow$ & En curso & $\longrightarrow$ & Entregado \\
-& $\searrow$ & $\downarrow$ & & \\
-& & Cancelado & &
-\end{tabular}
-
-\vspace{0.5em}
-\small La transición a ``En curso'' requiere vehículo y conductor; ``Entregado'' y ``Cancelado'' no tienen salida.
-\end{minipage}}
-\caption{Máquina de estados cerrada del envío en el Sprint 4}
-\label{fig:maquina-estados-s4}
-\end{figure}
-
 La migración \texttt{AddShipmentOperation} añadió las dos fechas reales y una restricción de coherencia. La API expone acciones explícitas para asignar, retirar la asignación y cambiar el estado; el CRUD general no puede alterar estos campos. En la interfaz, los botones se derivan del estado actual, las acciones irreversibles piden confirmación y un estado final muestra de forma explícita que ya no admite cambios.
 
 \begin{figure}[htbp]
@@ -108,7 +92,7 @@ El quinto incremento completó el historial inmutable de cada envío. La entidad
 
 RN-09 introdujo por primera vez la identidad del actor en la capa de aplicación. El JWT conserva el identificador en el claim \texttt{sub}; en vez de repetir su lectura en cada controlador o acoplar los servicios a \texttt{HttpContext}, se definió la abstracción mínima \texttt{ICurrentUser}. Su implementación web usa \texttt{IHttpContextAccessor} y los tests la sustituyen por un doble trivial. La alternativa de pasar un \texttt{Guid} por todas las firmas era explícita, pero habría propagado una preocupación transversal por cada acción de envío; leer directamente el contexto dentro del servicio habría impedido aislarlo en pruebas.
 
-Los eventos automáticos se añaden al mismo contexto antes del único \texttt{SaveChangesAsync} de la operación. En consecuencia, la modificación del envío y su traza se confirman en la misma transacción implícita: no puede quedar una salida sin evento ni un evento de una transición rechazada. Se prefirieron llamadas explícitas a un helper privado frente a eventos de dominio, interceptores o un bus, porque el tamaño del dominio no justifica ocultar este efecto lateral.
+Los eventos automáticos se añaden al mismo contexto antes de la única confirmación de EF Core. En consecuencia, la modificación del envío y su traza se guardan en la misma transacción implícita: no puede quedar una salida sin evento ni un evento de una transición rechazada. Se prefirieron llamadas explícitas a un helper privado frente a eventos de dominio, interceptores o un bus, porque el tamaño del dominio no justifica ocultar este efecto lateral.
 
 La API representa el historial como subrecurso \texttt{/shipments/\{id\}/events}, sin edición, borrado ni paginación. La consulta ordena por fecha de ocurrencia y desempata por fecha de creación, proyectando también el nombre de usuario. La migración \texttt{AddShipmentEvents} añadió un índice compuesto para ese patrón de lectura y un índice por tipo que podrá reutilizar el resumen estadístico del Sprint 6.
 
