@@ -96,6 +96,10 @@ Enlaces del panel hacia filtros operativos & Frontend & Correcto \\
 
 El Sprint 6 elevó el total a 127 pruebas backend y 30 frontend. Además de las suites, se construyeron ambos contenedores y se comprobaron las agregaciones sobre PostgreSQL 16 con periodo omitido, explícito y fechas sin zona. El flujo de navegador verificó el alta de un operador, la ausencia del enlace administrativo, la redirección de \texttt{/usuarios}, el formulario de contraseña y el mensaje de conflicto al intentar desactivar al único administrador. No se generó ninguna migración y EF confirmó que la base estaba actualizada.
 
+Las pruebas de sistema del Sprint 7 recorren los cuatro flujos de negocio con Playwright sobre la composición de contenedores. Sobre la sesión comprueban que la cookie no es legible desde \texttt{document.cookie}, evidencia observable del atributo \texttt{HttpOnly}, y que sobrevive a una recarga completa de la página. La colección ejecutable de la API añade la verificación directa de la cabecera \texttt{Set-Cookie}, incluidos \texttt{HttpOnly} y \texttt{SameSite=Strict}, y la reautenticación posterior al cambio de contraseña, cuya invalidación por versión de token cubren además las pruebas de servicio del backend.
+
+Queda fuera de esa automatización el atributo \texttt{Secure}. La integración continua no dispone de terminación TLS y ejecuta la API con el entorno \texttt{Development}, en el que la aplicación emite deliberadamente la cookie sin esa marca para que el recorrido funcione por HTTP; \texttt{Secure} solo se activa fuera de \texttt{Development}. Su verificación es, por tanto, manual y se realiza sobre el despliegue real con HTTPS siguiendo el procedimiento de despliegue. Se documenta de forma explícita porque implica que una de las propiedades endurecidas en el Sprint 7.3 se ejercita automáticamente en el único entorno donde permanece desactivada.
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.4\textwidth]{imaxes/ci-verde}

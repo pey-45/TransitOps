@@ -4,7 +4,6 @@ Description=Comprobar actualizaciones de TransitOps cada cinco minutos
 [Timer]
 OnBootSec=2min
 OnUnitActiveSec=5min
-Persistent=true
 Unit=transitops-deploy.service
 
 [Install]
