@@ -184,3 +184,29 @@ Criterios objetivos de cierre de sprint:
 | `npm audit --fix` rompe el build | Triar primero; son casi seguro devDependencies, así que la urgencia es baja |
 | Testcontainers necesita Docker en local y en CI | Ambos lo tienen; los runners de Actions traen Docker |
 | S7 y la memoria compiten por el mismo calendario | El cierre de S7.5 alimenta justo los capítulos congelados de la memoria |
+
+---
+
+## Saneado posterior (2026-08-20)
+
+Revisión de los cuatro incrementos y barrido de las zonas no cubiertas por ella. Trece hallazgos, ninguno funcional: casi todos eran superficie muerta o engañosa que dejó la migración a cookie de S7.3.
+
+| Hallazgo | Cierre |
+| --- | --- |
+| `/auth/session` duplicaba `/auth/me` | Endpoint retirado; sus tres consumidores (dos pruebas y Postman) apuntan a `/auth/me` |
+| Política CORS obsoleta y sin `AllowCredentials()` | `AddCors`/`UseCors` y la sección `Cors` eliminados; el mismo origen queda documentado como decisión en `docs/design/IntegrationArchitecture.md` |
+| `loginApi` leía un `accessToken` inexistente | `support.ts` confía en el cookie jar de Playwright, que es lo que ya ocurría de facto |
+| 33 pruebas en un único `App.test.tsx` de 487 líneas | Divididas en `src/__tests__/{auth,catalogs,summary,users,shipments}.test.tsx` con arnés común en `src/test/harness.tsx` |
+| `Me()` con cuatro `!` sobre claims | Los datos del usuario salen ahora de `AuthService.GetCurrentUserAsync`, e `IsActive` es real en vez de fijo; un `exp` ausente responde 401 con el contrato uniforme |
+| `Persistent=true` inerte en el timer | Eliminado |
+| `deploy.sh` leía el log completo cada 5 minutos | `--tail=200` |
+| CI no subía el informe HTML de Playwright | Artefacto `playwright-evidence` con `test-results/` y `playwright-report/` |
+| `ghcr.io/pey-45` codificado a mano | `${{ github.repository_owner }}` en CI e `IMAGE_REPOSITORY` en el compose de despliegue |
+| `CurrentUser` usaba el literal `"sub"` | `JwtRegisteredClaimNames.Sub` |
+| `SSH.NET 2025.1.0` vulnerable, transitivo de Testcontainers | Fijado a 2026.0.0 en `TransitOps.Tests.csproj` y documentado en `docs/DependencyAudit.md` |
+| `docs/UpdateMemoryToSprint6.md`, plan de un trabajo ya ejecutado | Eliminado; su contenido está en el log de `CONTEXT.md` |
+| E2E valida imágenes distintas de las que publica `publish` | **No se corrige**: exigiría reestructurar CI para construir una vez y publicar esa imagen. Documentado como limitación conocida en `docs/Deployment.md` §1 |
+
+Además, `cloudflared` pasa a fijarse por digest en lugar de seguir `latest`, de modo que el despliegue periódico ya no puede cambiar la URL del túnel a mitad de una demostración.
+
+Verificación: 139 pruebas backend, 33 frontend en cinco ficheros, los cuatro flujos E2E, lint y build correctos, `npm audit` sin avisos y `dotnet restore` sin `NU1903`.
