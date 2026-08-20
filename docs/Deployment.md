@@ -84,11 +84,29 @@ cd /opt/transitops
 sudo ./scripts/deploy.sh
 ```
 
-El script valida la configuración, descarga las imágenes, aplica el Compose, espera a sus healthchecks, consulta `/api/v1/health` desde el contenedor `web` y muestra el SHA y el digest de las imágenes en ejecución. También imprime la URL temporal cuando `cloudflared` ya la ha registrado. Si todavía no aparece:
+El script valida la configuración, descarga las imágenes, aplica el Compose, espera a sus healthchecks, consulta `/api/v1/health` desde el contenedor `web` y muestra el SHA y el digest de las imágenes en ejecución. Al final imprime también la URL pública del túnel.
+
+### Consultar la URL pública
+
+`cloudflared` genera un hostname nuevo cada vez que se crea el contenedor y no lo escribe en ningún fichero: solo aparece en su log. Para leerla en cualquier momento, sin volver a desplegar:
+
+```bash
+cd /opt/transitops && sudo docker compose --env-file .env --file docker-compose.deploy.yml logs cloudflared | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1
+```
+
+Si no devuelve nada, el túnel todavía se está registrando: espera unos segundos y repite. Para ver el log completo y diagnosticar un fallo de conexión:
 
 ```bash
 sudo docker compose --env-file .env --file docker-compose.deploy.yml logs cloudflared
 ```
+
+**La URL cambia si el contenedor `cloudflared` se recrea, y eso puede ocurrir sin pedirlo.** `deploy.sh` hace `pull` de los cuatro servicios, así que si Cloudflare publica una imagen `cloudflared:latest` nueva, el timer la descarga y recrea el contenedor en su siguiente ejecución, con hostname distinto. Antes de grabar, detén el timer para que la URL no se mueva a mitad de la demostración:
+
+```bash
+sudo systemctl stop transitops-deploy.timer
+```
+
+Reactívalo con `sudo systemctl start transitops-deploy.timer` cuando ya no dependas de una URL estable.
 
 Para diagnosticar el stack sin exponer un puerto HTTP:
 
@@ -157,12 +175,15 @@ No añadas `--volumes` salvo que quieras eliminar de forma irreversible la base 
 
 ## 8. Guion de evidencia
 
-Graba en una sola pieza:
+Graba en una sola pieza, en este orden:
 
 1. `git rev-parse HEAD` y el workflow verde correspondiente.
-2. `sudo ./scripts/deploy.sh`, incluidos SHA, digests y health check.
-3. `systemctl list-timers` y `journalctl -u transitops-deploy.service`.
-4. Los cuatro flujos de negocio por la URL HTTPS del túnel.
-5. La cookie segura en las herramientas del navegador y la ausencia de puertos publicados en `docker compose ps`.
+2. `sudo ./scripts/deploy.sh`, incluidos SHA, digests, health check y la URL del túnel.
+3. `systemctl list-timers` y `journalctl -u transitops-deploy.service`, para evidenciar la vía automática.
+4. `sudo systemctl stop transitops-deploy.timer`, para fijar la URL durante el resto de la grabación.
+5. Los cuatro flujos de negocio por la URL HTTPS del túnel.
+6. La cookie con `HttpOnly`, `Secure` y `SameSite=Strict` en las herramientas del navegador, y la ausencia de puertos publicados en `docker compose ps`.
+
+El paso 4 va deliberadamente después del 3: el timer hay que demostrarlo antes de detenerlo, y detenerlo evita que una imagen `cloudflared` nueva cambie el hostname a mitad de los flujos.
 
 Conserva el vídeo y anota el SHA mostrado: la URL temporal no constituye evidencia duradera por sí sola.
