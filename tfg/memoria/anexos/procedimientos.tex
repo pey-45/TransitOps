@@ -1,26 +1,58 @@
 \chapter{Procedimientos de reproducción}
 
+Este anexo recoge los procedimientos que permiten reproducir lo que la memoria afirma haber verificado. Ninguno requiere conocimiento no escrito: si un paso necesitase una decisión que no aparece aquí, sería un defecto del procedimiento y no del lector.
+
 \section{Ejecución contenerizada}
 
-Con Docker Desktop disponible, desde la raíz se ejecuta:
+Con Docker y el complemento Compose disponibles, desde la raíz del repositorio se copia la plantilla de configuración y se levanta la composición:
 
 \begin{verbatim}
-copy .env.example .env
+cp .env.example .env        (copy en Windows)
 docker compose up --build
 \end{verbatim}
 
-La interfaz queda en \url{http://localhost:5173} y la salud de API en \url{http://localhost:8080/api/v1/health}. El primer administrador se crea una sola vez mediante \texttt{POST /api/v1/auth/bootstrap-admin}, enviando JSON con usuario, correo y contraseña y la cabecera \texttt{X-Bootstrap-Token}. El fichero \texttt{.env} es obligatorio, queda ignorado por Git y se crea desde \texttt{.env.example}; sus valores son exclusivamente locales.
+La interfaz queda en \url{http://localhost:5173} y la salud de la API en \url{http://localhost:8080/api/v1/health}. El primer administrador se crea una sola vez mediante \texttt{POST /api/v1/auth/bootstrap-admin}, enviando usuario, correo y contraseña en JSON junto con la cabecera \texttt{X-Bootstrap-Token}. El fichero \texttt{.env} es obligatorio, queda ignorado por el control de versiones y sus valores son exclusivamente locales; la composición falla antes de arrancar si falta alguna variable.
 
-\section{Verificación nativa}
+\section{Verificación automatizada}
+
+Las pruebas de servicio, de controlador y de componente no necesitan la composición levantada. Las de backend sustituyen PostgreSQL por un proveedor en memoria, salvo la clase de concurrencia, que arranca su propio contenedor mediante Testcontainers y por tanto requiere un Docker operativo:
 
 \begin{verbatim}
 dotnet restore TransitOps.slnx
 dotnet build TransitOps.slnx
 dotnet test TransitOps.slnx
-cd frontend
-npm ci
-npm run build
-npm run test
 \end{verbatim}
 
-La migración se valida con \texttt{dotnet tool restore} y la opción \texttt{--migrate-only} de la API contra una instancia PostgreSQL configurada.
+\begin{verbatim}
+cd frontend
+npm ci
+npm run lint
+npm run test
+npm run build
+\end{verbatim}
+
+La validación de migraciones se realiza con \texttt{dotnet tool restore} y la opción \texttt{-{}-migrate-only} de la API contra una instancia PostgreSQL configurada, que es la misma comprobación que ejecuta la integración continua.
+
+\section{Pruebas de sistema}
+
+Los cuatro flujos de negocio se ejecutan con Playwright contra la composición completa, de modo que esta debe estar levantada y respondiendo antes de lanzarlos. La preparación global arranca el primer administrador si la base todavía no lo tiene y tolera el conflicto si ya existe, y cada prueba genera sus propios datos con identificadores únicos, por lo que no hace falta reiniciar la base entre ejecuciones:
+
+\begin{verbatim}
+docker compose up --build --detach
+cd frontend
+npx playwright install --with-deps chromium
+npm run test:e2e
+\end{verbatim}
+
+Ante un fallo, la configuración conserva traza, captura y vídeo de la prueba afectada. La colección de la API publicada en \texttt{postman/} cubre los mismos contratos de forma directa, incluida la comprobación de la cabecera \texttt{Set-Cookie} de la sesión.
+
+\section{Despliegue accesible}
+
+El procedimiento completo del entorno accesible ---provisión de la máquina, instalación de Docker, configuración privada, ejecución del script, arranque del primer administrador y activación del temporizador--- se publica en \texttt{docs/Deployment.md} y se resume en el Capítulo~\ref{chap:despliegue}. Una vez preparada la máquina, todo el ciclo se reduce a una orden:
+
+\begin{verbatim}
+cd /opt/transitops
+sudo ./scripts/deploy.sh
+\end{verbatim}
+
+El script valida la configuración, descarga las imágenes publicadas, aplica la composición, espera las comprobaciones de salud, verifica la API a través del proxy interno y muestra la revisión y el digest de lo que ha quedado en ejecución junto con la dirección pública del túnel. La misma orden la invoca el temporizador de \emph{systemd}, de modo que la vía automática y la manual no son procedimientos distintos.
