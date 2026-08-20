@@ -17,7 +17,7 @@ Los actores son operador, administrador, público no identificado e instalador. 
 RF-01 & Acceso con usuario y contraseña y permisos por rol. & Alta \\
 RF-02 & Creación controlada del primer administrador. & Alta \\
 RF-03 & Cambio de contraseña propia confirmando la actual. & Media \\
-RF-04 & Administración de usuarios, roles y activación. & Media \\
+RF-04 & Administración de usuarios, roles, activación y asignación de contraseña. & Media \\
 RF-05 & Gestión y baja lógica de vehículos. & Alta \\
 RF-06 & Gestión y baja lógica de conductores. & Alta \\
 RF-07 & Gestión y baja lógica de clientes. & Media \\
@@ -35,12 +35,12 @@ Las prioridades orientan el orden, no eliminan alcance. Autenticación, operaci�
 
 \section{Reglas de negocio}
 
-Las dieciséis RN concretan condiciones que una descripción funcional breve no debe dejar ambiguas. Se agrupan en cuatro áreas:
+Las diecisiete RN concretan condiciones que una descripción funcional breve no debe dejar ambiguas. Se agrupan en cuatro áreas:
 
 \begin{itemize}
   \item \textbf{Asignación y recursos (RN-01 a RN-05):} un envío mantiene una pareja vehículo--conductor; solo se modifica planificado; cliente y recursos deben estar activos; no se permite \gls{doble-reserva}; y una capacidad insuficiente avisa sin bloquear.
   \item \textbf{Fechas, estados y traza (RN-06 a RN-09):} las fechas previstas son coherentes; iniciar requiere asignación; los estados finales no revierten; y cada evento pertenece a un envío y conserva autoría.
-  \item \textbf{Acceso y administración (RN-10 a RN-14):} solo el administrador gestiona cuentas; el bootstrap se limita al primero; siempre queda un administrador activo; un usuario inactivo no entra; y el cambio de contraseña exige confirmar la actual.
+  \item \textbf{Acceso y administración (RN-10 a RN-14, RN-17):} solo el administrador gestiona cuentas; el bootstrap se limita al primero; siempre queda un administrador activo; un usuario inactivo no entra; el cambio de contraseña propia exige confirmar la actual; y un administrador puede asignar una contraseña nueva a otra persona sin conocer la anterior, lo que cierra sus sesiones abiertas y no es aplicable a su propia cuenta.
   \item \textbf{Conservación y actores (RN-15 y RN-16):} las bajas de catálogo no borran historia, y conductores y clientes no son usuarios.
 \end{itemize}
 
@@ -56,4 +56,4 @@ Los flujos sirven como casos narrativos para demostración y como base de las pr
 
 RNF-01 exige facilidad de uso desde navegador; RNF-02, acceso seguro; RNF-03, fiabilidad y conservación; RNF-04, trazabilidad de eventos; RNF-05, disponibilidad compatible con la operativa; y RNF-06, rendimiento adecuado para una empresa con decenas de recursos. Son deliberadamente proporcionales al contexto: no se atribuyen objetivos de escala global a una pyme ficticia, pero tampoco se confunde ``pequeño'' con ausencia de seguridad o pruebas.
 
-La matriz del Apéndice~A enlaza grupos de requisitos con sprints, componentes y evidencia. Los planes de sprint amplían criterios; las suites los automatizan; y el roadmap registra el cierre. La validación final de RNF y los cuatro flujos permanece marcada para Sprint 7, manteniendo visible qué afirmaciones están demostradas y cuáles son todavía objetivo.
+La matriz del Apéndice~A enlaza grupos de requisitos con sprints, componentes y evidencia. Los planes de sprint amplían criterios; las suites los automatizan; y el roadmap registra el cierre. Los cuatro flujos quedaron automatizados en el séptimo incremento; la comprobación de RNF-05 depende todavía del entorno desplegado, y se mantiene marcada como tal para que siga siendo visible qué afirmaciones están demostradas y cuáles son todavía objetivo.
