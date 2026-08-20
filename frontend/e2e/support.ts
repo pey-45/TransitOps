@@ -27,6 +27,9 @@ export async function loginThroughUi(page: Page, username: string, password: str
   await expect(page.getByRole('heading', { name: `Hola, ${username}` })).toBeVisible()
 }
 
+// La sesión viaja en la cookie HttpOnly que emite el login. El APIRequestContext de Playwright
+// la conserva en su propio jar y la reenvía en las peticiones siguientes, así que no hay
+// ninguna cabecera de autorización que construir ni propagar.
 export async function loginApi(request: APIRequestContext, username: string, password: string) {
   const response = await request.post('/api/v1/auth/login', { data: { username, password } })
   await expectApi(response, 200)

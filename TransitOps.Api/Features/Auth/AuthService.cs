@@ -53,6 +53,19 @@ public sealed class AuthService(
         return new LoginResult(CreateToken(user, expiresAt), expiresAt, MapUser(user));
     }
 
+    public async Task<UserResponse> GetCurrentUserAsync(CancellationToken cancellationToken)
+    {
+        var user = currentUser.Id.HasValue
+            ? await dbContext.AppUsers.SingleOrDefaultAsync(
+                item => item.Id == currentUser.Id.Value,
+                cancellationToken)
+            : null;
+        if (user is null || !user.IsActive)
+            throw new ApiException(401, "authentication_required", "Es necesario iniciar sesión.");
+
+        return MapUser(user);
+    }
+
     public async Task ChangePasswordAsync(
         ChangePasswordRequest request,
         CancellationToken cancellationToken)

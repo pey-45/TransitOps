@@ -30,3 +30,9 @@ Los éxitos usan `{ "data": ..., "requestId": "..." }`. Los fallos usan `{ "erro
 El despliegue de demostración usa cuatro servicios en una VM Ubuntu: PostgreSQL, API, Nginx/SPA y `cloudflared`. Ninguno publica puertos en el host. `cloudflared` establece una conexión saliente y ofrece una URL HTTPS temporal; desde ahí reenvía a Nginx por la red privada de Compose, que a su vez enruta `/api` a ASP.NET Core. El diagnóstico se ejecuta por SSH dentro del contenedor web, no mediante una entrada HTTP alternativa.
 
 La API se ejecuta en entorno `Production`, de modo que la cookie siempre conserva `Secure` aunque Cloudflare termine TLS antes del tramo HTTP privado. GitHub Actions publica imágenes de API y web en GHCR solo después de superar compilación, pruebas y E2E. La VM aplica un modelo pull mediante un único script invocado manualmente o por un timer de systemd; el script valida salud y registra SHA y digest desplegados.
+
+## Mismo origen por diseño
+
+La SPA y la API comparten origen siempre: Nginx sirve los estáticos y reenvía `/api` al backend en Docker, y Vite hace el mismo proxy en desarrollo. No es una casualidad de la configuración local, es la condición que permite que la sesión viaje en una cookie `SameSite=Strict` sin CORS ni preflight.
+
+Por eso el proyecto **no define ninguna política CORS**. Una cookie `SameSite=Strict` no se envía entre orígenes, así que una política permisiva no habilitaría un cliente externo: solo daría la apariencia de hacerlo. Si alguna vez se sirviera la SPA desde un origen distinto, habría que rediseñar la sesión (no solo añadir CORS), y esa decisión debe tomarse de forma explícita.

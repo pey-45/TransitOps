@@ -40,18 +40,10 @@ public sealed class AuthController(IAuthService authService, IWebHostEnvironment
 
     [Authorize(Policy = Policies.Operational)]
     [HttpGet("me")]
-    public ActionResult<ApiResponse<LoginResponse>> Me()
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> Me(CancellationToken cancellationToken)
     {
-        var id = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
-        var expiresAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(
-            User.FindFirstValue(JwtRegisteredClaimNames.Exp)!,
-            CultureInfo.InvariantCulture)).UtcDateTime;
-        var user = new UserResponse(
-            id,
-            User.Identity!.Name!,
-            User.FindFirstValue(JwtRegisteredClaimNames.Email)!,
-            User.FindFirstValue("role")!,
-            true);
+        var expiresAt = SessionExpiry();
+        var user = await authService.GetCurrentUserAsync(cancellationToken);
         return Ok(ApiResponse<LoginResponse>.Success(
             new LoginResponse(expiresAt, user),
             HttpContext.TraceIdentifier));
@@ -66,14 +58,6 @@ public sealed class AuthController(IAuthService authService, IWebHostEnvironment
     }
 
     [Authorize(Policy = Policies.Operational)]
-    [HttpGet("session")]
-    public ActionResult<ApiResponse<object>> Session() => Ok(ApiResponse<object>.Success(new
-    {
-        username = User.Identity!.Name,
-        role = User.FindFirst("role")?.Value
-    }, HttpContext.TraceIdentifier));
-
-    [Authorize(Policy = Policies.Operational)]
     [HttpPost("password")]
     public async Task<ActionResult<ApiResponse<object>>> ChangePassword(
         ChangePasswordRequest request,
@@ -84,4 +68,22 @@ public sealed class AuthController(IAuthService authService, IWebHostEnvironment
     }
 
     private bool SecureCookie => !environment.IsDevelopment() && !environment.IsEnvironment("Testing");
+
+    // AuthService emite `exp` y OnTokenValidated ya ha validado la firma, así que en la práctica
+    // el claim está siempre presente. Se lee de forma comprobada de todos modos: un token sin
+    // caducidad no es una sesión utilizable y debe responder 401 con el contrato uniforme,
+    // no romper con un 500.
+    private DateTime SessionExpiry()
+    {
+        if (!long.TryParse(
+                User.FindFirstValue(JwtRegisteredClaimNames.Exp),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var seconds))
+        {
+            throw new ApiException(401, "authentication_required", "Es necesario iniciar sesión.");
+        }
+
+        return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
+    }
 }

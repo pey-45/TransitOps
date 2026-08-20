@@ -151,16 +151,16 @@
           ]
         },
         {
-          "name": "Get Session",
+          "name": "Get Current Session",
           "request": {
             "method": "GET",
             "header": [ { "key": "Accept", "value": "application/json" } ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/session",
+              "raw": "{{baseUrl}}/api/v1/auth/me",
               "host": [ "{{baseUrl}}" ],
-              "path": [ "api", "v1", "auth", "session" ]
+              "path": [ "api", "v1", "auth", "me" ]
             },
-            "description": "Requiere la cookie de sesión con policy 'operational' (admin u operator). Devuelve data.username y data.role."
+            "description": "Rehidrata la sesión a partir de la cookie: requiere policy 'operational' (admin u operator) y devuelve data.expiresAt y data.user. Es el endpoint que usa la SPA al recargar la página."
           },
           "event": [
             {
@@ -168,7 +168,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Rehidrata la sesion desde la cookie\", () => {",
+                  "  const payload = pm.response.json();",
+                  "  pm.expect(payload.data).to.have.property(\"expiresAt\");",
+                  "  pm.expect(payload.data.user).to.have.property(\"username\");",
+                  "});"
                 ]
               }
             }

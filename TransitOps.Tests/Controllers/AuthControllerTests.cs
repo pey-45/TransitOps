@@ -65,10 +65,10 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
-    public async Task Session_returns_unauthorized_contract_without_token()
+    public async Task Me_returns_unauthorized_contract_without_session_cookie()
     {
         using var factory = new TransitOpsApiFactory();
-        using var response = await factory.CreateClient().GetAsync("/api/v1/auth/session");
+        using var response = await factory.CreateClient().GetAsync("/api/v1/auth/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal("authentication_required", (await ReadJson(response))["error"]?["code"]?.GetValue<string>());
@@ -118,18 +118,18 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
-    public async Task Session_returns_authenticated_user_from_issued_token()
+    public async Task Me_returns_authenticated_user_from_session_cookie()
     {
         using var factory = FactoryWithOperator();
         using var client = factory.CreateClient();
         (await Login(client)).EnsureSuccessStatusCode();
 
-        var response = await client.GetAsync("/api/v1/auth/session");
+        var response = await client.GetAsync("/api/v1/auth/me");
         var payload = await ReadJson(response);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("operator", payload["data"]?["username"]?.GetValue<string>());
-        Assert.Equal("operator", payload["data"]?["role"]?.GetValue<string>());
+        Assert.Equal("operator", payload["data"]?["user"]?["username"]?.GetValue<string>());
+        Assert.Equal("operator", payload["data"]?["user"]?["role"]?.GetValue<string>());
     }
 
     [Fact]

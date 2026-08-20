@@ -23,8 +23,6 @@ namespace TransitOps.Api;
 
 public class Program
 {
-    private const string CorsPolicy = "Frontend";
-
     public static void Main(string[] args)
     {
         var migrateOnly = args.Contains("--migrate-only", StringComparer.OrdinalIgnoreCase);
@@ -69,10 +67,6 @@ public class Program
         builder.Services.AddScoped<IShipmentEventService, ShipmentEventService>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ISummaryService, SummaryService>();
-
-        builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy =>
-            policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
-                .AllowAnyHeader().AllowAnyMethod()));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
         {
@@ -149,7 +143,6 @@ public class Program
 
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-        app.UseCors(CorsPolicy);
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

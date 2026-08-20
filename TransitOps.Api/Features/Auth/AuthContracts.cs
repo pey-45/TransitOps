@@ -23,5 +23,6 @@ public interface IAuthService
 {
     Task<UserResponse> BootstrapAsync(BootstrapAdminRequest request, string? token, CancellationToken cancellationToken);
     Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
+    Task<UserResponse> GetCurrentUserAsync(CancellationToken cancellationToken);
     Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken);
 }
