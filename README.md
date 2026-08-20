@@ -75,6 +75,7 @@ Development follows an iterative, incremental approach organized in sprints, as 
 - Data model: [docs/design/DataModel.md](docs/design/DataModel.md)
 - Integration architecture: [docs/design/IntegrationArchitecture.md](docs/design/IntegrationArchitecture.md)
 - Deployment procedure: [docs/Deployment.md](docs/Deployment.md)
+- End-user manual: [docs/UserManual.md](docs/UserManual.md)
 - Stable agent instructions: [AGENTS.md](AGENTS.md)
 - Evolving project context and decision log: [CONTEXT.md](CONTEXT.md)
 - Archived materials (previous direction + previous-iteration reference code): [archive/README.md](archive/README.md)

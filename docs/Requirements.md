@@ -94,17 +94,19 @@ El sistema debe permitir que cada persona usuaria cambie su propia contraseña.
 
 **Criterios de aceptación:**
 - Para cambiarla, la persona debe confirmar su contraseña actual.
-- La recuperación de una contraseña olvidada no es automática: la reasigna un administrador (queda fuera de alcance por ahora).
+- La recuperación de una contraseña olvidada no es automática: la reasigna un administrador (RF-04).
 
 **Origen:** "Sobre quién usará la aplicación" (gestión de contraseñas).
 
 ### RF-04 · Administración de Usuarios
 
-El sistema debe permitir a un administrador dar de alta nuevas personas usuarias, asignarles un tipo de acceso (operador o administrador), y activarlas o desactivarlas.
+El sistema debe permitir a un administrador dar de alta nuevas personas usuarias, asignarles un tipo de acceso (operador o administrador), activarlas o desactivarlas, y asignarles una contraseña nueva cuando la hayan olvidado.
 
 **Criterios de aceptación:**
 - Solo un administrador puede realizar estas acciones.
 - El sistema no debe permitir quedarse sin ningún administrador activo.
+- Asignar una contraseña nueva a otra persona no exige conocer la anterior, pero cierra sus sesiones abiertas.
+- Un administrador no puede asignarse a sí mismo una contraseña nueva por esta vía: para la propia sigue rigiendo RF-03 y RN-14.
 
 **Origen:** "Sobre quién usará la aplicación".
 
@@ -231,6 +233,7 @@ El sistema debe ofrecer un resumen con el número de envíos en cada estado, la 
 - **RN-14:** Cambiar la contraseña propia requiere confirmar la contraseña actual.
 - **RN-15:** Dar de baja un vehículo, conductor o cliente no elimina los envíos ni el historial asociados; solo lo retira del uso diario.
 - **RN-16:** Los conductores y los clientes no acceden a la aplicación; su información se gestiona, pero no son personas usuarias del sistema.
+- **RN-17:** Un administrador puede asignar una contraseña nueva a otra persona sin conocer la anterior; hacerlo invalida las sesiones abiertas de esa persona. No es aplicable a la propia cuenta, que se rige por RN-14.
 
 ## Flujos de Negocio
 

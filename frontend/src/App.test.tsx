@@ -260,6 +260,41 @@ describe('administración e indicadores', () => {
     })
   })
 
+  it('resets another user password and offers self-service on the own row', async () => {
+    currentSession = session
+    const target = { ...session.user, id: 'user-2', username: 'operator', role: 'operator' as const }
+    const fetchMock = vi.fn().mockImplementation((_input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? response({ data: target, requestId: 'reset-1' })
+        : response({ data: [session.user, target], requestId: 'users-1' }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderAt('/usuarios')
+    const user = userEvent.setup()
+
+    await screen.findByText('operator')
+    expect(screen.getByRole('link', { name: 'Cambiar mi contraseña' })).toHaveAttribute('href', '/cambiar-contrasena')
+    expect(screen.getAllByRole('button', { name: 'Restablecer contraseña' })).toHaveLength(1)
+
+    await user.click(screen.getByRole('button', { name: 'Restablecer contraseña' }))
+    expect(await screen.findByRole('heading', { name: 'Restablecer la contraseña de operator' })).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Contraseña nueva'), 'ResetPass!2026')
+    await user.type(screen.getByLabelText('Repetir contraseña nueva'), 'OtherPass!2026')
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+    expect(screen.getByText('Las contraseñas no coinciden.')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(call => call[1]?.method === 'PUT')).toBe(false)
+
+    await user.clear(screen.getByLabelText('Repetir contraseña nueva'))
+    await user.type(screen.getByLabelText('Repetir contraseña nueva'), 'ResetPass!2026')
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Se ha asignado una contraseña nueva a operator y se han cerrado sus sesiones abiertas.')
+    const call = fetchMock.mock.calls.find(item => item[1]?.method === 'PUT')!
+    expect(String(call[0])).toContain('/api/v1/users/user-2/password')
+    expect(JSON.parse(String(call[1]?.body))).toEqual({ password: 'ResetPass!2026' })
+  })
+
   it('checks repeated password locally and submits a valid password change', async () => {
     currentSession = session
     const fetchMock = vi.fn().mockImplementation(() =>

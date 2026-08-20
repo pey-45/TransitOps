@@ -54,4 +54,13 @@ public sealed class UsersController(IUserService service) : ControllerBase
         Ok(ApiResponse<UserResponse>.Success(
             await service.ChangeActivationAsync(id, request, cancellationToken),
             HttpContext.TraceIdentifier));
+
+    [HttpPut("{id:guid}/password")]
+    public async Task<ActionResult<ApiResponse<UserResponse>>> ResetPassword(
+        Guid id,
+        ResetUserPasswordRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(ApiResponse<UserResponse>.Success(
+            await service.ResetPasswordAsync(id, request, cancellationToken),
+            HttpContext.TraceIdentifier));
 }

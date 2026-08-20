@@ -7,6 +7,7 @@ using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Auth;
 using TransitOps.Api.Features.Users;
 using TransitOps.Api.Persistence;
+using TransitOps.Api.Security;
 
 namespace TransitOps.Tests.Persistence;
 
@@ -92,8 +93,8 @@ public sealed class PostgreSqlConcurrencyTests : IAsyncLifetime
 
         await using var first = CreateDatabase();
         await using var second = CreateDatabase();
-        var firstService = new UserService(first, new PasswordHasher<AppUser>());
-        var secondService = new UserService(second, new PasswordHasher<AppUser>());
+        var firstService = new UserService(first, new PasswordHasher<AppUser>(), new StubCurrentUser(null));
+        var secondService = new UserService(second, new PasswordHasher<AppUser>(), new StubCurrentUser(null));
 
         var results = await Task.WhenAll(
             CaptureApiExceptionAsync(() => firstService.ChangeActivationAsync(firstAdmin.Id, new(false), default)),
@@ -156,4 +157,5 @@ public sealed class PostgreSqlConcurrencyTests : IAsyncLifetime
         PasswordHash = "hash",
         Role = UserRole.Admin
     };
+    private sealed record StubCurrentUser(Guid? Id) : ICurrentUser;
 }

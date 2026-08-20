@@ -5,12 +5,14 @@ using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Auth;
 using TransitOps.Api.Persistence;
+using TransitOps.Api.Security;
 
 namespace TransitOps.Api.Features.Users;
 
 public sealed class UserService(
     TransitOpsDbContext dbContext,
-    IPasswordHasher<AppUser> passwordHasher) : IUserService
+    IPasswordHasher<AppUser> passwordHasher,
+    ICurrentUser currentUser) : IUserService
 {
     private const long LastAdminLockKey = 2026080701;
 
@@ -106,6 +108,27 @@ public sealed class UserService(
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null)
             await transaction.CommitAsync(cancellationToken);
+        return Map(user);
+    }
+
+    public async Task<UserResponse> ResetPasswordAsync(
+        Guid id,
+        ResetUserPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (currentUser.Id == id)
+        {
+            throw new ApiException(
+                409,
+                "user_self_password_reset",
+                "Cambia tu propia contraseña desde tu cuenta, confirmando la actual.");
+        }
+
+        var user = await Existing(id, cancellationToken);
+        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+        user.TokenVersion++;
+        user.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
         return Map(user);
     }
 

@@ -18,6 +18,9 @@ public sealed record UpdateUserRoleRequest(
 
 public sealed record UpdateUserActivationRequest([Required] bool? IsActive);
 
+public sealed record ResetUserPasswordRequest(
+    [Required, StringLength(128, MinimumLength = 10)] string Password);
+
 public sealed record ListUsersQuery(bool? IncludeInactive);
 
 public interface IUserService
@@ -29,6 +32,10 @@ public interface IUserService
     Task<UserResponse> ChangeActivationAsync(
         Guid id,
         UpdateUserActivationRequest request,
+        CancellationToken cancellationToken);
+    Task<UserResponse> ResetPasswordAsync(
+        Guid id,
+        ResetUserPasswordRequest request,
         CancellationToken cancellationToken);
 }
 

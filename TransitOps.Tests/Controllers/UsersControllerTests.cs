@@ -14,6 +14,7 @@ public sealed class UsersControllerTests
     [InlineData("POST", "/api/v1/users")]
     [InlineData("PUT", "/api/v1/users/11111111-1111-1111-1111-111111111111/role")]
     [InlineData("PUT", "/api/v1/users/11111111-1111-1111-1111-111111111111/activation")]
+    [InlineData("PUT", "/api/v1/users/11111111-1111-1111-1111-111111111111/password")]
     public async Task User_administration_requires_an_admin(string method, string path)
     {
         using var factory = FactoryWithOperator();
@@ -108,6 +109,70 @@ public sealed class UsersControllerTests
         var rejected = await operatorClient.GetAsync("/api/v1/auth/me");
         Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
         Assert.Equal("authentication_required", (await Json(rejected))["error"]?["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Admin_reset_closes_the_target_session_and_enables_the_new_password()
+    {
+        var admin = TransitOpsApiFactory.CreateUser("admin", "SecurePass!123", UserRole.Admin);
+        var operatorUser = TransitOpsApiFactory.CreateUser("operator", "SecurePass!123", UserRole.Operator);
+        using var factory = new TransitOpsApiFactory(db => db.AppUsers.AddRange(admin, operatorUser));
+        using var operatorClient = await AuthenticatedClient(factory, "operator", "SecurePass!123");
+        using var adminClient = await AuthenticatedClient(factory, "admin", "SecurePass!123");
+
+        var response = await adminClient.PutAsJsonAsync(
+            $"/api/v1/users/{operatorUser.Id}/password",
+            new { password = "ResetPass!2026" });
+        var body = await Json(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("operator", body["data"]?["username"]?.GetValue<string>());
+        Assert.Null(body["data"]?["passwordHash"]);
+
+        var rejected = await operatorClient.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+
+        using var reissued = factory.CreateClient();
+        var stale = await reissued.PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new { username = "operator", password = "SecurePass!123" });
+        Assert.Equal(HttpStatusCode.Unauthorized, stale.StatusCode);
+        var renewed = await reissued.PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new { username = "operator", password = "ResetPass!2026" });
+        Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_cannot_reset_their_own_password_through_administration()
+    {
+        var admin = TransitOpsApiFactory.CreateUser("admin", "SecurePass!123", UserRole.Admin);
+        using var factory = new TransitOpsApiFactory(db => db.AppUsers.Add(admin));
+        using var client = await AuthenticatedClient(factory, "admin", "SecurePass!123");
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/users/{admin.Id}/password",
+            new { password = "ResetPass!2026" });
+        var body = await Json(response);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("user_self_password_reset", body["error"]?["code"]?.GetValue<string>());
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/v1/auth/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_reset_rejects_a_password_below_the_minimum_length()
+    {
+        var operatorUser = TransitOpsApiFactory.CreateUser("operator", "SecurePass!123", UserRole.Operator);
+        using var factory = FactoryWithAdmin(db => db.AppUsers.Add(operatorUser));
+        using var client = await AuthenticatedClient(factory, "admin", "SecurePass!123");
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/v1/users/{operatorUser.Id}/password",
+            new { password = "corta" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("validation_error", (await Json(response))["error"]?["code"]?.GetValue<string>());
     }
 
     private static HttpRequestMessage Request(string method, string path)

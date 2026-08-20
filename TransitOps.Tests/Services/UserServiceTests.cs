@@ -4,6 +4,7 @@ using TransitOps.Api.Common;
 using TransitOps.Api.Domain;
 using TransitOps.Api.Features.Users;
 using TransitOps.Api.Persistence;
+using TransitOps.Api.Security;
 
 namespace TransitOps.Tests.Services;
 
@@ -152,7 +153,8 @@ public sealed class UserServiceTests
         {
             () => service.GetByIdAsync(id, default),
             () => service.ChangeRoleAsync(id, new("admin"), default),
-            () => service.ChangeActivationAsync(id, new(true), default)
+            () => service.ChangeActivationAsync(id, new(true), default),
+            () => service.ResetPasswordAsync(id, new("NewPass!12345"), default)
         })
         {
             var error = await Assert.ThrowsAsync<ApiException>(action);
@@ -161,7 +163,62 @@ public sealed class UserServiceTests
         }
     }
 
-    private static UserService Service(TransitOpsDbContext db) => new(db, new PasswordHasher<AppUser>());
+    [Fact]
+    public async Task Reset_password_replaces_the_hash_and_invalidates_existing_sessions()
+    {
+        await using var db = CreateDatabase();
+        var admin = User("admin", UserRole.Admin);
+        var target = User("operator", UserRole.Operator);
+        db.AppUsers.AddRange(admin, target);
+        await db.SaveChangesAsync();
+        var previousHash = target.PasswordHash;
+        var previousVersion = target.TokenVersion;
+
+        var result = await Service(db, admin.Id).ResetPasswordAsync(target.Id, new("NewPass!12345"), default);
+        var stored = await db.AppUsers.SingleAsync(item => item.Id == target.Id);
+
+        Assert.Equal("operator", result.Username);
+        Assert.NotEqual(previousHash, stored.PasswordHash);
+        Assert.Equal(previousVersion + 1, stored.TokenVersion);
+        Assert.NotEqual(
+            PasswordVerificationResult.Failed,
+            new PasswordHasher<AppUser>().VerifyHashedPassword(stored, stored.PasswordHash, "NewPass!12345"));
+    }
+
+    [Fact]
+    public async Task Reset_password_works_on_an_inactive_user_without_reactivating_it()
+    {
+        await using var db = CreateDatabase();
+        var admin = User("admin", UserRole.Admin);
+        var target = User("inactive", UserRole.Operator, false);
+        db.AppUsers.AddRange(admin, target);
+        await db.SaveChangesAsync();
+
+        var result = await Service(db, admin.Id).ResetPasswordAsync(target.Id, new("NewPass!12345"), default);
+
+        Assert.False(result.IsActive);
+    }
+
+    [Fact]
+    public async Task Reset_password_rejects_the_administrator_own_account()
+    {
+        await using var db = CreateDatabase();
+        var admin = User("admin", UserRole.Admin);
+        db.AppUsers.Add(admin);
+        await db.SaveChangesAsync();
+        var previousHash = admin.PasswordHash;
+
+        var error = await Assert.ThrowsAsync<ApiException>(() =>
+            Service(db, admin.Id).ResetPasswordAsync(admin.Id, new("NewPass!12345"), default));
+
+        Assert.Equal(409, error.StatusCode);
+        Assert.Equal("user_self_password_reset", error.Code);
+        Assert.Equal(previousHash, (await db.AppUsers.SingleAsync()).PasswordHash);
+    }
+
+    private static UserService Service(TransitOpsDbContext db, Guid? currentUserId = null) =>
+        new(db, new PasswordHasher<AppUser>(), new StubCurrentUser(currentUserId));
+    private sealed record StubCurrentUser(Guid? Id) : ICurrentUser;
     private static AppUser User(string username, UserRole role, bool active = true) => new()
     {
         Username = username,

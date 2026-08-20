@@ -31,7 +31,9 @@
     { "key": "customerId", "value": "", "type": "string" },
     { "key": "shipmentId", "value": "", "type": "string" },
     { "key": "userId", "value": "", "type": "string" },
-    { "key": "temporaryPassword", "value": "Admin!87654321", "type": "string" }
+    { "key": "temporaryPassword", "value": "Admin!87654321", "type": "string" },
+    { "key": "selfUserId", "value": "", "type": "string" },
+    { "key": "resetPassword", "value": "Reset!12345678", "type": "string" }
   ],
   "item": [
     {
@@ -136,6 +138,7 @@
                   "  pm.expect(payload.data.expiresAt).to.be.a(\"string\").and.not.empty;",
                   "  pm.expect(payload.data).not.to.have.property(\"accessToken\");",
                   "});",
+                  "pm.collectionVariables.set(\"selfUserId\", payload.data.user.id);",
                   "pm.test(\"Establece la cookie HttpOnly de mismo origen\", () => {",
                   "  const setCookie = (pm.response.headers.get(\"Set-Cookie\") || \"\").toLowerCase();",
                   "  pm.expect(setCookie).to.include(\"transitops_session=\");",
@@ -887,11 +890,75 @@
               "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status 200\", () => pm.response.to.have.status(200));" ] }
             }
           ]
+        },
+        {
+          "name": "Restablecer Contraseña de Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"password\": \"{{resetPassword}}\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/password",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users", "{{userId}}", "password" ]
+            },
+            "description": "Asigna una contraseña nueva sin conocer la anterior (RF-04, RN-17). Cierra las sesiones abiertas de esa persona."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve el usuario sin exponer el hash\", () => {",
+                  "  const payload = pm.response.json();",
+                  "  pm.expect(payload.data.id).to.eql(pm.collectionVariables.get(\"userId\"));",
+                  "  pm.expect(payload.data).not.to.have.property(\"passwordHash\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Autorrestablecimiento Rechazado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"password\": \"{{resetPassword}}\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{selfUserId}}/password",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "v1", "users", "{{selfUserId}}", "password" ]
+            },
+            "description": "La propia contraseña se cambia por RF-03 confirmando la actual, no por administración (RN-14)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código de conflicto esperado\", () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql(\"user_self_password_reset\"));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
       "name": "Resumen",
+
       "item": [
         {
           "name": "Resumen - Últimos 30 Días",
