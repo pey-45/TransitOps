@@ -40,7 +40,7 @@ Es el sprint más grande del proyecto con diferencia. Los seis anteriores se cer
 
 ## Por qué cinco partes, y en este orden
 
-La división no es por comodidad: cada parte cierra con su propia validación, igual que las rebanadas de S1–S6, y así la memoria gana evidencia granular en lugar de un único cierre monolítico.
+La división no es por comodidad: cada parte cierra con su propia validación, igual que las rebanadas de S1–S6, y así el registro del sprint gana evidencia granular en lugar de un único cierre monolítico.
 
 El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de sesión, para que hagan de red de seguridad en el refactor más arriesgado.** Los E2E actúan sobre la interfaz (rellenan el formulario de login), así que son indiferentes a si el token vive en `localStorage` o en una cookie. Escritas antes, protegen el cambio; escritas después, no protegen nada.
 
@@ -50,7 +50,7 @@ El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de
 | **S7.2** | Pruebas de sistema E2E + dependencias | Construye la red de seguridad. Ya se toca `package.json`, así que el triaje de `npm audit` va aquí |
 | **S7.3** | Seguridad de sesión | El cambio invasivo, ya protegido por los E2E |
 | **S7.4** | Despliegue y entrega continua | Independiente de lo anterior salvo que el TLS es lo que hace comprobable la cookie `Secure` |
-| **S7.5** | Cierre | Consolida evidencia y desbloquea los capítulos congelados de la memoria |
+| **S7.5** | Cierre | Consolida la evidencia del sprint y cierra su registro |
 
 ---
 
@@ -58,7 +58,7 @@ El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de
 
 **Objetivo.** Que RN-04 y RN-12 dejen de depender de una comprobación en servicio con ventana de carrera.
 
-**Diseño — cinturón y tirantes, no sustitución.** La comprobación en servicio **se mantiene**: es la que produce el mensaje bueno, identificando el envío que ocupa el recurso. El índice se añade **debajo**, como garantía de corrección bajo concurrencia. Conviene decirlo así en la memoria: una da usabilidad, el otro da corrección.
+**Diseño — cinturón y tirantes, no sustitución.** La comprobación en servicio **se mantiene**: es la que produce el mensaje bueno, identificando el envío que ocupa el recurso. El índice se añade **debajo**, como garantía de corrección bajo concurrencia. Conviene enunciarlo así: una da usabilidad, el otro da corrección.
 
 - Migración nueva con dos índices únicos parciales sobre `Shipments`: uno por `VehicleId`, otro por `DriverId`, filtrados a los estados abiertos y a `IS NOT NULL`.
   - **Comprobar antes de escribir el filtro** cómo persiste EF el enum `Status` (entero o texto): el predicado del índice depende de ello.
@@ -136,7 +136,6 @@ El orden responde a una idea concreta: **las pruebas E2E van antes del cambio de
 - **Enmendar `docs/Roadmap.md`**: la única línea del repo que dice «accesible por internet» (entregable de S7) pasa a describir lo realmente entregado. Todo lo demás —RNF-05, la definición de hecho, `contexto_objetivos.tex`— ya dice «entorno accesible» y no necesita tocarse.
 - Cierre fechado del Sprint 7 en el Roadmap, con el estilo de los seis anteriores.
 - Entrada nueva en el log de decisiones de `CONTEXT.md`.
-- **Capítulos de memoria que S7 desbloquea:** `desarrollo_iterativo.tex` §Sprint 7 (el `% TODO` de la línea 152), la sección de pruebas de sistema en `validacion.tex`, `despliegue.tex` completo, `resultados.tex`, `conclusions.tex` definitivo, la fila RNF-01–06 de `anexos/trazabilidad.tex`, y §3 de `diseno_detallado.tex` ya como decisión final y no provisional.
 
 ---
 
@@ -183,7 +182,6 @@ Criterios objetivos de cierre de sprint:
 | Repositorio público | Ningún secreto en ficheros versionados (ya es regla de `AGENTS.md`); runners autoalojados descartados por seguridad |
 | `npm audit --fix` rompe el build | Triar primero; son casi seguro devDependencies, así que la urgencia es baja |
 | Testcontainers necesita Docker en local y en CI | Ambos lo tienen; los runners de Actions traen Docker |
-| S7 y la memoria compiten por el mismo calendario | El cierre de S7.5 alimenta justo los capítulos congelados de la memoria |
 
 ---
 

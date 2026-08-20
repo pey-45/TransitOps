@@ -4,7 +4,7 @@
 
 Este procedimiento despliega TransitOps en una VM Ubuntu Server 24.04 LTS mediante Docker Compose. La aplicación solo es accesible por la URL HTTPS temporal que crea `cloudflared`; ningún contenedor publica puertos en la VM y no es necesario abrir ni redirigir puertos del router.
 
-El túnel rápido de Cloudflare se utiliza para la demostración y el vídeo del TFG, no como alojamiento permanente. Su hostname `*.trycloudflare.com` cambia si se recrea el contenedor `cloudflared`.
+El túnel rápido de Cloudflare se utiliza para demostración y grabación, no como alojamiento permanente. Su hostname `*.trycloudflare.com` cambia si se recrea el contenedor `cloudflared`.
 
 ```mermaid
 flowchart LR

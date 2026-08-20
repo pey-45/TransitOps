@@ -13,11 +13,10 @@ Entregable demostrable: crear un envío, verlo en el listado, filtrarlo por esta
 1. **Referencia introducida y única**: el operador escribe `reference`; obligatoria y única entre **todos** los envíos (sin `HasFilter`, a diferencia de los catálogos). Conflicto → 409 `shipment_reference_conflict`.
 2. **Paginación dentro de `data`**: `data: { items, page, pageSize, totalCount, totalPages }`. **No se toca** `Common/ApiContracts.cs` ni el sobre común.
 3. **Vehículo y conductor**: la migración crea `VehicleId`/`DriverId` y el listado filtra por ellos, pero **no hay forma de asignarlos** en S3 (llega en S4). Los tests siembran esos valores en el DbContext.
-4. **Memoria del TFG incluida**: al cerrar el sprint se documenta S3 **y se salda la deuda de S2** (`desarrollo_iterativo.tex` y `trazabilidad.tex` siguen marcando S2 como "Pendiente").
 
 ## Alcance y no-objetivos
 
-**Dentro**: entidad `Shipment` + migración incremental; CRUD sin borrado (crear/listar/consultar/editar); validación RN-06 y enlace a cliente activo (RN-03); listado filtrado y paginado; SPA con listado+filtros+paginación, detalle y formulario; pruebas backend y frontend; actualización de `DataModel.md`, Postman, Roadmap, CONTEXT y memoria LaTeX.
+**Dentro**: entidad `Shipment` + migración incremental; CRUD sin borrado (crear/listar/consultar/editar); validación RN-06 y enlace a cliente activo (RN-03); listado filtrado y paginado; SPA con listado+filtros+paginación, detalle y formulario; pruebas backend y frontend; actualización de `DataModel.md`, Postman, Roadmap y CONTEXT.
 
 **Fuera**: asignación de vehículo/conductor y transiciones de estado (S4); historial de eventos (S5); administración de usuarios e indicadores (S6); baja o borrado de envíos (la retirada es `Cancelled`, un cambio de estado de S4).
 
@@ -145,7 +144,7 @@ Tipos `ShipmentStatus` (unión de los 4 tokens), `Page<T>`, `Shipment`, `Shipmen
 
 ### 2. `pages/shipments/ShipmentPages.tsx`
 
-**`ShipmentListPage`** — filtros en la URL con **`useSearchParams`** (ya disponible en react-router-dom), no en `useState`: permite recargar, compartir por enlace y usar el botón atrás, lo que además da capturas reproducibles para la memoria; sustituye dos estados (filtros aplicados + página) y hace innecesario un `refetch()` manual. Nombres de parámetro idénticos a los de la API, con una única asimetría documentada: en la URL las fechas son **días** (`2026-08-01`) y hacia la API se expanden a **instantes**.
+**`ShipmentListPage`** — filtros en la URL con **`useSearchParams`** (ya disponible en react-router-dom), no en `useState`: permite recargar, compartir por enlace y usar el botón atrás; sustituye dos estados (filtros aplicados + página) y hace innecesario un `refetch()` manual. Nombres de parámetro idénticos a los de la API, con una única asimetría documentada: en la URL las fechas son **días** (`2026-08-01`) y hacia la API se expanden a **instantes**.
 
 - Tres efectos separados: catálogos una sola vez (`Promise.all([listVehicles(), listDrivers()])` con dependencia `[]`, para no recargarlos en cada filtrado), sincronización de los borradores cuando cambia la URL, y carga de envíos dependiente de `params.toString()` con bandera `ignore` en la limpieza (evita que una respuesta lenta pise a otra; `StrictMode` duplica efectos en dev, el escenario es real).
 - **Submit explícito** ("Filtrar" + "Limpiar"), no aplicar al cambio: los `<input type="date">` emiten `change` por segmento tecleado. Filtrar **no escribe `page`** → siempre vuelve a la página 1.
@@ -202,7 +201,6 @@ Regla transversal: **ningún assert sobre fechas formateadas ni instantes hardco
 3. **`docs/Roadmap.md`**: nota `**Cierre (YYYY-MM-DD)**` tras la línea 111, con duración real, entregables y recuento de pruebas, en el formato exacto de la del Sprint 2.
 4. **`CONTEXT.md`**: entrada en el Recent Decision Log, `Repository Snapshot` a "Sprints 1–3 implemented" y `Open Notes` apuntando a S4. **`README.md`** (`## Current Status`) y **`AGENTS.md:52`** al mismo estado.
 5. **`postman/`**: carpeta "Envíos" en la colección con listar (con query de filtros), crear, obtener por id y actualizar, siguiendo la nomenclatura en español ya usada. Corregir `baseUrl` del entorno a `http://localhost:8080` si se valida contra Compose.
-6. **Memoria LaTeX** (`tfg/memoria/`), saldando la deuda de S2 y documentando S3: sección de cada sprint en `contido/desarrollo_iterativo.tex` (hoy S2 sigue como "Pendiente de completar"), filas en `contido/validacion.tex`, párrafo en `contido/resultados.tex`, y `anexos/trazabilidad.tex` con `RF-05--07 | S2` y `RF-08, RF-12 | S3` pasando de "Pendiente" a evidencia real. Capturas nuevas en `imaxes/` tomadas de la verificación end-to-end.
 
 ## Verificación (extremo a extremo)
 
@@ -210,7 +208,7 @@ Regla transversal: **ningún assert sobre fechas formateadas ni instantes hardco
 2. **Migración**: generar `AddShipments`, comprobar la ruta del archivo y los tipos de columna, y validar con `dotnet run --project TransitOps.Api -- --migrate-only`.
 3. **Frontend**: `npm run lint`, `npm run build` (`tsc -b` con `noUnusedLocals` y `verbatimModuleSyntax` → imports de tipo con `type` inline) y `npm run test` en verde.
 4. **PostgreSQL real (paso imprescindible, no cubierto por los tests)**: `docker compose up --build` y, con token de operador, comprobar los tres casos que InMemory no detecta — POST con `"2026-08-01T08:00:00"` (naive), POST con `"+02:00"`, y `GET /api/v1/shipments?pickupFrom=2026-08-01` (date-only). Los tres deben responder 2xx, no 500.
-5. **Flujo funcional en el navegador** (`http://localhost:5173`, a través de Nginx): login → Envíos → alta → aparece en el listado → filtrar por estado y por rango de fechas → paginar → abrir detalle → editar. Capturas para la memoria en este paso.
+5. **Flujo funcional en el navegador** (`http://localhost:5173`, a través de Nginx): login → Envíos → alta → aparece en el listado → filtrar por estado y por rango de fechas → paginar → abrir detalle → editar.
 6. **Casos de error visibles**: referencia duplicada (409), entrega anterior a recogida (aviso bajo el campo), y cliente dado de baja aún editable.
 7. **CI**: `.github/workflows/ci.yml` valida ambos lados en el push.
 
@@ -218,6 +216,6 @@ Regla transversal: **ningún assert sobre fechas formateadas ni instantes hardco
 
 **Crear** — `TransitOps.Api/Domain/Shipment.cs`; `TransitOps.Api/Features/Shipments/{ShipmentContracts,ShipmentService}.cs`; `TransitOps.Api/Controllers/ShipmentsController.cs`; migración `Persistence/Migrations/*_AddShipments.cs` (generada); `TransitOps.Tests/Services/ShipmentServiceTests.cs`; `TransitOps.Tests/Controllers/ShipmentsControllerTests.cs`; `frontend/src/pages/shipments/ShipmentPages.tsx`; `docs/Sprint3Plan.md`.
 
-**Editar** — `TransitOps.Api/Persistence/TransitOpsDbContext.cs`; `TransitOps.Api/Program.cs`; `frontend/src/api/client.ts`; `frontend/src/App.tsx`; `frontend/src/components/AppLayout.tsx`; `frontend/src/index.css`; `frontend/src/App.test.tsx`; `docs/design/DataModel.md`; `docs/Roadmap.md`; `CONTEXT.md`; `README.md`; `AGENTS.md`; `postman/TransitOps.Api.postman_collection.json`; `tfg/memoria/contido/{desarrollo_iterativo,validacion,resultados}.tex`; `tfg/memoria/anexos/trazabilidad.tex`.
+**Editar** — `TransitOps.Api/Persistence/TransitOpsDbContext.cs`; `TransitOps.Api/Program.cs`; `frontend/src/api/client.ts`; `frontend/src/App.tsx`; `frontend/src/components/AppLayout.tsx`; `frontend/src/index.css`; `frontend/src/App.test.tsx`; `docs/design/DataModel.md`; `docs/Roadmap.md`; `CONTEXT.md`; `README.md`; `AGENTS.md`; `postman/TransitOps.Api.postman_collection.json`.
 
 **Sin tocar** — `Common/ApiContracts.cs` (decisión 2), `components/CatalogUi.tsx`, `ErrorAlert.tsx`, `form-errors.ts`, `package.json` (cero dependencias nuevas), `archive/` (solo oráculo de consulta; su forma **no** se copia).

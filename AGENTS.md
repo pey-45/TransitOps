@@ -8,12 +8,12 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 
 ## Working Agreement
 
-- Treat this repository as a full-stack academic/professional project covering the complete software development lifecycle: requirements, design, backend, frontend, testing, and deployment.
+- Treat this repository as a full-stack project covering the complete software development lifecycle: requirements, design, backend, frontend, testing, and deployment.
 - Prefer pragmatic, maintainable solutions over premature complexity.
 - Keep the functional scope intentionally small, but demonstrable end-to-end across backend and frontend, rather than deep in any single layer.
 - The project's differentiator is software engineering discipline across the full lifecycle, not infrastructure or cloud depth. Deployment and CI/CD exist, but stay deliberately lightweight.
 - Preserve consistency with the documented requirements and roadmap unless the user explicitly changes scope.
-- The project direction changed on 2026-06-19 (signed TFG modification request) from an AWS cloud-platform thesis to this full-lifecycle application thesis. The prior cloud/AWS/Terraform work, the previous TFG memoria/presentation, and the previous-iteration application code are all preserved under `archive/cloud-phase/`.
+- The project direction changed on 2026-06-19 from an AWS cloud-platform focus to this full-lifecycle application. The prior cloud/AWS/Terraform work and the previous-iteration application code are preserved under `archive/cloud-phase/`.
 - The application is being **rebuilt from scratch** following the new iterative full-lifecycle methodology, on the same stack (.NET + PostgreSQL backend, React frontend). The archived previous-iteration code is a **reference oracle**: consult it (business rules, EF migrations, test cases, decisions already made) while re-implementing, but do not edit it or build the active project directly on top of it.
 
 ## User Preferences
@@ -33,6 +33,8 @@ Use `CONTEXT.md` for evolving project context, current status, recent decisions,
 - Keep `README.md` focused on repository-facing documentation, setup, and high-level project description.
 - Keep requirements and roadmap documents aligned with actual project decisions when they materially change.
 - `archive/cloud-phase/` holds documentation and code superseded by the direction change. Treat it as reference only (a consultable oracle for the rewrite), never as current state and never as something to edit.
+- **The dependency on `tfg/` is one-way.** `tfg/` may reference anything in the project; nothing outside `tfg/` may reference `tfg/`, its contents, or the academic deliverables built from it. Deleting `tfg/` must leave a coherent, self-contained software project: no dangling links, no tasks whose output lives there, no dates driven by an academic calendar. When work produces material for `tfg/`, record it inside `tfg/`, not in the project's roadmap, plans or context.
+- `archive/` is the single exception to the rule above: it is a frozen historical capsule of the previous direction and is never edited, so whatever it contains stays as it is.
 
 ## Engineering Rules
 

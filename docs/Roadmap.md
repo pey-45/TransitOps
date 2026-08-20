@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Traducir la especificación de [docs/Requirements.md](Requirements.md) en un plan de sprints iterativos que recorra el ciclo de vida completo del software, en línea con la metodología del anteproyecto: enfoque iterativo e incremental, priorizando versiones funcionales desde fases tempranas, con cada incremento validado mediante pruebas funcionales y ejecución real del sistema.
+Traducir la especificación de [docs/Requirements.md](Requirements.md) en un plan de sprints iterativos que recorra el ciclo de vida completo del software, siguiendo un enfoque iterativo e incremental, priorizando versiones funcionales desde fases tempranas, con cada incremento validado mediante pruebas funcionales y ejecución real del sistema.
 
 ## Modelo de Planificación
 
@@ -10,7 +10,7 @@ Traducir la especificación de [docs/Requirements.md](Requirements.md) en un pla
 - **El modelo de datos se diseña completo al principio, no a trozos.** El dominio es pequeño y ya está definido en `Requirements.md`, así que el modelo de datos entero se diseña en el Sprint 1. Cada sprint posterior implementa (mediante migraciones incrementales) solo la parte del modelo que su funcionalidad necesita. Esto evita rediseñar el modelo sprint a sprint sin renunciar a la entrega incremental de funcionalidad.
 - **Esqueleto ejecutable desde el primer sprint.** El Sprint 1 deja una aplicación mínima pero real (autenticación funcionando de punta a punta), de modo que a partir de ahí cada sprint amplía algo demostrable y ejecutable.
 - **Sin fechas de calendario fijas.** A petición del autor, los sprints van numerados y secuenciales. La duración real de cada uno se registra al cerrarlo (una línea basta), en lugar de estimar horas por adelantado; si el ritmo observado lo exige, se replanifica lo pendiente.
-- **Objetivo temporal.** Tener la ingeniería (S1–S7) terminada con holgura antes de la ventana de defensa de finales de septiembre de 2026, dejando el Sprint 8 (documentación y cierre) y el ensayo sin agobios.
+- **Objetivo temporal.** Tener la ingeniería (S1–S7) terminada con holgura, de modo que el Sprint 8 no arrastre trabajo de implementación y pueda dedicarse solo a coherencia documental.
 - **La implementación anterior es un acelerador.** El código archivado en `archive/cloud-phase/` resuelve ya buena parte del backend del dominio (reglas, migraciones, casos de prueba). Se consulta como referencia al reconstruir cada rebanada, pero no se edita ni se parte de él.
 
 ## Convención de Sprint
@@ -36,7 +36,7 @@ Cada sprint de funcionalidad define:
 | Sprint 5 | Trazabilidad: historial de eventos | RF-11 |
 | Sprint 6 | Administración e indicadores | RF-03, RF-04, RF-14 |
 | Sprint 7 | Endurecimiento, pruebas de sistema y despliegue | Transversal |
-| Sprint 8 | Documentación y cierre | Transversal |
+| Sprint 8 | Cierre documental del proyecto | Transversal |
 
 Los sprints 1–6 son rebanadas verticales de funcionalidad; los sprints 7–8 son consolidación y cierre, lo habitual al final de un proyecto iterativo.
 
@@ -208,23 +208,23 @@ Sprint ejecutado en cuatro tramos consecutivos, con las pruebas de sistema delib
 
 Una revisión posterior encontró trece defectos de coherencia, ninguno funcional, en su mayoría superficie que el cambio de sesión dejó sin uso pero aparentando estar activa; doce se corrigieron y el restante —la no identidad entre las imágenes probadas y las publicadas— queda documentado como limitación conocida. Validación final: 139 pruebas backend, 33 frontend, los cuatro flujos E2E, lint, builds, `npm audit` sin avisos y `dotnet restore` sin advertencias de vulnerabilidad. El procedimiento de `docs/Deployment.md` se siguió desde una máquina recién creada sin necesitar correcciones, y el registro de systemd muestra despliegues completos ejecutados de forma autónoma con la misma revisión y digests. El túnel rápido es deliberadamente temporal: sirve como entorno de demostración reproducible, no como alojamiento estable. Sprint 8 pasa a ser la siguiente prioridad.
 
-## Sprint 8 · Documentación y Cierre
+## Sprint 8 · Cierre Documental del Proyecto
 
 **Objetivo**
-La memoria del TFG y el material de defensa para la nueva dirección.
+Que la documentación del repositorio describa el sistema realmente entregado, sin contenido provisional.
 
 **Trabajo**
-- Redactar la memoria: introducción, objetivos, metodología, requisitos, arquitectura, implementación de backend y frontend, pruebas, despliegue, resultados y conclusiones.
-- Producir los diagramas (arquitectura, modelo de datos, flujos) que la memoria referencia.
-- Preparar la presentación de defensa y un guion de ensayo.
-- Repaso final de `README.md`, `CONTEXT.md`, `Requirements.md` y este roadmap para que describan el sistema realmente entregado.
+- Repaso de `README.md`, `CONTEXT.md`, `docs/Requirements.md`, `docs/UserManual.md` y este roadmap para que ninguno describa como pendiente algo ya hecho, ni como hecho algo pendiente.
+- Revisión de los documentos de diseño (`docs/design/`) frente al código final.
+- Verificación de que los procedimientos publicados ---ejecución local, verificación y despliegue--- se siguen sin correcciones desde cero.
+- Retirada de documentos de trabajo que ya cumplieron su función.
 
 **Entregable demostrable**
-Memoria compilada, presentación y documentación alineada con lo entregado.
+Documentación alineada con lo entregado y procedimientos reproducibles siguiendo lo escrito.
 
 **Definición de hecho**
-- El proyecto queda listo para defender antes de la ventana de finales de septiembre de 2026, con tiempo de ensayo.
 - No queda contenido provisional ni funcionalidad descrita como hecha sin estarlo.
+- Los enlaces internos resuelven y los procedimientos se completan sin conocimiento no escrito.
 
 ## Nota de Despliegue
 
@@ -232,4 +232,4 @@ El despliegue no es una fase final aislada. La aplicación se mantiene conteneri
 
 ## Nota de Ritmo
 
-No se asignan fechas a los sprints. Al cerrar cada uno, anota aquí (o en `CONTEXT.md`) cuánto duró de verdad, para dimensionar los siguientes con datos en vez de estimaciones. Como referencia orientativa: ocho sprints a un ritmo aproximado de una a dos semanas cada uno encajan con holgura antes de finales de septiembre. Si el ritmo real se alarga, comprime alcance (por ejemplo, uniendo los sprints 5 y 6, o acotando RF-14 a su versión mínima) antes de dejar que el Sprint 8 quede apretado.
+No se asignan fechas a los sprints. Al cerrar cada uno, anota aquí (o en `CONTEXT.md`) cuánto duró de verdad, para dimensionar los siguientes con datos en vez de estimaciones. Como referencia orientativa, ocho sprints a un ritmo de una a dos semanas cada uno. Si el ritmo real se alarga, comprime alcance (por ejemplo, uniendo los sprints 5 y 6, o acotando RF-14 a su versión mínima) antes de dejar que el Sprint 8 quede apretado.

@@ -2,7 +2,7 @@
 
 ## Nota metodológica
 
-Este TFG no tiene un cliente externo real. Para poder aplicar y documentar la fase de análisis de requisitos del ciclo de vida del software, este documento recoge una entrevista de recogida de requisitos con una clienta ficticia, una técnica habitual y aceptada en este tipo de proyecto académico.
+Este proyecto no tiene un cliente externo real. Para poder aplicar y documentar la fase de análisis de requisitos del ciclo de vida del software, este documento recoge una entrevista de recogida de requisitos con una clienta ficticia, una técnica habitual y aceptada en este tipo de proyecto académico.
 
 - **Cliente (persona ficticia):** Marta Souto, responsable de operaciones en una empresa de transporte de mercancías por carretera, tamaño pequeño-mediano (una veintena de vehículos y conductores).
 - **Siguiente paso:** a partir de este documento se derivan los requisitos funcionales formales (sin tecnicismos) y, después, la planificación en sprints.

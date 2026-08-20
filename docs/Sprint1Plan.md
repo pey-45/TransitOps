@@ -1,26 +1,20 @@
-# Plan — Sprint 1 completo + estructura de memoria TFG en LaTeX
+# Plan — Sprint 1 completo
 
 ## Contexto
 
-TransitOps es el TFG (Grado en Ingeniería Informática, mención Ingeniería del Software, UDC-FIC) de Pablo Manzanares López. Tras la modificación firmada (2026-06-19), la dirección pasó de una tesis cloud/AWS a **"Diseño y desarrollo de una aplicación de gestión de transportes: ciclo de vida completo del software"**. El repositorio se reinició: hoy la raíz solo contiene documentación de planificación (`README.md`, `CONTEXT.md`, `AGENTS.md`, `docs/`) y el `archive/cloud-phase/` como **oráculo de referencia** de solo lectura (backend .NET anterior + memoria LaTeX antigua).
+TransitOps es una aplicación de gestión de transportes desarrollada recorriendo el ciclo de vida completo del software. Tras el cambio de dirección de 2026-06-19, el proyecto dejó de centrarse en una plataforma cloud para construir la aplicación completa: backend, frontend y disciplina de proceso.
 
-Este plan cubre las dos peticiones:
+Este plan cubre el Sprint 1 completo:
 
 1. **Sprint 1 completo** — el "esqueleto andante": diseño del modelo de datos completo + arquitectura de integración, backend ASP.NET Core/.NET 10 + EF Core/PostgreSQL con arranque del primer administrador y login JWT, frontend React con login y enrutado protegido, contenerización, CI y pruebas. Cubre RF-01, RF-02 y el contrato base de RF-13 (`docs/Roadmap.md:43-63`).
-2. **Estructura de la memoria TFG en LaTeX** — reutilizando **exclusivamente la plantilla y la memoria del archivo** (`archive/cloud-phase/tfg/memoria/`, modelo oficial UDC-FIC), reorientada a la nueva dirección, con el Sprint 1 documentado con contenido real y placeholders para fotos, figuras y sprints futuros.
 
-Resultado esperado: una aplicación mínima real y ejecutable (login de punta a punta, contenerizada, CI en verde) y una memoria que compila a PDF con el Sprint 1 redactado y el andamiaje del resto listo para crecer sprint a sprint.
+Resultado esperado: una aplicación mínima real y ejecutable ---login de punta a punta, contenerizada y con la CI en verde--- sobre la que los sprints siguientes cuelgan cada rebanada de funcionalidad.
 
 ## Decisiones fijadas (confirmadas con el usuario)
 
 - **Frontend:** Vite + React + **TypeScript**; pruebas con **Vitest + React Testing Library**.
-- **Estructura de memoria:** **híbrida** — capítulos por fase del ciclo de vida + un capítulo de **desarrollo iterativo** con una sección por sprint (Sprint 1 real, S2–S8 placeholder).
-- **Profundidad de memoria:** **contenido real** de todo lo que produce el Sprint 1 + **placeholders** para sprints posteriores, capturas y figuras.
-- **Plantilla:** solo la del archivo (UDC-FIC `estilo_tfg.sty`), sin plantillas externas. Idioma: español con segundo resumen en inglés (default de la plantilla, coherente con `docs/`).
 
 ---
-
-# PARTE A — Sprint 1 (implementación)
 
 ## A0. Layout del repositorio (raíz, greenfield)
 
@@ -42,7 +36,7 @@ TransitOps/
 
 ## A1. Diseño (entregable versionado, además del código)
 
-Dos artefactos de diseño, que también alimentan la memoria (Parte B, cap. Arquitectura):
+Dos artefactos de diseño, versionados junto al código:
 
 - **Modelo de datos COMPLETO** de todo el dominio de `docs/Requirements.md` — entidades `AppUser`, `Vehicle`, `Driver`, `Customer`, `Shipment`(Transport), `ShipmentEvent`, con relaciones, enums de estado, borrado lógico (`IsActive`/soft-delete) y las FK opcionales del envío (cliente, vehículo, conductor). Se documenta en `docs/design/DataModel.md` + un diagrama ER. **Novedades sin precedente en el archivo:** entidad `Customer` (RF-07) y el campo `EstimatedLoad`/carga estimada del envío (RN-05) con FK opcional envío→cliente.
 - **Arquitectura de integración front/back:** SPA React contra API REST; emisión y ubicación del token JWT (recomendado: token en `localStorage` para persistir sesión en S1, documentando el tradeoff XSS y dejando cookie httpOnly como endurecimiento para S7); propagación de roles (claim `role` → navegación adaptada) y de errores (contrato JSON común RF-13); política CORS para el origen del frontend en desarrollo.
@@ -98,69 +92,15 @@ Sin precedente en el archivo. Estructura mínima y clara:
 - [x] Workflow de CI definido para build, migración y pruebas de backend y frontend; el equivalente local está en verde (la ejecución remota requiere un push).
 
 ---
-
-# PARTE B — Memoria TFG en LaTeX (estructura + Sprint 1 documentado)
-
-## B0. Ubicación y reutilización de la plantilla
-
-Crear `tfg/memoria/` en la raíz (espejo del layout del archivo). **Copiar desde `archive/cloud-phase/tfg/memoria/`** (no editar el archivo) y adaptar:
-
-- **Motor de plantilla (reutilizar tal cual):** `estilo_tfg.sty`, `.latexmkrc` (XeLaTeX, `makeglossaries`), `.gitignore`, `CREDITS`, `COPYING`, `AUTHOR`, `README.md`.
-- **Assets institucionales (copiar):** `imaxes/udc-sanitized.png`, `imaxes/euro-inf-seal-bachelor-light-background.png`.
-- **Portada/preliminares (adaptar):** `portada/portada.tex` (se reusa; el título sale de variables), `portada/resumo.tex` (nuevo resumen ES + `segundoresumo` EN), `portada/palabras_chave.tex` (nuevas palabras clave: gestión de transportes, ASP.NET Core, React, ciclo de vida del software, pruebas, Docker…).
-- **Bibliografía/glosario:** `bibliografia/bibliografia.bib` (nuevas referencias reales: .NET/ASP.NET Core, EF Core, PostgreSQL, React, JWT/RFC 7519, integración continua, metodologías iterativas), `bibconf-es.bib`, `acronimos.tex`, `glosario.tex` (API, REST, JWT, SPA, EF, CI, ORM, CRUD…). Estilo `IEEEtranN`.
-
-## B1. Variables a actualizar (`memoria_tfg.tex`)
-
-- `\titulo{Diseño y desarrollo de una aplicación de gestión de transportes: ciclo de vida completo del software}`
-- `\nome{Pablo Manzanares López}`, `\nomedirectorA{Paula María Castro Castro}`, `\titulacion{gei}`, `\mencion{INGENIERÍA DEL SOFTWARE}`, `\lingua{esp}` (sin cambios).
-- Reescribir la lista de `\include{contido/...}` a la nueva estructura (abajo); **eliminar** los capítulos cloud (`infraestructura_despliegue`, `cicd`, `observabilidad_seguridad`, `operacion_runbooks`).
-
-## B2. Estructura de capítulos (híbrida) — `contido/`
-
-| # | Fichero | Contenido | Estado en S1 |
-| --- | --- | --- | --- |
-| 1 | `introduccion.tex` | Motivación, problema, alcance, estructura de la memoria | **Real** |
-| 2 | `contexto_objetivos.tex` | Contexto, objetivo general, objetivos específicos, criterios de éxito | **Real** |
-| 3 | `marco_tecnologico.tex` | .NET/ASP.NET Core, EF Core/PostgreSQL, React/Vite/TS, Docker, GitHub Actions, JWT | **Real** |
-| 4 | `metodologia.tex` | Iterativo-incremental; proceso entrevista→requisitos→sprints; planificación S1–S8; gestión del alcance | **Real** |
-| 5 | `requisitos.tex` | Actores, RF-01…RF-14, RN-01…RN-16, RNF, modelo de dominio, trazabilidad con la entrevista (de `docs/`) | **Real** |
-| 6 | `arquitectura.tex` | Visión general, arquitectura de integración front/back, **modelo de datos completo (ER)**, decisiones | **Real** (diseño S1) |
-| 7 | `diseno_detallado.tex` | Contrato HTTP/errores (RF-13), diseño de auth/autorización (JWT, roles, bootstrap), esqueleto front (rutas protegidas) | **Real** para S1; placeholder para diseños de features posteriores |
-| 8 | `desarrollo_iterativo.tex` | **Capítulo híbrido nuevo:** §Sprint 1 (objetivo, backend, frontend, pruebas, resultado) | **Sprint 1 real; S2–S8 placeholder** |
-| 9 | `validacion.tex` | Estrategia de pruebas; pruebas backend S1 (bootstrap, login, rutas), reproducibilidad Docker + CI | **Real** para S1; placeholder resto |
-| 10 | `despliegue.tex` | Reproducibilidad local (Compose) + CI desde S1; despliegue accesible (S7) | Parcial: local/CI real; despliegue placeholder |
-| 11 | `resultados.tex` | Resultados y análisis (crece por sprint); S1: esqueleto autenticado demostrable | Placeholder-mayoritario |
-| 12 | `conclusions.tex` | Conclusiones, competencias aplicadas, lecciones, líneas futuras | Ligero/placeholder |
-
-**Anexos (`anexos/`):** `trazabilidad.tex` (matriz RF ↔ sprint ↔ evidencia, creciente), `procedimientos.tex` (arranque local y verificación del Sprint 1). Opcional `adicional.tex` (anteproyecto).
-
-## B3. Convención de placeholders (compila sin romper)
-
-Definir en el preámbulo un comando de placeholder visible, p. ej. `\newcommand{\fotoPlaceholder}[1]{\begin{center}\fbox{\parbox[c][4cm][c]{0.8\textwidth}{\centering\itshape[PENDIENTE — #1]}}\end{center}}`, y usar `% TODO(Sprint N):` en el texto pendiente. Reglas:
-
-- **Figuras reales en S1:** diagrama ER del modelo de datos y diagrama de arquitectura de integración (son entregables de diseño de S1). Captura del login y de la CI en verde: reales si se capturan durante la verificación; si no, placeholder.
-- **Placeholders:** capturas de features de S2–S8, resultados por sprint, y secciones de sprints futuros del capítulo 8.
-- El patrón de figura sigue el del archivo: `\begin{figure}[htbp]\centering\includegraphics[width=...]{imaxes/...}\caption{...}\label{...}\end{figure}`.
-
-## B4. Restricciones de la plantilla a respetar
-
-- Compilación **XeLaTeX** vía `latexmk -xelatex memoria_tfg.tex`.
-- Límite FIC de **80 páginas** antes de anexos (la plantilla marca "PÁXINA EXTRA" en rojo si se excede): vigilar al redactar.
-- Mantener `CREDITS`/`COPYING` (licencia del modelo UDC-FIC).
-
----
-
 ## Orden de ejecución
 
-1. **Sprint 1 primero** (Parte A): así la memoria documenta código real y puede incorporar diagramas/capturas verdaderos.
+1. **Implementación primero**: modelo, backend, frontend, infraestructura y pruebas, en ese orden.
    1. Solución + backend (modelo, migración usuarios, contrato de error, bootstrap, JWT, salud).
    2. Frontend (login, rutas protegidas, navegación por rol).
    3. Compose + `.env.example` + CI + `dotnet-tools.json`.
    4. Pruebas backend y frontend.
    5. Verificación de punta a punta (ver abajo) y captura de evidencias.
-2. **Memoria después** (Parte B): copiar/adaptar plantilla, reescribir variables y estructura, redactar contenido real de S1 e insertar placeholders; compilar a PDF.
-3. Actualizar `CONTEXT.md` (cierre de S1: duración real, decisiones) y `docs/Roadmap.md` (nota de cierre de S1), según convención del repo.
+2. Actualizar `CONTEXT.md` (cierre de S1: duración real, decisiones) y `docs/Roadmap.md` (nota de cierre de S1), según convención del repo.
 
 ## Verificación
 
@@ -170,14 +110,9 @@ Definir en el preámbulo un comando de placeholder visible, p. ej. `\newcommand{
 - Frontend: `npm run build` y `npm run test` en verde; con la API arriba, servir el frontend y **conducir el login desde el navegador** (Browser MCP): navegar al login, autenticar, confirmar redirección a la zona autenticada y navegación adaptada al rol. Captura de pantalla como evidencia.
 - CI: workflow ejecuta build + pruebas de ambos lados (validar localmente; verde al hacer push).
 
-**Memoria:**
-- `latexmk -xelatex memoria_tfg.tex` compila a `memoria_tfg.pdf` sin errores (requiere TeX Live/MiKTeX con XeLaTeX; si no está instalado, se reporta como paso manual).
-- Comprobar: portada con título nuevo, índice/figuras/tablas, resumen ES+EN, bibliografía y glosario renderizados, placeholders visibles, y que el cuerpo no supera las 80 páginas antes de anexos.
-
 ## Riesgos y notas
 
-- **Alcance amplio:** S1 es una rebanada vertical completa (back + front + infra + CI + pruebas) más la memoria. Se ejecuta de forma incremental y verificable por etapas.
-- **Toolchain LaTeX:** la compilación XeLaTeX puede no estar disponible en el entorno; en ese caso se entregan los fuentes listos y se documenta el comando de compilación.
+- **Alcance amplio:** S1 es una rebanada vertical completa (back + front + infra + CI + pruebas). Se ejecuta de forma incremental y verificable por etapas.
 - **.NET 10 / preview:** confirmar SDK disponible; si falta, se ajusta el `TargetFramework` documentándolo.
 - **No editar `archive/`:** es solo oráculo de consulta (AGENTS.md); todo lo nuevo vive en la raíz.
 - **Sin secretos reales** en ficheros versionados; solo `.env.example` con valores de desarrollo.

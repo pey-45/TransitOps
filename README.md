@@ -2,13 +2,11 @@
 
 Transport management application, developed as a full software development lifecycle project: requirements, design, backend, frontend, testing, and deployment.
 
-This is the Final Degree Project (TFG) of the Bachelor's in Computer Engineering (UDC, Software Engineering track). Title: *"Design and development of a transport-management application: complete software development lifecycle"*.
-
 ## Current Status
 
-Reference date: August 8, 2026.
+Reference date: August 20, 2026.
 
-Sprints 1–6 are implemented and RF-01…RF-14 are integrated. Sprint 7 has added PostgreSQL-backed concurrency guarantees, four Playwright system flows, dependency remediation, secure invalidatable sessions, and the complete material for a lightweight pull-based deployment. Backend, frontend, E2E tests, Docker Compose and CI keep the increment reproducible. The deployment assets target an Ubuntu VM reached only through a temporary HTTPS Cloudflare tunnel; executing the documented procedure and recording its evidence remain the final S7 validation step.
+Sprints 1–7 are implemented and RF-01…RF-14 are integrated. Sprint 7 added PostgreSQL-backed concurrency guarantees, four Playwright system flows, dependency remediation, and sessions held in an HttpOnly cookie that can be invalidated immediately. The application is deployed to an Ubuntu VM that publishes no host ports and is reached over HTTPS through an outbound Cloudflare tunnel; CI publishes container images only after the full suite passes, and the VM consumes them by pull, manually or through a five-minute systemd timer. Only Sprint 8 (documentation coherence) remains.
 
 The earlier AWS-oriented direction remains archived as a read-only reference; the active solution is independent and lives at the repository root.
 
@@ -45,7 +43,7 @@ Build and demonstrate a complete transport-management application, covering the 
 - deploy the application to an accessible environment and document the process;
 - document the architecture, design decisions, and development process.
 
-The differentiator of this TFG is software engineering discipline across the full lifecycle, applied iteratively, rather than depth in any single layer or in cloud infrastructure.
+The differentiator of this project is software engineering discipline across the full lifecycle, applied iteratively, rather than depth in any single layer or in cloud infrastructure.
 
 ## Scope
 
@@ -65,7 +63,7 @@ The stack is intentionally kept the same as the previous iteration, so the archi
 
 ## Methodology
 
-Development follows an iterative, incremental approach organized in sprints, as stated in the TFG proposal. Each sprint adds concrete functionality and goes through the full development cycle for that slice (design, implementation, testing), rather than grouping work into horizontal phases. The requirements process is: client interview (`docs/ClientRequirements.md`) → formal requirements (`docs/Requirements.md`) → iterative sprints (`docs/Roadmap.md`).
+Development follows an iterative, incremental approach organized in sprints. Each sprint adds concrete functionality and goes through the full development cycle for that slice (design, implementation, testing), rather than grouping work into horizontal phases. The requirements process is: client interview (`docs/ClientRequirements.md`) → formal requirements (`docs/Requirements.md`) → iterative sprints (`docs/Roadmap.md`).
 
 ## Documentation
 

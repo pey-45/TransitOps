@@ -9,13 +9,12 @@ El **Sprint 2** (`docs/Roadmap.md:68-88`) implementa la primera rebanada vertica
 **Decisiones confirmadas con el usuario:**
 - **Baja lógica solo-activos, sin reactivación**: los listados muestran solo `IsActive=true`; "dar de baja" = `IsActive=false` (fiel a RF-05/06/07; reactivación fuera de alcance).
 - **Frontend minimalista** (sin librerías nuevas): se sigue el estilo actual (React manual, `fetch` nativo, CSS global) con helpers ligeros compartidos y páginas explícitas por entidad.
-- **Sin trabajo sobre el TFG en esta tarea**: la memoria se actualiza al cerrar el sprint, no ahora.
 
 ## Alcance y no-objetivos
 
 **Dentro**: entidades `Vehicle`/`Driver`/`Customer` + migración; CRUD backend con unicidad y baja lógica; endpoints REST autorizados; vistas listado/detalle/alta/edición por entidad; validación cliente + avisos de conflicto (RF-13); pruebas backend (servicio + integración) y frontend; nota de cierre en Roadmap/CONTEXT.
 
-**Fuera**: envíos y sus FKs a catálogos (Sprint 3+); reactivación de bajas; filtro "ver dados de baja"; administración de usuarios (Sprint 6); cualquier edición del TFG.
+**Fuera**: envíos y sus FKs a catálogos (Sprint 3+); reactivación de bajas; filtro "ver dados de baja"; administración de usuarios (Sprint 6).
 
 ## Patrones existentes a reutilizar (mapa verificado)
 
@@ -113,14 +112,13 @@ Por entidad (p. ej. `pages/vehicles/`): **ListPage** (tabla de activos + botón 
 
 1. **Backend**: `dotnet build` y `dotnet test` en verde. Generar la migración; `docker compose up --build` la aplica sola; comprobar endpoints con token (bootstrap admin → login → `POST/GET/PUT/DELETE /api/v1/vehicles`), confirmando sobre común, 201/200/404/409 y que la baja no borra fila.
 2. **Frontend**: `npm run lint`, `npm run build`, `npm run test` en verde. Con el stack arriba (`localhost:5173`), conducir el flujo real: login → menú Vehículos → alta → aparece en listado → edición → baja (desaparece del listado). Repetir spot-check en conductores y clientes.
-3. **Full stack**: Docker Compose (ya operativo) sirviendo web+api+db; captura opcional como evidencia (para el TFG en el cierre, no ahora).
+3. **Full stack**: Docker Compose (ya operativo) sirviendo web+api+db; captura opcional como evidencia.
 4. **CI**: el workflow existente (`.github/workflows/ci.yml`) valida build+test de ambos lados en el push.
 
-## Cierre (al terminar, dentro de esta tarea salvo el TFG)
+## Cierre (al terminar, dentro de esta tarea)
 
 - Nota de cierre del Sprint 2 en `docs/Roadmap.md` (una línea con duración real, convención `docs/Roadmap.md:213-215`) y actualización de `CONTEXT.md`.
 - Commit + push de la rebanada (código + migración + pruebas).
-- **TFG explícitamente aplazado**: capturas y redacción del Sprint 2 se harán al cerrar el sprint, no en esta tarea (petición del usuario).
 
 ## Archivos representativos a crear/editar
 
