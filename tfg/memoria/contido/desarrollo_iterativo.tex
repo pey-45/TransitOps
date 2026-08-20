@@ -131,10 +131,34 @@ El endpoint \texttt{/summary} combina tres consultas. Los contadores por estado 
 \end{figure}
 
 \clearpage
-\section{Sprints 7 y 8}
-\subsection*{Sprint 7 --- Endurecimiento y despliegue}
-% TODO(Sprint 7)
-Pendiente de pruebas de sistema y entorno accesible.
+\section{Sprint 7: endurecimiento, pruebas de sistema y despliegue}
+
+Con RF-01--RF-14 implementados, el séptimo incremento no añadió funcionalidad sino que atacó lo que los seis anteriores habían dejado anotado como deuda. Por tamaño se dividió en cuatro tramos consecutivos, cada uno con su propio cierre, y el orden entre ellos respondió a una decisión concreta: las pruebas de sistema se escribieron \emph{antes} del cambio de sesión, para que actuasen como red de seguridad del refactor más invasivo. Al recorrer la interfaz, esas pruebas son indiferentes a si el token viaja en almacenamiento local o en una cookie; escritas después no habrían protegido nada.
+
+\subsection*{Concurrencia sostenida por el motor}
+
+El primer tramo cerró las dos carreras declaradas en los Sprints 4 y 6. La regla anti-doble-reserva pasó a estar garantizada por dos índices únicos parciales sobre los envíos, uno por vehículo y otro por conductor, limitados a los estados abiertos; la protección del último administrador se serializó con un cerrojo de aviso mantenido dentro de la transacción. La comprobación previa en el servicio se conservó en ambos casos, porque es la que produce un mensaje útil: el índice aporta corrección, el servicio aporta explicación.
+
+Verificar esto obligó a ampliar la estrategia de pruebas. Ni un índice filtrado ni un cerrojo existen en el proveedor en memoria que usan las pruebas rápidas, así que se incorporó una clase que arranca PostgreSQL real en un contenedor efímero y lanza dos operaciones simultáneas. Es el primer punto del proyecto donde una regla no podía demostrarse sin pagar el coste de infraestructura de prueba.
+
+\subsection*{Pruebas de sistema y dependencias}
+
+El segundo tramo automatizó los cuatro flujos de negocio con Playwright sobre la composición de contenedores. Las pruebas son independientes entre sí y no reinician la base: generan datos únicos por ejecución, algo obligatorio y no cosmético, porque las credenciales de usuario y las referencias de envío son únicas de forma global e incluyen a los registros inactivos. El arranque del primer administrador, que solo puede tener éxito una vez por base de datos, se resolvió en la preparación global tolerando el conflicto.
+
+La misma revisión abordó las dependencias del frontend. La auditoría encontró cinco avisos, uno de ellos en una dependencia de producción ---una vulnerabilidad de falsificación de petición en el enrutador--- y el resto en el árbol de desarrollo y pruebas. Se actualizaron por versiones compatibles en lugar de aplicar correcciones automáticas mayores, y se documentó el alcance de cada cadena para distinguir lo que llega a la imagen servida de lo que no.
+
+\subsection*{Sesión endurecida}
+
+El tercer tramo pagó la deuda más visible del Sprint 1. El token dejó de ser puramente autocontenido: incorpora una versión de sesión que se comprueba en cada petición protegida, de modo que cambiar la contraseña, desactivar la cuenta o modificar el rol invalidan de inmediato los tokens anteriores. Y el almacenamiento local dio paso a una cookie \texttt{HttpOnly} con \texttt{SameSite=Strict}, barata de adoptar porque la aplicación siempre ha operado en mismo origen.
+
+El cambio tuvo dos consecuencias que no eran evidentes al planificarlo. La respuesta de acceso dejó de contener el token, lo que alteró el contrato y las pruebas que lo simulaban; y la interfaz perdió la capacidad de leer su propia sesión, de modo que necesitó un punto final nuevo para reconstruirla al recargar. Sin él, refrescar la página expulsaba al usuario. Ambas se descubrieron al implementar, no al diseñar, y quedan registradas porque ilustran el tipo de coste que un cambio de mecanismo arrastra más allá de su propia superficie.
+
+\subsection*{Despliegue accesible}
+
+El cuarto tramo llevó la aplicación a una máquina virtual Ubuntu con Docker Compose, accesible por una dirección HTTPS temporal mediante un túnel saliente, sin publicar ningún puerto ni abrir el router. La entrega quedó automatizada hasta el registro de contenedores y la máquina consume desde allí, con un temporizador que comprueba novedades cada cinco minutos. El Capítulo~\ref{chap:despliegue} detalla la topología y el procedimiento.
+
+Cerrado ese tramo, una revisión completa del incremento localizó trece defectos de coherencia, ninguno funcional: en su mayoría código y configuración que el cambio de sesión había dejado sin uso pero aparentando seguir activos ---un punto final duplicado, una política de intercambio de recursos entre orígenes inservible, un ayudante de pruebas que leía un campo eliminado--- además de una vulnerabilidad de severidad alta que había entrado de forma transitiva con la infraestructura de pruebas del primer tramo. Doce se corrigieron; el restante, la no identidad entre las imágenes probadas y las publicadas, se documentó como limitación conocida. Que una revisión posterior encuentre este tipo de residuo es esperable cuando un sprint sustituye un mecanismo transversal, y registrarlo es más útil que presentar el incremento como limpio desde el principio.
+
 \subsection*{Sprint 8 --- Cierre}
-% TODO(Sprint 8)
-Pendiente de consolidación de memoria, defensa y conclusiones.
+
+El último incremento consolida esta memoria, produce el material de defensa y revisa que la documentación del repositorio describa el sistema realmente entregado.

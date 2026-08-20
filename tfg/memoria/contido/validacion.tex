@@ -104,7 +104,16 @@ La suite de frontend se reorganizó en cinco ficheros por área ---sesión, cat�
 
 Las pruebas de sistema del Sprint 7 recorren los cuatro flujos de negocio con Playwright sobre la composición de contenedores. Sobre la sesión comprueban que la cookie no es legible desde \texttt{document.cookie}, evidencia observable del atributo \texttt{HttpOnly}, y que sobrevive a una recarga completa de la página. La colección ejecutable de la API añade la verificación directa de la cabecera \texttt{Set-Cookie}, incluidos \texttt{HttpOnly} y \texttt{SameSite=Strict}, y la reautenticación posterior al cambio de contraseña, cuya invalidación por versión de token cubren además las pruebas de servicio del backend.
 
-Queda fuera de esa automatización el atributo \texttt{Secure}. La integración continua no dispone de terminación TLS y ejecuta la API con el entorno \texttt{Development}, en el que la aplicación emite deliberadamente la cookie sin esa marca para que el recorrido funcione por HTTP; \texttt{Secure} solo se activa fuera de \texttt{Development}. Su verificación es, por tanto, manual y se realiza sobre el despliegue real con HTTPS siguiendo el procedimiento de despliegue. Se documenta de forma explícita porque implica que una de las propiedades endurecidas en el Sprint 7.3 se ejercita automáticamente en el único entorno donde permanece desactivada.
+Queda fuera de esa automatización el atributo \texttt{Secure}. La integración continua no dispone de terminación TLS y ejecuta la API con el entorno \texttt{Development}, en el que la aplicación emite deliberadamente la cookie sin esa marca para que el recorrido funcione por HTTP; \texttt{Secure} solo se activa fuera de \texttt{Development}. Su verificación es, por tanto, manual, y se realizó sobre el despliegue accesible con HTTPS: las herramientas del navegador muestran la cookie \texttt{transitops\_session} con las tres marcas ---\texttt{HttpOnly}, \texttt{Secure} y \texttt{SameSite=Strict}--- sobre la dirección pública del túnel. Se documenta de forma explícita porque implica que una de las propiedades endurecidas en el Sprint 7.3 se ejercita automáticamente en el único entorno donde permanece desactivada, y su comprobación depende de una inspección puntual y no de la suite.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/cookie-segura-sprint7}
+\caption{Cookie de sesión sobre el despliegue con HTTPS: \texttt{HttpOnly}, \texttt{Secure} y \texttt{SameSite=Strict}}
+\label{fig:cookie-segura-s7}
+\end{figure}
+
+La validación sobre el entorno desplegado completó los criterios que no pueden observarse en local. La aplicación respondió por HTTPS con certificado válido; la comprobación de salud devolvió estado correcto a través del túnel; el punto final retirado en el saneado responde ya con ausencia y el de reconstrucción de sesión con falta de autenticación, lo que confirma que el artefacto desplegado corresponde al código revisado; y una petición con origen ajeno no obtiene cabeceras de intercambio entre orígenes, coherente con la eliminación de esa política. La revisión y los digests que el script imprime permiten atar cada una de esas observaciones a un \emph{commit} concreto.
 
 \begin{figure}[htbp]
 \centering

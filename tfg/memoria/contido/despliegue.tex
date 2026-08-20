@@ -1,7 +1,66 @@
 \chapter{Despliegue y reproducibilidad}
+\label{chap:despliegue}
 
-Desde el primer sprint, \texttt{docker compose up --build} crea tres servicios. PostgreSQL mantiene un volumen persistente y expone una comprobación de salud; la API espera a que la base esté disponible, aplica migraciones y escucha en el puerto 8080; Nginx sirve la SPA en el puerto 5173 y reenvía \texttt{/api} al backend.
+\section{Reproducibilidad local}
 
-Los valores del Compose permiten una demostración local inmediata. El fichero \texttt{.env.example} enumera las variables que deben sustituirse y \texttt{.env} queda excluido del control de versiones. En particular, claves JWT, token de bootstrap y contraseña de base de datos deberán gestionarse como secretos en cualquier entorno accesible.
+Desde el primer sprint, \texttt{docker compose up --build} crea tres servicios. PostgreSQL mantiene un volumen persistente y expone una comprobación de salud; la API espera a que la base esté disponible, aplica migraciones y escucha en el puerto 8080; Nginx sirve la SPA en el puerto 5173 y reenvía \texttt{/api} al backend. El fichero \texttt{.env.example} enumera las variables que deben sustituirse y \texttt{.env} queda excluido del control de versiones, de modo que claves JWT, token de arranque y contraseña de base de datos nunca viajan en el repositorio.
 
-El objetivo de este sprint es reproducibilidad local, no operación pública. La selección del destino accesible, HTTPS, copias de seguridad, observabilidad mínima y automatización de despliegue pertenece al Sprint 7.
+Esa composición sigue siendo el entorno de desarrollo y el que ejecuta la integración continua. El despliegue accesible no la sustituye: la reutiliza con otro fichero y otros parámetros.
+
+\section{Destino y topología}
+
+El destino elegido es una máquina virtual Ubuntu Server 24.04 LTS con Docker Compose, alojada en el equipo del autor. Se descartó deliberadamente una plataforma gestionada con infraestructura como código: el objetivo de este trabajo es el ciclo de vida del software, y un entorno de demostración reproducible desde un documento aporta más a esa tesis que una cuenta en la nube que un tribunal no puede recrear. La decisión tiene además una consecuencia deseable: el procedimiento que se documenta funciona igual sobre cualquier host con Docker, y cambiar de destino solo cambia la máquina.
+
+La composición de despliegue define cuatro servicios ---base de datos, API, servidor web y túnel--- y **no publica ningún puerto en la máquina anfitriona**, tampoco el de PostgreSQL. Los tres primeros se comunican por la red privada de Compose; el cuarto, \texttt{cloudflared}, establece una conexión saliente con Cloudflare y ofrece una \gls{url} \gls{https} temporal. No hay, por tanto, ninguna regla de entrada que abrir en el router ni superficie HTTP alternativa que quede a medio funcionar. El diagnóstico se realiza desde dentro de la máquina, consultando la salud a través del contenedor web.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.62\textwidth]{imaxes/despliegue-tunel-sprint7}
+\caption{Aplicación accesible por la dirección pública del túnel}
+\label{fig:despliegue-tunel-s7}
+\end{figure}
+
+La terminación \gls{tls} ocurre en Cloudflare, de modo que el tramo interno entre el túnel y Nginx es HTTP. Esa es la razón por la que el atributo \texttt{Secure} de la cookie se condiciona al entorno de ejecución y no al esquema de la petición: decidirlo por esquema lo desactivaría precisamente en el único camino real de acceso. La API se ejecuta con el entorno \texttt{Production} y la cookie conserva la marca.
+
+\section{Entrega continua basada en \emph{pull}}
+
+GitHub Actions no puede alcanzar la máquina virtual, que no tiene dirección pública ni puertos entrantes. En lugar de forzar esa conectividad, la entrega se invierte: el flujo de trabajo construye las dos imágenes y las publica en el registro de contenedores de GitHub solo después de superar compilación, pruebas unitarias, pruebas de integración y los cuatro flujos de sistema. La máquina virtual las descarga cuando le corresponde.
+
+Esta inversión tiene una propiedad que conviene enunciar, porque no es un efecto colateral sino el motivo de la elección: **la existencia de la imagen es la prueba de que la validación pasó**. No hay forma de desplegar un artefacto que no haya superado la suite, porque el artefacto no llega a existir. Las imágenes se etiquetan con el identificador del \emph{commit} además de \texttt{latest}, y llevan etiquetas \gls{oci} con el origen y la revisión, lo que permite recuperar desde un contenedor en marcha el código exacto que ejecuta.
+
+El registro es público, así que la máquina descarga sin credenciales y no hay ningún secreto de registro que custodiar en ella. El flujo de trabajo se autentica con el token efímero que Actions provee a cada ejecución.
+
+\section{Procedimiento y automatización}
+
+Un único script, \texttt{scripts/deploy.sh}, valida la configuración, descarga las imágenes, aplica la composición, espera a las comprobaciones de salud, consulta la API a través del proxy interno y muestra la revisión y el digest de lo que ha quedado en ejecución, junto con la dirección pública del túnel. Es idempotente: si nada ha cambiado, la descarga no trae capas nuevas y ningún contenedor se recrea.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/deploy-script-sprint7}
+\caption{Ejecución del procedimiento: descarga, salud de los cuatro servicios, revisión y digest desplegados y dirección pública}
+\label{fig:deploy-script-s7}
+\end{figure}
+
+El mismo script se invoca a mano y desde una unidad de \emph{systemd} activada por un temporizador cada cinco minutos. No se eligió esa periodicidad por necesidad operativa ---no hay tráfico que atender--- sino para que la automatización sea observable dentro de una sesión de trabajo. Un ciclo sin novedades cuesta unos cinco segundos y alrededor de un segundo de CPU, coste que se registra aquí porque es la contrapartida honesta de sondear en lugar de ser notificado.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/timer-sprint7}
+\caption{Temporizador activo, con la ejecución anterior y la siguiente a cinco minutos de distancia}
+\label{fig:timer-s7}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{imaxes/despliegue-automatico-sprint7}
+\caption{Despliegue completo iniciado por \emph{systemd} sin intervención, con la misma revisión y los mismos digests}
+\label{fig:despliegue-automatico-s7}
+\end{figure}
+
+La verificación del procedimiento consistió en seguirlo desde una máquina recién creada sin desviarse del documento. Se aplicó sin correcciones: provisionar la máquina, instalar Docker, clonar el repositorio, crear la configuración privada, ejecutar el script, arrancar el primer administrador y activar el temporizador. El registro del servicio muestra después ejecuciones completas iniciadas por \emph{systemd}, con la misma revisión y los mismos digests que la ejecución manual, lo que confirma que la vía automática no es una variante teórica del procedimiento sino la misma.
+
+\section{Observabilidad mínima y límites conocidos}
+
+La monitorización es deliberadamente proporcionada: comprobaciones de salud en los cuatro contenedores, política de reinicio \texttt{unless-stopped}, y una verificación de salud en el propio script que hace fallar el despliegue si la aplicación no responde. No se incorporó recolección de métricas ni agregación de registros; para un entorno de demostración habría sido infraestructura sin lector.
+
+Tres límites merecen quedar escritos. El primero es que el túnel rápido genera un nombre efímero: sirve para demostrar y grabar, no como alojamiento estable, y recrear el contenedor cambia la dirección. Por eso la imagen del túnel se fija por digest, de modo que el despliegue periódico actualice la aplicación sin mover la dirección pública. El segundo es que las pruebas de sistema validan imágenes construidas en su propio trabajo de integración, mientras que la publicación construye las que se despliegan: son construcciones distintas del mismo \emph{commit}, y resolverlo exigiría construir una vez y publicar ese mismo artefacto. El tercero es que la base de datos desplegada es independiente de la de desarrollo, de modo que los datos de una demostración no coinciden con los locales.

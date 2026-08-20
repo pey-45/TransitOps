@@ -203,6 +203,11 @@ La aplicación completa, accesible por internet, con los cuatro flujos funcionan
 - Ningún requisito de prioridad alta queda roto.
 - El despliegue es repetible siguiendo la documentación.
 
+**Cierre (2026-08-20)**
+Sprint ejecutado en cuatro tramos consecutivos, con las pruebas de sistema deliberadamente antes del cambio de sesión para que sirvieran de red de seguridad. S7.1 trasladó las dos carreras conocidas al motor relacional: índices únicos parciales para RN-04 y cerrojo de aviso transaccional para RN-12, verificados con operaciones simultáneas contra PostgreSQL real mediante Testcontainers. S7.2 automatizó los cuatro flujos con Playwright sobre Compose, con datos únicos por ejecución, y saneó las dependencias del frontend, incluida una vulnerabilidad de producción en el enrutador. S7.3 sustituyó `localStorage` por cookie `HttpOnly`/`Secure`/`SameSite=Strict` y añadió invalidación inmediata por versión de token ante cambio de contraseña, desactivación y cambio de rol, lo que obligó a un endpoint nuevo de rehidratación. S7.4 desplegó en una VM Ubuntu 24.04 con cuatro servicios y ningún puerto publicado, accesible por túnel saliente de Cloudflare con HTTPS, y automatizó la entrega hasta GHCR con consumo por *pull* desde un timer de systemd cada cinco minutos.
+
+Una revisión posterior encontró trece defectos de coherencia, ninguno funcional, en su mayoría superficie que el cambio de sesión dejó sin uso pero aparentando estar activa; doce se corrigieron y el restante —la no identidad entre las imágenes probadas y las publicadas— queda documentado como limitación conocida. Validación final: 139 pruebas backend, 33 frontend, los cuatro flujos E2E, lint, builds, `npm audit` sin avisos y `dotnet restore` sin advertencias de vulnerabilidad. El procedimiento de `docs/Deployment.md` se siguió desde una máquina recién creada sin necesitar correcciones, y el registro de systemd muestra despliegues completos ejecutados de forma autónoma con la misma revisión y digests. El túnel rápido es deliberadamente temporal: sirve como entorno de demostración reproducible, no como alojamiento estable. Sprint 8 pasa a ser la siguiente prioridad.
+
 ## Sprint 8 · Documentación y Cierre
 
 **Objetivo**
