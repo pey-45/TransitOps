@@ -18,7 +18,7 @@ services:
       start_period: 10s
 
   api:
-    image: ghcr.io/pey-45/transitops-api:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REPOSITORY:-ghcr.io/pey-45}/transitops-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -38,7 +38,7 @@ services:
       start_period: 20s
 
   web:
-    image: ghcr.io/pey-45/transitops-web:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REPOSITORY:-ghcr.io/pey-45}/transitops-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       api:
@@ -51,7 +51,7 @@ services:
       start_period: 10s
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared@sha256:0aa26e284f05e6c77ae375b8c9c11d9eb6a448fb7bcd8d40f31cb6176189eb38
     restart: unless-stopped
     command: tunnel --no-autoupdate --url http://web:80
     depends_on:

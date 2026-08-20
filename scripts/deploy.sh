@@ -68,7 +68,7 @@ for service in api web; do
   printf '  %s: revision=%s digest=%s\n' "${service}" "${revision:-desconocida}" "${digest}"
 done
 
-tunnel_url="$("${compose[@]}" logs --no-color cloudflared 2>/dev/null \
+tunnel_url="$("${compose[@]}" logs --no-color --tail=200 cloudflared 2>/dev/null \
   | sed -n 's#.*\(https://[-a-z0-9]*\.trycloudflare\.com\).*#\1#p' \
   | tail -n 1)"
 if [[ -n "${tunnel_url}" ]]; then

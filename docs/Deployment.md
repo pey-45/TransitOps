@@ -28,6 +28,8 @@ El job usa el `GITHUB_TOKEN` efímero de Actions; el repositorio no necesita sec
 
 No continúes hasta que el workflow del commit que se va a demostrar esté verde y sus dos imágenes aparezcan en Packages.
 
+Limitación conocida: el job de E2E valida imágenes construidas en su propio job, mientras que `publish` construye las que se despliegan. Son construcciones distintas del mismo commit, así que lo probado no es byte a byte lo que llega a la VM. Resolverlo exigiría construir una vez, pasar las imágenes como artefacto y publicar esas mismas; se acepta la limitación porque el determinismo de ambas construcciones depende de las mismas capas base y del mismo `package-lock.json`.
+
 ## 2. Preparar la VM
 
 La VM solo necesita salida a Internet. No requiere modo puente ni reglas de entrada para la aplicación; la consola de Hyper-V o SSH se usan para administrarla.
@@ -100,7 +102,9 @@ Si no devuelve nada, el túnel todavía se está registrando: espera unos segund
 sudo docker compose --env-file .env --file docker-compose.deploy.yml logs cloudflared
 ```
 
-**La URL cambia si el contenedor `cloudflared` se recrea, y eso puede ocurrir sin pedirlo.** `deploy.sh` hace `pull` de los cuatro servicios, así que si Cloudflare publica una imagen `cloudflared:latest` nueva, el timer la descarga y recrea el contenedor en su siguiente ejecución, con hostname distinto. Antes de grabar, detén el timer para que la URL no se mueva a mitad de la demostración:
+**La URL cambia si el contenedor `cloudflared` se recrea.** Para que el despliegue periódico no la mueva, el compose fija `cloudflared` por digest en lugar de seguir la etiqueta `latest`: así el `pull` cada cinco minutos actualiza las imágenes de la aplicación y deja el túnel intacto. Sólo cambia el hostname si recreas el contenedor a propósito, o si actualizas el digest en el compose.
+
+Aun así, para una grabación larga conviene detener el timer y quitar de la ecuación cualquier reinicio inesperado:
 
 ```bash
 sudo systemctl stop transitops-deploy.timer

@@ -82,11 +82,11 @@ jobs:
       - name: Diagnóstico del stack
         if: failure()
         run: docker compose logs --no-color
-      - name: Trazas de Playwright
+      - name: Evidencia de Playwright
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
+          name: playwright-evidence
           path: |
             frontend/test-results/
             frontend/playwright-report/
@@ -122,8 +122,8 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ghcr.io/pey-45/${{ matrix.image }}:${{ github.sha }}
-            ghcr.io/pey-45/${{ matrix.image }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
