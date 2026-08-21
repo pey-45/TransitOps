@@ -44,7 +44,7 @@ La dedicación se dimensionó a partir de los créditos asignados al Trabajo Fin
 
 La unidad de calendario es la semana y coincide con la duración de un sprint. La equivalencia es intencionada: una rebanada vertical que no cabe en una semana suele abarcar más de una capacidad y conviene dividirla. Las dos primeras semanas no producen incremento ejecutable porque se dedican a entender el problema y a fijar el modelo conceptual; a partir de la tercera, cada semana cierra con una versión integrada y demostrable.
 
-La Figura~\ref{fig:gantt} representa ese reparto. Las ocho barras centrales son los sprints y avanzan en secuencia, sin solapamiento, porque un único desarrollador no puede paralelizarlos. Las dos barras inferiores sí atraviesan el proyecto entero: la verificación automatizada crece con cada incremento en lugar de concentrarse en una fase final de pruebas, y la redacción de la memoria acompaña al desarrollo para que cada capítulo se escriba con la decisión reciente y no reconstruida meses después. Esa continuidad es la razón de que no exista una fase de documentación al final del diagrama.
+La Figura~\ref{fig:gantt} representa ese reparto. Las ocho barras centrales son los sprints y avanzan en secuencia, sin solapamiento, porque un único desarrollador no puede paralelizarlos. Las dos barras inferiores, en cambio, se extienden a lo largo de todo el desarrollo: la verificación automatizada arranca con el primer sprint y crece con cada incremento, en lugar de concentrarse en una fase final de pruebas, y la redacción de la memoria acompaña al proyecto desde la primera semana para que cada capítulo se escriba con la decisión reciente y no reconstruida meses después. Esa continuidad es la razón de que no exista una fase de documentación al final del diagrama.
 
 \begin{figure}[htbp]
 \centering
@@ -84,7 +84,7 @@ La Figura~\ref{fig:gantt} representa ese reparto. Las ocho barras centrales son 
 \label{fig:gantt}
 \end{figure}
 
-El reparto de esas trescientas horas entre actividades aparece en la Tabla~\ref{tab:horas}. La implementación concentra algo menos de la mitad del esfuerzo, lo que resulta coherente con la tesis del trabajo: si escribir código hubiese absorbido la mayor parte del tiempo, las actividades que este TFG pretende demostrar ---especificación, verificación y despliegue--- habrían quedado como apéndices de la programación en lugar de como partes equiparables del ciclo de vida. La verificación recibe quince horas más que el diseño, proporción deliberada en un proyecto cuyo criterio de cierre exige pruebas automatizadas por incremento.
+El reparto de esas trescientas horas entre actividades aparece en la Tabla~\ref{tab:horas}. La implementación concentra algo menos de la mitad del esfuerzo, lo que resulta coherente con la tesis del trabajo: si escribir código hubiese absorbido la mayor parte del tiempo, las actividades que este TFG pretende demostrar ---especificación, verificación y despliegue--- habrían quedado como apéndices de la programación en lugar de como partes equiparables del ciclo de vida. La verificación recibe más horas que el diseño, proporción deliberada en un proyecto cuyo criterio de cierre exige pruebas automatizadas por incremento, y sumada a la especificación y al despliegue supera a cualquiera de las dos fases de implementación por separado.
 
 \begin{table}[htbp]
 \centering
@@ -117,7 +117,7 @@ El personal domina el resultado, como es esperable en un proyecto de software si
 \centering
 \caption{Estimación de costes del proyecto}
 \label{tab:costes}
-\begin{tabular}{llr}
+\begin{tabular}{@{}p{4.1cm}p{6.0cm}r@{}}
 \hline
 Concepto & Base de cálculo & Importe \\
 \hline
