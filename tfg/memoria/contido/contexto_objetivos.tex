@@ -1,8 +1,6 @@
 \chapter{Contexto y objetivos}
 
-El trabajo se desarrolla como TFG del Grado en Ingeniería Informática de la Universidade da Coruña, en la mención de Ingeniería del Software. Su planteamiento actual procede de una modificación aprobada el 19 de junio de 2026. La propuesta anterior se centraba en infraestructura cloud y prácticas DevOps alrededor de una aplicación de transportes; la nueva dirección sitúa en primer plano el diseño y desarrollo integral de la propia aplicación y su ciclo de vida.
-
-El cambio no consistió en renombrar el mismo resultado. El material AWS, Terraform, despliegues y una implementación previa se trasladó íntegramente a \texttt{archive/\allowbreak cloud-phase/}. Ese archivo conserva decisiones, migraciones y pruebas como fuente de conocimiento, pero no forma parte del producto activo. La aplicación se reconstruye desde cero sobre el mismo dominio y stack para que los incrementos documentados sean reales: cada sprint parte de los requisitos actuales, decide su diseño, implementa todas las capas necesarias y verifica el resultado. Esta separación evita presentar como nuevo un desarrollo heredado y permite aprovechar experiencia sin perder rigor metodológico.
+El trabajo se desarrolla como TFG del Grado en Ingeniería Informática de la Universidade da Coruña, en la mención de Ingeniería del Software. Su objeto es el diseño y la construcción íntegra de una aplicación de gestión operativa para una empresa de transporte, junto con el ciclo de vida de ingeniería que la produce: desde la elicitación de necesidades hasta el despliegue verificado del producto.
 
 La situación de partida combina dos necesidades. Desde el dominio, una empresa de transporte pequeña requiere visibilidad compartida y reglas que eviten inconsistencias. Desde el TFG, se necesita demostrar competencias de ingeniería más amplias que la programación de una capa: comprender a la parte interesada, delimitar alcance, justificar arquitectura, probar comportamiento, reproducir entornos y evaluar el producto. TransitOps une ambos objetivos en un caso suficientemente rico para contener estados, relaciones, roles y trazabilidad, pero bastante pequeño para completarlo.
 
@@ -14,7 +12,7 @@ Diseñar, construir, probar y desplegar una aplicación web mantenible que permi
 
 \begin{itemize}
   \item Obtener necesidades mediante una entrevista simulada con una responsable del dominio y formalizarlas sin introducir prematuramente decisiones técnicas.
-  \item Mantener trazabilidad entre entrevista, RF-01 a RF-14, RN-01 a RN-16, flujos de negocio, diseño, implementación y pruebas.
+  \item Mantener trazabilidad entre entrevista, RF-01 a RF-14, RN-01 a RN-17, flujos de negocio, diseño, implementación y pruebas.
   \item Diseñar un dominio coherente, un contrato HTTP uniforme y una arquitectura separada de backend, frontend y persistencia.
   \item Implementar incrementos verticales utilizables, con autenticación y autorización desde el comienzo, hasta cubrir el alcance funcional completo.
   \item Automatizar pruebas de reglas en backend, contratos HTTP y comportamiento observable en frontend.
@@ -27,6 +25,6 @@ Diseñar, construir, probar y desplegar una aplicación web mantenible que permi
 
 Los criterios funcionales son el cumplimiento verificable de RF-01 a RF-14 y la ejecución satisfactoria de los cuatro flujos de negocio. En calidad, se exige build reproducible, suites automatizadas correctas, esquema migrable desde cero, autorización efectiva en servidor, errores comprensibles y conservación del historial. En operación, la aplicación debe poder levantarse siguiendo documentación explícita y sin incorporar credenciales reales a ficheros versionados.
 
-Los criterios funcionales se alcanzaron durante los seis primeros incrementos con pruebas de componente e integración y verificaciones manuales por rebanada. El séptimo añadió las pruebas \gls{e2e} de los cuatro flujos, las garantías de concurrencia sostenidas por el motor relacional y una sesión endurecida. No se declara todavía el éxito final: queda ejecutar el despliegue en un entorno accesible y recoger su evidencia. Esta distinción evita confundir una cobertura amplia y automatizada con un cierre de sistema demostrado sobre el entorno real.
+Los criterios funcionales se alcanzaron durante los seis primeros incrementos con pruebas de componente e integración y verificaciones manuales por rebanada. El séptimo añadió las pruebas \gls{e2e} de los cuatro flujos, las garantías de concurrencia sostenidas por el motor relacional, una sesión endurecida y el despliegue en un entorno accesible con su evidencia recogida. El éxito solo se declara en ese punto, porque una cobertura amplia y automatizada no equivale a un cierre de sistema demostrado sobre el entorno real.
 
-El trabajo no pretende optimizar rutas, procesar telemetría GPS, emitir facturas ni ofrecer un portal externo. Tampoco busca profundidad de infraestructura comparable a la propuesta archivada. CI, contenedores y despliegue son medios para reproducir y evaluar el producto; la aportación principal es la disciplina aplicada de ingeniería del software a todo su recorrido.
+El trabajo no pretende optimizar rutas, procesar telemetría GPS, emitir facturas ni ofrecer un portal externo. Tampoco persigue profundidad en infraestructura: CI, contenedores y despliegue son medios para reproducir y evaluar el producto; la aportación principal es la disciplina aplicada de ingeniería del software a todo su recorrido.
