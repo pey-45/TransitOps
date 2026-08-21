@@ -1,6 +1,8 @@
 \chapter{Desarrollo iterativo}
 \label{chap:desarrollo-iterativo}
 
+El Capítulo~\ref{chap:diseno-detallado} describe el sistema tal como quedó; este describe cómo llegó a serlo. Cada sección corresponde a un sprint y conserva el orden temporal, incluidas las decisiones que después se revisaron y las limitaciones que cada incremento dejó anotadas por escrito antes de resolverlas. Esa doble lectura es intencionada: un capítulo de diseño sin crónica presenta el resultado como si hubiera sido evidente desde el principio, y buena parte de lo que este trabajo pretende demostrar ocurre precisamente en la diferencia entre lo que se planificó y lo que la implementación obligó a corregir. Las capturas que acompañan a cada sprint no son ilustraciones decorativas sino la evidencia de que el incremento quedó utilizable en su momento de cierre, y por eso se conservan con el estado que tenía la interfaz entonces y no con el actual.
+
 \section{Sprint 1: cimientos y esqueleto autenticado}
 
 El incremento comenzó con una solución .NET y dos proyectos independientes, más una SPA TypeScript. En backend se implementaron la entidad de usuario, su configuración EF Core y la migración \texttt{InitialCreate}; el servicio de autenticación; los controladores de salud y sesión; JWT, CORS, correlación y tratamiento uniforme de excepciones.
@@ -8,6 +10,8 @@ El incremento comenzó con una solución .NET y dos proyectos independientes, m�
 En frontend se construyeron el cliente HTTP, un contexto de sesión persistente, la pantalla de login, el componente de error, la ruta protegida y un layout adaptable. Un administrador ve la futura entrada de usuarios, mientras que un operador recibe solo la navegación común. El resultado atraviesa navegador, proxy, API y PostgreSQL: constituye un \gls{walking-skeleton} real.
 
 Docker Compose orquesta base de datos, API y web; la API aplica migraciones al arrancar. GitHub Actions compila y prueba ambas aplicaciones y ejecuta la migración contra PostgreSQL. Esta infraestructura se mantendrá en todos los incrementos siguientes.
+
+La Figura~\ref{fig:login-compose} muestra el resultado del incremento: la pantalla de acceso servida por Nginx desde la composición de contenedores, no por el servidor de desarrollo. La distinción importa más de lo que aparenta, porque significa que el primer sprint ya atraviesa la misma frontera que atravesará el sistema desplegado ---navegador, proxy, API y base de datos--- y que los problemas de integración entre esas piezas se descubrieron en la primera semana y no en la última.
 
 \begin{figure}[htbp]
 \centering
@@ -31,6 +35,8 @@ La API normaliza referencias y fechas antes de persistir o filtrar. Los instante
 La SPA ofrece alta, edición, detalle y una tabla paginada. Los filtros de estado, rango de recogida, vehículo y conductor viven en la URL. El formulario convierte de forma explícita entre \texttt{datetime-local} y UTC, muestra los errores por campo y conserva la asociación visible al editar un envío cuyo cliente ya fue dado de baja.
 
 La automatización del cierre alcanzó 45 pruebas backend y 13 frontend, con compilaciones de producción y análisis estático correctos.
+
+Las dos capturas del incremento documentan sus dos caras. En la Figura~\ref{fig:envios-filtrados-s3} aparece el listado con varios filtros aplicados simultáneamente; lo relevante no es la tabla sino la barra de direcciones, porque los criterios viajan en la \emph{query string} y eso permite compartir una vista concreta o recuperarla al volver atrás sin que la aplicación tenga que recordar nada. La Figura~\ref{fig:envio-detalle-s3} muestra un envío recién creado, todavía planificado y sin recursos asignados: es el estado en el que el tercer sprint deja necesariamente el agregado, porque la asignación y el ciclo de vida corresponden al siguiente. Que el detalle sea navegable antes de existir esas capacidades es lo que permitió validar el modelo de datos sin esperar a completarlo.
 
 \begin{figure}[htbp]
 \centering
@@ -56,6 +62,8 @@ La capacidad insuficiente sigue una semántica distinta a la de los errores: la 
 La máquina de estados adopta una política cerrada: solo se permiten las cuatro transiciones dibujadas en la Figura~\ref{fig:maquina-estados-s4}. Entrar en curso requiere los dos recursos y sella la recogida real en UTC; entregar sella la entrega real. Entregado y cancelado son terminales, y ninguna operación devuelve el envío a planificado.
 
 La migración \texttt{AddShipmentOperation} añadió las dos fechas reales y una restricción de coherencia. La API expone acciones explícitas para asignar, retirar la asignación y cambiar el estado; el CRUD general no puede alterar estos campos. En la interfaz, los botones se derivan del estado actual, las acciones irreversibles piden confirmación y un estado final muestra de forma explícita que ya no admite cambios.
+
+Las cuatro capturas de este incremento recorren un envío completo y conviene leerlas en secuencia. La Figura~\ref{fig:asignacion-s4} presenta el panel de asignación con el envío todavía planificado: vehículo y conductor aparecen en un único formulario porque la regla los trata como una pareja, y no como dos campos que se puedan guardar por separado. La Figura~\ref{fig:capacidad-s4} recoge el caso que mejor distingue un aviso de un error: la carga supera la capacidad del vehículo, el mensaje aparece en ámbar y, pese a ello, la asignación se ha guardado; un operador que conoce su flota mejor que el sistema conserva la decisión. La Figura~\ref{fig:en-curso-s4} muestra el mismo envío tras iniciarlo, ya con la hora real de recogida sellada y con el conjunto de acciones reducido a las que su estado admite. Y la Figura~\ref{fig:entregado-s4} cierra el recorrido: el envío entregado conserva ambas fechas reales y no ofrece ninguna acción de transición, porque la terminalidad no se comunica deshabilitando un botón sino retirándolo.
 
 \begin{figure}[htbp]
 \centering
@@ -98,6 +106,8 @@ La API representa el historial como subrecurso \texttt{/shipments/\{id\}/events}
 
 La SPA integra una línea de tiempo en el detalle. Los eventos automáticos forman la espina dorsal y los manuales se diferencian visualmente; las incidencias reciben énfasis rojo. El formulario permite indicar una fecha pasada, transforma \texttt{datetime-local} a UTC y rechaza fechas futuras con dos minutos de tolerancia. Tras el alta inserta la respuesta en su posición cronológica sin recargar; tras una acción operativa vuelve a consultar el historial para incorporar el evento automático.
 
+La Figura~\ref{fig:historial-s5} muestra esa cronología ya poblada. La distinción visual entre los eventos que el sistema generó por sí mismo y los que una persona anotó es la propiedad central de la pantalla: permite responder si un hecho consta porque el sistema lo observó o porque alguien lo declaró, que es una pregunta distinta y a menudo la relevante al reconstruir una incidencia. La Figura~\ref{fig:registro-evento-s5} recoge el formulario de alta manual, donde se aprecia que la fecha del hecho es un campo editable y no la hora del registro; sin esa separación, anotar por la tarde una incidencia de la mañana falsearía la cronología.
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imaxes/historial-eventos-sprint5}
@@ -122,6 +132,8 @@ La administración de usuarios se separó del servicio de autenticación y se si
 El cambio de contraseña propia reutiliza \texttt{ICurrentUser}: carga la cuenta activa, verifica el hash de la contraseña actual y rechaza tanto una credencial incorrecta como una nueva contraseña idéntica. El JWT no se sustituye ni se revocan sesiones previas. Del mismo modo, un token ya emitido sobrevive temporalmente a una desactivación o cambio de rol. Es una limitación consciente de la autenticación sin estado, acotada por la caducidad del token, que se revisará junto con el almacenamiento en \texttt{localStorage} durante el endurecimiento del Sprint 7.
 
 El endpoint \texttt{/summary} combina tres consultas. Los contadores por estado son globales y representan la situación actual. La actividad de vehículo y conductor usa la fecha prevista de recogida dentro de un periodo configurable ---treinta días por defecto---, mientras que las incidencias se cuentan por \texttt{OccurredAt}. Las etiquetas se resuelven sin filtrar recursos inactivos, de modo que una baja no borra actividad histórica. En el Inicio de la SPA, cada contador enlaza al listado de envíos ya filtrado y la interfaz explica expresamente qué cifras dependen del periodo.
+
+La Figura~\ref{fig:resumen-s6} recoge ese panel. Su diseño responde a lo que la clienta pidió en la entrevista, que era ver la situación de un vistazo y no un informe elaborado, y por eso los indicadores son recuentos y no gráficas. La decisión con más consecuencias, sin embargo, no se ve en la captura: cada cifra es un enlace al listado ya filtrado por el criterio que la produjo. Eso convierte el resumen en un punto de entrada al trabajo operativo en lugar de un cuadro que hay que leer y luego traducir a mano a una búsqueda.
 
 \begin{figure}[htbp]
 \centering

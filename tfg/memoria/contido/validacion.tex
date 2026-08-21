@@ -1,12 +1,24 @@
 \chapter{Validación}
+\label{chap:validacion}
+
+Este capítulo responde a una pregunta concreta: por qué debe creerse que el sistema cumple lo que los capítulos anteriores afirman. Primero expone la estrategia de pruebas y el criterio con el que se eligió cada nivel; después recorre cómo creció la cobertura incremento a incremento, con el detalle de qué comportamiento quedó cubierto en cada uno; y termina con la validación del sistema ensamblado y la del entorno desplegado, que son las únicas capaces de demostrar propiedades que ninguna prueba aislada alcanza. Se declaran también, de forma explícita, las comprobaciones que quedaron fuera de la automatización, porque una relación de pruebas que omite sus huecos informa peor que una más corta que los enuncia.
+
+\section{Estrategia de pruebas}
 
 La estrategia combina cuatro niveles, cada uno elegido por lo que puede demostrar y por lo que cuesta ejecutar. Las pruebas de integración de API arrancan la aplicación completa con \texttt{WebApplicationFactory} y sustituyen solo PostgreSQL por una base en memoria aislada, lo que las hace rápidas y aptas para la mayoría de reglas de negocio. Las pruebas de componentes y rutas de frontend simulan la API y manipulan la interfaz como lo haría una persona usuaria.
 
 El endurecimiento añadió dos niveles más, porque los anteriores no podían demostrar lo que introdujo. Las garantías que dependen del motor relacional ---índices únicos parciales y cerrojos--- no las respeta un proveedor en memoria, así que se verifican con una clase que arranca PostgreSQL real en un contenedor efímero mediante Testcontainers. Y los cuatro flujos de negocio, que atraviesan sesión, navegación y datos entre pantallas, se ejercitan con Playwright contra la composición completa de contenedores. La proporción es deliberada: la inmensa mayoría de las pruebas siguen siendo rápidas y aisladas, y solo lo que no se puede demostrar de otro modo paga el coste de un contenedor.
 
+\section{Evolución de la cobertura por incremento}
+
+Las tablas de este apartado recogen, sprint a sprint, qué comportamiento concreto quedó cubierto y en qué capa. Están redactadas en términos de comportamiento observable y no de clases o ficheros, porque el propósito es que puedan contrastarse con los requisitos del Capítulo~\ref{chap:requisitos} sin conocer la estructura interna del código.
+
+La Tabla~\ref{tab:val-s1} corresponde al primer incremento. Su contenido revela una decisión de la que dependen los seis sprints siguientes: la autenticación y la autorización se probaron desde el principio, incluidos los rechazos 401 y 403, en lugar de añadirse como una capa posterior. Un esqueleto que se autentica de verdad obliga a que toda capacidad nueva nazca ya dentro de un contexto con permisos.
+
 \begin{table}[htbp]
 \centering
 \caption{Pruebas automatizadas del Sprint 1}
+\label{tab:val-s1}
 \begin{tabular}{p{6.2cm}p{2cm}p{2.5cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
 Primer administrador y hash de contraseña & Backend & Correcto \\
@@ -21,12 +33,15 @@ Navegación adaptada al rol administrador & Frontend & Correcto \\
 \end{tabular}
 \end{table}
 
-La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de build de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16. Las pruebas funcionales de sistema crecerán con cada flujo y se consolidarán en el Sprint 7.
+La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de build de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16.
 
 \clearpage
+La Tabla~\ref{tab:val-s23} agrupa los incrementos segundo y tercero, porque comparten un mismo tipo de riesgo: la conservación de datos históricos y la corrección de las representaciones. Dos filas concentran el valor del conjunto. La de unicidad y reutilización tras baja demuestra que un identificador queda libre cuando su registro se da de baja pero el historial que lo menciona no se pierde, que es la tensión que resuelve la baja lógica. Y la de normalización UTC comprueba los tres formatos de entrada posibles, porque una fecha que cambia de significado al cruzar de navegador a base de datos produce errores que no se manifiestan hasta que alguien opera en otro horario.
+
 \begin{table}[htbp]
 \centering
 \caption{Validación acumulada de los Sprints 2 y 3}
+\label{tab:val-s23}
 \begin{tabular}{p{5.8cm}p{2.4cm}p{2.5cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
 CRUD y baja lógica de los tres catálogos & Backend/\allowbreak Frontend & Correcto \\
@@ -42,9 +57,12 @@ Cliente activo y conservación del vínculo histórico & Backend & Correcto \\
 
 Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 añadió 16 y 6 respectivamente, elevando el total a 45 pruebas backend y 13 frontend, todas correctas junto con el lint y las compilaciones de producción.
 
+La Tabla~\ref{tab:val-s4} cubre el incremento con más reglas de negocio del proyecto. Conviene fijarse en la columna de capa: es la primera vez que aparecen las marcas de sistema y de PostgreSQL, y no por afán de exhaustividad. La regla anti-doble-reserva y el sellado de fechas reales dependen del motor relacional, así que comprobarlas únicamente contra un proveedor en memoria habría producido una confianza infundada.
+
 \begin{table}[htbp]
 \centering
 \caption{Validación del Sprint 4}
+\label{tab:val-s4}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
 Asignación conjunta y retirada idempotente & Backend/\allowbreak Frontend & Correcto \\
@@ -60,9 +78,12 @@ Proyección de matrícula y conductor en PostgreSQL & Integración & Correcto \\
 
 El cierre del Sprint 4 elevó el total a 74 pruebas backend y 19 frontend. Además de las suites, se ejecutó el flujo integrado mediante Nginx, API y PostgreSQL 16: se verificaron la migración, las proyecciones SQL, el aviso de capacidad, el conflicto que identifica el envío ocupante y el bloqueo visual de un estado final. La prueba en navegador descubrió además un caso de fecha inválida que podía dejar el formulario pendiente; se corrigió y quedó cubierto por una prueba de regresión.
 
+La Tabla~\ref{tab:val-s5} corresponde al historial de eventos, cuyo requisito de inmutabilidad exige probar tanto lo que el sistema permite como lo que debe impedir. Las dos filas que expresan eso son la de tipos del sistema bloqueados para el cliente ---que evita insertar una entrega ficticia en la traza--- y la de eventos automáticos en la misma operación, que comprueba que una transición y su registro se guardan juntos o no se guardan.
+
 \begin{table}[htbp]
 \centering
 \caption{Validación del Sprint 5}
+\label{tab:val-s5}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
 Alta y consulta inmutable por envío & Backend/\allowbreak Frontend & Correcto \\
@@ -79,9 +100,12 @@ Refresco tras asignación o transición & Frontend & Correcto \\
 
 El Sprint 5 elevó el total a 96 pruebas backend y 24 frontend. Las pruebas de controlador verifican la asociación del evento con el usuario real del token, no solo con un doble; las de servicio comprueban el orden estable, el aislamiento entre envíos y que una transición rechazada no deja rastro. Lint y compilaciones de producción permanecieron correctos.
 
+La Tabla~\ref{tab:val-s6} cierra la cobertura funcional. Su fila más significativa es la protección del último administrador, porque describe una regla cuyo incumplimiento dejaría el sistema inutilizable de forma irreversible: sin ningún administrador activo no existe vía para crear otro, ya que el arranque solo funciona una vez. Las dos filas de agregaciones sobre PostgreSQL responden a que los contadores del resumen se calculan en la base de datos y no en memoria.
+
 \begin{table}[htbp]
 \centering
 \caption{Validación del Sprint 6}
+\label{tab:val-s6}
 \begin{tabular}{p{6.1cm}p{2.2cm}p{2.3cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
 Alta, listado y reactivación de usuarios & Backend/\allowbreak Frontend & Correcto \\
@@ -98,13 +122,15 @@ Enlaces del panel hacia filtros operativos & Frontend & Correcto \\
 
 El Sprint 6 elevó el total a 127 pruebas backend y 30 frontend. Además de las suites, se construyeron ambos contenedores y se comprobaron las agregaciones sobre PostgreSQL 16 con periodo omitido, explícito y fechas sin zona. El flujo de navegador verificó el alta de un operador, la ausencia del enlace administrativo, la redirección de \texttt{/usuarios}, el formulario de contraseña y el mensaje de conflicto al intentar desactivar al único administrador. No se generó ninguna migración y EF confirmó que la base estaba actualizada.
 
+\section{Validación del sistema completo}
+
 El endurecimiento elevó el total a 139 pruebas backend, 33 frontend y los cuatro flujos de sistema. El incremento no es solo de cantidad: las pruebas nuevas de backend comprueban la invalidación de sesión tras cambiar la contraseña, desactivar la cuenta y cambiar el rol, y una clase específica lanza dos asignaciones concurrentes contra PostgreSQL real para verificar que el índice único parcial rechaza la segunda con el conflicto esperado, además de dos degradaciones simultáneas del último administrador. Esa comprobación es imposible con el proveedor en memoria, que no aplica ni índices filtrados ni cerrojos de aviso.
 
 La suite de frontend se reorganizó en cinco ficheros por área ---sesión, catálogos, resumen, usuarios y envíos--- espejando la separación que el backend ya tenía entre controladores y servicios. Además del beneficio de lectura, la ejecución pasó de unos veintidós segundos a menos de tres, porque el ejecutor paraleliza entre ficheros y antes existía uno solo.
 
-Las pruebas de sistema del Sprint 7 recorren los cuatro flujos de negocio con Playwright sobre la composición de contenedores. Sobre la sesión comprueban que la cookie no es legible desde \texttt{document.cookie}, evidencia observable del atributo \texttt{HttpOnly}, y que sobrevive a una recarga completa de la página. La colección ejecutable de la API añade la verificación directa de la cabecera \texttt{Set-Cookie}, incluidos \texttt{HttpOnly} y \texttt{SameSite=Strict}, y la reautenticación posterior al cambio de contraseña, cuya invalidación por versión de token cubren además las pruebas de servicio del backend.
+Las pruebas de sistema del Sprint 7 recorren los cuatro casos de uso con Playwright sobre la composición de contenedores. Sobre la sesión comprueban que la cookie no es legible desde \texttt{document.cookie}, evidencia observable del atributo \texttt{HttpOnly}, y que sobrevive a una recarga completa de la página. La colección ejecutable de la API añade la verificación directa de la cabecera \texttt{Set-Cookie}, incluidos \texttt{HttpOnly} y \texttt{SameSite=Strict}, y la reautenticación posterior al cambio de contraseña, cuya invalidación por versión de token cubren además las pruebas de servicio del backend.
 
-Queda fuera de esa automatización el atributo \texttt{Secure}. La integración continua no dispone de terminación TLS y ejecuta la API con el entorno \texttt{Development}, en el que la aplicación emite deliberadamente la cookie sin esa marca para que el recorrido funcione por HTTP; \texttt{Secure} solo se activa fuera de \texttt{Development}. Su verificación es, por tanto, manual, y se realizó sobre el despliegue accesible con HTTPS: las herramientas del navegador muestran la cookie \texttt{transitops\_session} con las tres marcas ---\texttt{HttpOnly}, \texttt{Secure} y \texttt{SameSite=Strict}--- sobre la dirección pública del túnel. Se documenta de forma explícita porque implica que una de las propiedades endurecidas en el Sprint 7.3 se ejercita automáticamente en el único entorno donde permanece desactivada, y su comprobación depende de una inspección puntual y no de la suite.
+Queda fuera de esa automatización el atributo \texttt{Secure}. La integración continua no dispone de terminación TLS y ejecuta la API con el entorno \texttt{Development}, en el que la aplicación emite deliberadamente la cookie sin esa marca para que el recorrido funcione por HTTP; \texttt{Secure} solo se activa fuera de \texttt{Development}. Su verificación es, por tanto, manual, y se realizó sobre el despliegue accesible con HTTPS. La Figura~\ref{fig:cookie-segura-s7} recoge esa inspección: las herramientas del navegador muestran la cookie \texttt{transitops\_session} con las tres marcas ---\texttt{HttpOnly}, \texttt{Secure} y \texttt{SameSite=Strict}--- sobre la dirección pública del túnel. Se documenta de forma explícita porque implica que una de las propiedades endurecidas en el séptimo incremento se ejercita automáticamente en el único entorno donde permanece desactivada, y su comprobación depende de una inspección puntual y no de la suite.
 
 \begin{figure}[htbp]
 \centering
@@ -113,7 +139,7 @@ Queda fuera de esa automatización el atributo \texttt{Secure}. La integración 
 \label{fig:cookie-segura-s7}
 \end{figure}
 
-La validación sobre el entorno desplegado completó los criterios que no pueden observarse en local. La aplicación respondió por HTTPS con certificado válido; la comprobación de salud devolvió estado correcto a través del túnel; el punto final retirado en el saneado responde ya con ausencia y el de reconstrucción de sesión con falta de autenticación, lo que confirma que el artefacto desplegado corresponde al código revisado; y una petición con origen ajeno no obtiene cabeceras de intercambio entre orígenes, coherente con la eliminación de esa política. La revisión y los digests que el script imprime permiten atar cada una de esas observaciones a un \emph{commit} concreto.
+Todas las suites descritas se ejecutan además en la integración continua, que las repite sobre una máquina limpia y sin acceso al entorno de desarrollo. La Figura~\ref{fig:ci-verde} muestra una de esas ejecuciones completa. Su valor no es decorativo: mientras una ejecución local demuestra que las pruebas pasan en el equipo de quien las escribió, esta demuestra que el repositorio se reconstruye y se valida a partir de lo versionado, sin depender de ningún fichero, variable o herramienta presente solo en esa máquina.
 
 \begin{figure}[htbp]
 \centering
@@ -121,3 +147,9 @@ La validación sobre el entorno desplegado completó los criterios que no pueden
 \caption{Ejecución de la integración continua en verde tras publicar la rama}
 \label{fig:ci-verde}
 \end{figure}
+
+\section{Validación sobre el entorno desplegado}
+
+La validación sobre el entorno desplegado completó los criterios que no pueden observarse en local. La aplicación respondió por HTTPS con certificado válido; la comprobación de salud devolvió estado correcto a través del túnel; el punto final retirado en el saneado responde ya con ausencia y el de reconstrucción de sesión con falta de autenticación, lo que confirma que el artefacto desplegado corresponde al código revisado; y una petición con origen ajeno no obtiene cabeceras de intercambio entre orígenes, coherente con la eliminación de esa política. La revisión y los digests que el script imprime permiten atar cada una de esas observaciones a un \emph{commit} concreto.
+
+Esas cuatro comprobaciones comparten una propiedad que conviene enunciar: ninguna de ellas podría haberse sustituido por una prueba automatizada del repositorio, porque todas verifican el sistema tal como quedó configurado en su destino y no tal como se construye. Es la razón de que el capítulo no termine con la suite en verde, sino aquí.

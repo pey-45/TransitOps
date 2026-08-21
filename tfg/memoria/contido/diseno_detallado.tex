@@ -3,6 +3,8 @@
 
 Este capítulo describe las decisiones que forman el sistema tras los siete incrementos de desarrollo. A diferencia de la crónica del Capítulo~\ref{chap:desarrollo-iterativo}, el orden no es temporal: cada sección presenta una capacidad, las alternativas consideradas y las invariantes que conserva.
 
+Las secciones siguen el recorrido de una petición por el sistema, de fuera hacia dentro: primero cómo se establece y se comprueba la identidad, después la forma común de las respuestas y la sesión en el cliente, y a continuación las capacidades de dominio ---catálogos, envíos, operación, trazabilidad y administración--- en el orden en que dependen unas de otras. Cada una enuncia también lo que se descartó, porque una decisión de diseño sin su alternativa no se puede evaluar: informa de qué se hizo, pero no de si era la mejor opción disponible. Cuando una regla se sostiene en más de una capa, el capítulo indica cuál aporta la corrección y cuál el mensaje comprensible, distinción que reaparece en varias secciones y que no es redundancia sino reparto deliberado de responsabilidades.
+
 \section{Autenticación y autorización}
 
 El arranque controlado de RF-02 resuelve el problema circular de una instalación vacía: todavía no existe un administrador que pueda crear al primero. \texttt{POST /api/v1/auth/bootstrap-admin} recibe un secreto de instalación mediante la cabecera \texttt{X-Bootstrap-Token}, configurado fuera del código. Antes de crear la cuenta comprueba RN-11 ---que no exista ya un administrador activo--- y la unicidad global de usuario y correo. Se eligió un endpoint de uso único frente a credenciales sembradas porque no introduce una contraseña conocida en la imagen ni obliga a manipular directamente la base de datos.

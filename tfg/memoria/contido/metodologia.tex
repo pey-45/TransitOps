@@ -1,6 +1,6 @@
-\chapter{Metodología}
+\chapter{Metodología y planificación}
 
-Se adopta un proceso iterativo e incremental adaptado a un proyecto individual. La ingeniería del software comprende actividades relacionadas ---especificación, desarrollo, validación y evolución--- que no necesitan ejecutarse una única vez como fases estancas \cite{sommerville2016}. En TransitOps cada incremento recorre esas actividades para una capacidad acotada y deja una versión integrada.
+Este capítulo explica cómo se organizó el trabajo: qué proceso de desarrollo se siguió, cómo se convirtió una entrevista en una secuencia de incrementos verificables, cuánto tiempo se dedicó a cada actividad y qué coste tendría producir el sistema en un contexto profesional. Se adopta un proceso iterativo e incremental adaptado a un proyecto individual. La ingeniería del software comprende actividades relacionadas ---especificación, desarrollo, validación y evolución--- que no necesitan ejecutarse una única vez como fases estancas \cite{sommerville2016}. En TransitOps cada incremento recorre esas actividades para una capacidad acotada y deja una versión integrada.
 
 \section{De la necesidad al incremento}
 
@@ -10,9 +10,12 @@ La unidad de planificación es la \gls{rebanada-vertical}. Por ejemplo, ``gestio
 
 El Sprint 1 usa un \gls{walking-skeleton}: login y ruta protegida cruzan configuración, base de datos, API, proxy y SPA. Esa base no pretende anticipar toda la funcionalidad, sino retirar pronto los riesgos transversales. Los Sprints 2 a 6 añaden catálogos, envíos, operación, eventos y administración. Sprint 7 reúne endurecimiento, pruebas de sistema y despliegue; Sprint 8 cierra documentación y defensa.
 
+La Tabla~\ref{tab:plan-incremental} resume ese reparto asociando cada sprint con los requisitos que lo justifican. Conviene leerla como una asignación de responsabilidad y no como un cronograma: su valor está en que ningún sprint aparece sin requisitos que lo motiven y ningún requisito queda sin sprint asignado. Los dos últimos incrementos se salen del patrón deliberadamente, porque no añaden funcionalidad nueva: el séptimo consolida cualidades transversales sobre lo ya construido y el octavo cierra la documentación.
+
 \begin{table}[htbp]
 \centering
 \caption{Plan incremental del proyecto}
+\label{tab:plan-incremental}
 \begin{tabular}{cll}
 \hline
 Sprint & Incremento & Requisitos principales \\
@@ -27,7 +30,6 @@ Sprint & Incremento & Requisitos principales \\
 8 & Documentación y defensa & Cierre \\
 \hline
 \end{tabular}
-\label{tab:plan-incremental}
 \end{table}
 
 \section{Diseño anticipado e implementación incremental}
@@ -35,6 +37,104 @@ Sprint & Incremento & Requisitos principales \\
 En Sprint 1 se diseñó el modelo conceptual completo. Esta visión reduce el riesgo de que cada rebanada invente nombres, cardinalidades o políticas de borrado incompatibles. Sin embargo, solo se migró \texttt{AppUser}; cada tabla posterior apareció cuando existían reglas, endpoints y pruebas que la utilizaban. El equilibrio es deliberado: arquitectura suficiente para orientar, implementación justa para demostrar.
 
 Las decisiones se registran en artefactos versionados. \texttt{docs/design/} conserva el modelo y la integración; cada \texttt{SprintNPlan.md} fija decisiones antes de implementar; \texttt{CONTEXT.md} mantiene un log fechado; y \texttt{docs/Roadmap.md} preserva cierres y evidencia. El código implementado prevalece sobre un plan si aparece una diferencia, y la documentación se corrige para describir el resultado real.
+
+\section{Planificación temporal}
+
+La dedicación se dimensionó a partir de los créditos asignados al Trabajo Fin de Grado: doce créditos ECTS que, a razón de veinticinco horas por crédito, suponen trescientas horas de trabajo. Distribuidas en diez semanas efectivas, resultan unas treinta horas semanales. Esa cifra no es una medición a posteriori, sino la restricción de partida: el alcance se acotó para caber en ella, y ahí reside una de las decisiones de ingeniería del proyecto, porque un alcance mayor habría obligado a renunciar a las pruebas o al despliegue.
+
+La unidad de calendario es la semana y coincide con la duración de un sprint. La equivalencia es intencionada: una rebanada vertical que no cabe en una semana suele abarcar más de una capacidad y conviene dividirla. Las dos primeras semanas no producen incremento ejecutable porque se dedican a entender el problema y a fijar el modelo conceptual; a partir de la tercera, cada semana cierra con una versión integrada y demostrable.
+
+La Figura~\ref{fig:gantt} representa ese reparto. Las ocho barras centrales son los sprints y avanzan en secuencia, sin solapamiento, porque un único desarrollador no puede paralelizarlos. Las dos barras inferiores sí atraviesan el proyecto entero: la verificación automatizada crece con cada incremento en lugar de concentrarse en una fase final de pruebas, y la redacción de la memoria acompaña al desarrollo para que cada capítulo se escriba con la decisión reciente y no reconstruida meses después. Esa continuidad es la razón de que no exista una fase de documentación al final del diagrama.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[font=\small]
+  % rejilla de semanas
+  \foreach \w in {1,...,10}{
+    \draw[gray!25] (\w,0.5) -- (\w,-12.3);
+    \node[gray!70, font=\scriptsize, anchor=south] at (\w,0.6) {Sem.~\w};
+  }
+  \draw[gray!50] (0.5,0.5) -- (10.5,0.5);
+
+  % actividades: {fila}{semana inicio}{semana fin}{etiqueta}{color}
+  \foreach \r/\a/\b/\t in {
+    1/1/1/{Elicitación y especificación},
+    2/2/2/{Diseño conceptual y tecnológico},
+    3/3/3/{Sprint 1 · Esqueleto autenticado},
+    4/4/4/{Sprint 2 · Catálogos},
+    5/5/5/{Sprint 3 · Envíos y filtros},
+    6/6/6/{Sprint 4 · Asignación y ciclo de vida},
+    7/7/7/{Sprint 5 · Historial de eventos},
+    8/8/8/{Sprint 6 · Usuarios e indicadores},
+    9/9/9/{Sprint 7 · Endurecimiento y despliegue},
+    10/10/10/{Sprint 8 · Documentación y defensa}}{
+      \fill[blue!55!black] (\a-0.34,-\r+0.2) rectangle (\b+0.34,-\r-0.2);
+      \node[anchor=east] at (0.4,-\r) {\t};
+  }
+  % actividades continuas
+  \foreach \r/\a/\b/\t in {
+    11/3/10/{Verificación automatizada},
+    12/1/10/{Redacción de la memoria}}{
+      \fill[orange!70!black] (\a-0.34,-\r+0.2) rectangle (\b+0.34,-\r-0.2);
+      \node[anchor=east] at (0.4,-\r) {\t};
+  }
+\end{tikzpicture}}
+\caption{Planificación temporal del proyecto en semanas}
+\label{fig:gantt}
+\end{figure}
+
+El reparto de esas trescientas horas entre actividades aparece en la Tabla~\ref{tab:horas}. La implementación concentra algo menos de la mitad del esfuerzo, lo que resulta coherente con la tesis del trabajo: si escribir código hubiese absorbido la mayor parte del tiempo, las actividades que este TFG pretende demostrar ---especificación, verificación y despliegue--- habrían quedado como apéndices de la programación en lugar de como partes equiparables del ciclo de vida. La verificación recibe quince horas más que el diseño, proporción deliberada en un proyecto cuyo criterio de cierre exige pruebas automatizadas por incremento.
+
+\begin{table}[htbp]
+\centering
+\caption{Distribución del esfuerzo por actividad}
+\label{tab:horas}
+\begin{tabular}{lrr}
+\hline
+Actividad & Horas & \% \\
+\hline
+Elicitación y especificación de requisitos & 30 & 10 \\
+Diseño de arquitectura y diseño detallado & 40 & 13 \\
+Implementación del backend & 80 & 27 \\
+Implementación del frontend & 60 & 20 \\
+Verificación automatizada & 45 & 15 \\
+Despliegue y automatización de la entrega & 20 & 7 \\
+Redacción de la memoria & 25 & 8 \\
+\hline
+\textbf{Total} & \textbf{300} & \textbf{100} \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Costes}
+
+El proyecto no tuvo coste monetario para su autor, pero estimar el que tendría en un contexto profesional es parte del ejercicio de ingeniería: permite comprobar si las decisiones técnicas son proporcionadas al valor del producto. La Tabla~\ref{tab:costes} recoge esa estimación.
+
+El personal domina el resultado, como es esperable en un proyecto de software sin inversión en infraestructura. Se valora a razón de veinte euros por hora, tarifa correspondiente al coste para la empresa de un ingeniero junior, aplicada a las trescientas horas planificadas. El equipo de desarrollo es un portátil de 1.200~euros amortizado a cuatro años, del que el proyecto consume dos meses y medio. Los costes indirectos de energía y conectividad se estiman de forma agregada, sin desglosarlos, porque una precisión mayor sería falsa.
+
+\begin{table}[htbp]
+\centering
+\caption{Estimación de costes del proyecto}
+\label{tab:costes}
+\begin{tabular}{llr}
+\hline
+Concepto & Base de cálculo & Importe \\
+\hline
+Personal & 300 h $\times$ 20 €/h & 6.000,00 € \\
+Amortización del equipo & 1.200 € $\times$ 2,5/48 meses & 62,50 € \\
+Licencias de software & Herramientas libres o gratuitas & 0,00 € \\
+Infraestructura y servicios & Máquina local, CI y registro gratuitos & 0,00 € \\
+Costes indirectos & Energía y conectividad, estimados & 75,00 € \\
+\hline
+\textbf{Total} & & \textbf{6.137,50 €} \\
+\hline
+\end{tabular}
+\end{table}
+
+Las dos líneas a cero merecen comentario, porque no son un descuido de la estimación sino una consecuencia de decisiones tomadas y justificadas en su momento. Ninguna herramienta del proyecto exige licencia: la plataforma de desarrollo, el motor de base de datos, las bibliotecas de frontend, los ejecutores de pruebas y la contenerización son libres o gratuitos para este uso. Y la infraestructura tampoco cuesta: la integración continua se ejecuta dentro de la cuota gratuita para repositorios públicos, el registro de contenedores es gratuito en las mismas condiciones, el túnel que publica la aplicación no requiere cuenta y la máquina de despliegue es virtual sobre el equipo ya contabilizado.
+
+De ahí se sigue una propiedad que interesa a RNF-06: el coste marginal de mantener el sistema accesible es nulo. Una plataforma gestionada habría añadido una cuota mensual recurrente sin aportar nada a la tesis de este trabajo, que es el ciclo de vida del software y no la operación de infraestructura. La decisión de desplegar sobre una máquina propia, tomada en el séptimo incremento, queda así respaldada también por el análisis económico y no solo por la comodidad.
 
 \section{Definición de hecho}
 
@@ -57,6 +157,6 @@ Esta lista aproxima una política de calidad repetible y evita cierres basados s
 
 La estrategia combina pruebas rápidas de servicios, pruebas de controlador y pruebas de interfaz orientadas a comportamiento. Las reglas críticas se ejercitan donde viven; los contratos se verifican en el borde; y los recorridos completos se reservan para integración y Sprint 7. Esta pirámide evita depender exclusivamente de pruebas \gls{e2e} lentas sin renunciar a validar el sistema ensamblado.
 
-Cada sprint reduce primero su riesgo dominante. En catálogos fue la conservación tras baja; en envíos, fechas UTC y filtros; en operación, estados y reservas; en eventos, atomicidad y autoría; en administración, el último administrador. Las limitaciones no resueltas se registran, no se ocultan: concurrencia en RN-04 y RN-12, token no revocable y \texttt{localStorage} forman entradas concretas para el endurecimiento.
+Cada sprint reduce primero su riesgo dominante. En catálogos fue la conservación tras baja; en envíos, fechas UTC y filtros; en operación, estados y reservas; en eventos, atomicidad y autoría; en administración, el último administrador. Las limitaciones no resueltas se registran, no se ocultan: la concurrencia en RN-04 y RN-12, el token no revocable y el almacenamiento del token en el navegador formaron entradas concretas del endurecimiento posterior.
 
 No se aplican ceremonias de equipo que no aportan a un proyecto individual. La planificación, la revisión de alcance, la demostración mediante evidencia y la retrospectiva documental sí se mantienen, coherentes con la idea de adaptar el proceso al tamaño y a las personas \cite{cockburn2004}. El resultado es una metodología ligera, pero auditable.

@@ -1,6 +1,9 @@
 \chapter{Procedimientos de reproducción}
+\label{ap:procedimientos}
 
 Este anexo recoge los procedimientos que permiten reproducir lo que la memoria afirma haber verificado. Ninguno requiere conocimiento no escrito: si un paso necesitase una decisión que no aparece aquí, sería un defecto del procedimiento y no del lector.
+
+Se ordenan por coste de puesta en marcha. Los dos primeros ---ejecución contenerizada y verificación automatizada--- solo necesitan las herramientas del proyecto y bastan para comprobar la mayor parte de lo afirmado en el Capítulo~\ref{chap:validacion}. El tercero exige además tener la aplicación levantada, porque las pruebas de sistema recorren la interfaz real. El cuarto reproduce el entorno accesible y es el único que requiere una máquina distinta. Cada apartado indica de forma explícita sus prerrequisitos, ya que la causa más habitual de que un procedimiento reproducible falle no es un error en las órdenes sino una condición previa que su autor daba por evidente.
 
 \section{Ejecución contenerizada}
 

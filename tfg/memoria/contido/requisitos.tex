@@ -1,4 +1,7 @@
-\chapter{Requisitos}
+\chapter{Análisis y requisitos}
+\label{chap:requisitos}
+
+Este capítulo recoge qué debe hacer el sistema y de dónde procede cada exigencia. Se organiza siguiendo el recorrido que hizo la información: primero cómo se obtuvo de la parte interesada y cómo se convirtió en una especificación comprobable; después los requisitos funcionales, las reglas de negocio que los hacen inequívocos y los casos de uso que los encadenan en tareas reales; y por último los requisitos no funcionales y el mecanismo de trazabilidad que permite auditar el conjunto. El orden importa porque sostiene una afirmación que el resto de la memoria da por buena: ningún requisito de este capítulo se inventó durante la implementación.
 
 \section{Elicitación y especificación}
 
@@ -10,6 +13,8 @@ Los actores son operador, administrador, público no identificado e instalador. 
 
 \clearpage
 \section{Requisitos funcionales}
+
+La Tabla~\ref{tab:rf} enumera los catorce requisitos funcionales acordados con su prioridad. La columna de prioridad no expresa importancia sino orden de construcción: los marcados como altos forman la ruta crítica sin la cual el producto no es demostrable, mientras que los medios completan un sistema utilizable. Conviene notar que ningún requisito quedó clasificado como bajo, porque los candidatos de esa categoría ---optimización de rutas, seguimiento por GPS, facturación--- se excluyeron del alcance en lugar de mantenerse en una lista que nunca se abordaría.
 
 \begin{longtable}{p{1.0cm}p{7.9cm}p{1.5cm}}
 \caption{Requisitos funcionales}\label{tab:rf}\\
@@ -46,14 +51,87 @@ Las diecisiete RN concretan condiciones que una descripción funcional breve no 
 
 Las reglas actúan como puente entre lenguaje de negocio y criterios de prueba. Por ejemplo, RF-09 dice asignar recursos, mientras RN-02, RN-03, RN-04 y RN-05 determinan exactamente cuándo se acepta, rechaza o advierte. Esta separación reduce frases excesivamente largas y permite citar la misma regla desde diseño, servicio y matriz de trazabilidad.
 
-\section{Flujos de negocio}
+\section{Casos de uso}
 
-Cuatro recorridos reúnen requisitos sin añadir otros nuevos. El Flujo 1 instala el sistema y crea una sola vez al primer administrador. El Flujo 2 muestra cómo ese administrador crea un operador y cómo este accede y cambia su contraseña. El Flujo 3, representado técnicamente en la Figura~\ref{fig:secuencia-flujo3}, cubre el núcleo: mantener catálogos, crear un envío, asignar recursos disponibles, iniciarlo, registrar seguimiento y entregarlo o cancelarlo. El Flujo 4 desactiva una cuenta sin dejar el sistema sin administrador y conserva su historial.
+Los requisitos funcionales describen capacidades aisladas, pero una aplicación puede satisfacer cada una por separado y resultar inservible al encadenarlas. Por eso la especificación define además cuatro casos de uso que recorren tareas completas del negocio. No introducen requisitos nuevos: cada uno se compone de RF y RN ya enumerados, y su valor está en fijar el orden, las precondiciones y lo que debe quedar cierto al terminar. La Tabla~\ref{tab:casos-uso} los resume antes de detallarlos.
 
-Los flujos sirven como casos narrativos para demostración y como base de las pruebas de sistema de Sprint 7. Complementan los criterios aislados: una aplicación puede aprobar cada endpoint y fallar al encadenarlos por problemas de sesión, navegación o datos. Por eso el cierre final exige ambos niveles.
+\begin{table}[htbp]
+\centering
+\caption{Casos de uso y requisitos que los componen}
+\label{tab:casos-uso}
+\begin{tabular}{p{0.9cm}p{5.4cm}p{2.2cm}p{3.4cm}}
+\hline
+ID & Objetivo & Actor principal & Requisitos \\
+\hline
+CU-1 & Poner en marcha una instalación vacía & Instalador & RF-02, RN-11 \\
+CU-2 & Incorporar a una persona al sistema & Administrador, operador & RF-01, RF-03, RF-04 \\
+CU-3 & Ejecutar un envío de principio a fin & Operador & RF-05--12 \\
+CU-4 & Retirar el acceso sin perder historial & Administrador & RF-04, RN-12, RN-15 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{CU-1: puesta en marcha de una instalación vacía}
+
+El actor es el instalador, único punto del sistema donde alguien opera sin haber iniciado sesión, porque todavía no existe ninguna cuenta con la que hacerlo. La precondición es una base de datos migrada y sin usuarios, y el conocimiento del secreto de instalación que se configura fuera del código.
+
+\begin{enumerate}
+  \item El instalador envía usuario, correo y contraseña al punto final de arranque, acompañados del secreto de instalación en una cabecera.
+  \item El sistema comprueba que no existe ya un administrador activo (RN-11) y que el usuario y el correo no están en uso.
+  \item El sistema crea la cuenta con rol de administrador y almacena la contraseña transformada por el componente adaptativo de \emph{hash}.
+  \item El administrador accede con esas credenciales y obtiene una sesión válida.
+\end{enumerate}
+
+La excepción relevante es el segundo intento: una vez creada la cuenta, cualquier invocación posterior se rechaza con un conflicto, incluso presentando el secreto correcto. Esa irreversibilidad es intencionada y convierte el arranque en una operación de instalación y no en una vía alternativa de creación de administradores. Un secreto incorrecto se rechaza sin revelar si la instalación ya estaba inicializada. Al terminar, el sistema tiene exactamente un administrador activo y el punto final queda inservible.
+
+\subsection*{CU-2: incorporación de una persona al sistema}
+
+Intervienen dos actores en momentos distintos: un administrador autenticado que crea la cuenta y el operador que la recibe. La precondición es la existencia de un administrador activo, es decir, que CU-1 se haya completado.
+
+\begin{enumerate}
+  \item El administrador crea una cuenta indicando usuario, correo, rol y una contraseña inicial.
+  \item El sistema valida la unicidad del usuario y del correo frente a todas las cuentas, incluidas las inactivas.
+  \item El operador accede con la contraseña inicial y el sistema le concede una sesión con los permisos de su rol.
+  \item El operador cambia su contraseña confirmando la actual (RN-14).
+  \item El sistema invalida las sesiones abiertas de esa cuenta, de modo que el cambio surte efecto de inmediato.
+\end{enumerate}
+
+Las excepciones cubren tres situaciones: un usuario o correo repetido se rechaza con un conflicto que identifica el campo en cuestión; una contraseña actual incorrecta impide el cambio; y una contraseña nueva idéntica a la vigente también, porque rotarla por sí misma no cumple ninguna finalidad. Si el operador olvida la credencial, la vía no es este caso de uso sino la asignación por parte de un administrador que introdujo RN-17. Al terminar, existe una cuenta operativa cuya contraseña solo conoce su titular.
+
+\subsection*{CU-3: ejecución de un envío de principio a fin}
+
+Es el caso de uso central y el que justifica la mayor parte del sistema. El actor es un operador autenticado y la precondición es disponer de los catálogos que el envío necesita. La Figura~\ref{fig:secuencia-flujo3} representa la secuencia técnica de su tramo principal.
+
+\begin{enumerate}
+  \item El operador mantiene los catálogos: registra o consulta el vehículo, el conductor y el cliente que intervendrán.
+  \item Crea el envío con su referencia, el cliente, los puntos de origen y destino, las fechas previstas y la carga estimada.
+  \item Asigna vehículo y conductor como una pareja indivisible, que el sistema acepta solo si ambos están activos y libres en los estados abiertos (RN-03, RN-04).
+  \item Si la carga supera la capacidad del vehículo, el sistema avisa pero no impide la asignación (RN-05).
+  \item Inicia el envío, lo que exige asignación previa (RN-07) y sella la hora real de recogida.
+  \item Registra durante el trayecto los puntos de control o las incidencias que procedan, con la hora real que el operador indique.
+  \item Marca el envío como entregado, sellando la hora real de entrega, o lo cancela.
+\end{enumerate}
+
+Las excepciones son las que más valor aportan al caso de uso, porque son las que un sistema mal construido acepta. Asignar un recurso ya ocupado en otro envío abierto se rechaza identificando cuál lo ocupa. Modificar la asignación de un envío que ya no está planificado se rechaza (RN-02). Una fecha de entrega anterior a la de recogida se rechaza en el contrato, en el servicio y en la base de datos. Y una transición desde un estado final no se admite en ningún caso (RN-08), ni siquiera para corregir un error, porque el historial es la vía prevista para dejar constancia de una rectificación. Al terminar, el envío se encuentra en un estado terminal y su cronología permite reconstruir qué ocurrió, cuándo y por decisión de quién.
+
+\subsection*{CU-4: retirada del acceso conservando el historial}
+
+El actor es un administrador y la precondición es la existencia de una cuenta activa distinta de la suya, junto con actividad previa atribuida a esa cuenta.
+
+\begin{enumerate}
+  \item El administrador desactiva la cuenta seleccionada.
+  \item El sistema comprueba que la operación no deja el sistema sin ningún administrador activo (RN-12).
+  \item El sistema invalida las sesiones abiertas de la cuenta desactivada.
+  \item Un intento de acceso posterior con esas credenciales se rechaza con el mismo mensaje genérico que una contraseña incorrecta.
+  \item Los eventos registrados por esa persona siguen mostrando su autoría en la cronología de los envíos afectados (RN-15).
+\end{enumerate}
+
+La excepción crítica es desactivar al último administrador activo, que el sistema rechaza con un conflicto explicativo; el caso simétrico, degradar su rol, se rechaza por la misma regla. Al terminar, la persona ha perdido el acceso sin que el sistema haya perdido la trazabilidad de lo que hizo, que es precisamente la razón de que las bajas sean lógicas y no borrados.
+
+Estos cuatro casos de uso son también los recorridos que el séptimo incremento automatizó con pruebas de sistema. El resto de la memoria los denomina indistintamente CU-\emph{n} o Flujo~\emph{n}: el segundo nombre es el que conservan las pruebas de Playwright en el repositorio, y mantenerlo permite que una prueba fallida señale sin ambigüedad qué caso de uso ha dejado de cumplirse. Especificación y validación comparten así unidad de descripción.
 
 \section{Requisitos no funcionales y trazabilidad}
 
 RNF-01 exige facilidad de uso desde navegador; RNF-02, acceso seguro; RNF-03, fiabilidad y conservación; RNF-04, trazabilidad de eventos; RNF-05, disponibilidad compatible con la operativa; y RNF-06, rendimiento adecuado para una empresa con decenas de recursos. Son deliberadamente proporcionales al contexto: no se atribuyen objetivos de escala global a una pyme ficticia, pero tampoco se confunde ``pequeño'' con ausencia de seguridad o pruebas.
 
-La matriz del Apéndice~A enlaza grupos de requisitos con sprints, componentes y evidencia. Los planes de sprint amplían criterios; las suites los automatizan; y el roadmap registra el cierre. Los cuatro flujos quedaron automatizados en el séptimo incremento; la comprobación de RNF-05 depende todavía del entorno desplegado, y se mantiene marcada como tal para que siga siendo visible qué afirmaciones están demostradas y cuáles son todavía objetivo.
+La matriz del Apéndice~\ref{ap:trazabilidad} enlaza grupos de requisitos con sprints, componentes y evidencia, y el Apéndice~\ref{ap:procedimientos} recoge los procedimientos que permiten reproducir esa evidencia sin conocimiento no escrito. Los planes de sprint amplían criterios; las suites los automatizan; y el roadmap registra el cierre. Los cuatro casos de uso quedaron automatizados en el séptimo incremento, y la comprobación de RNF-05 se realizó sobre el entorno desplegado que describe el Capítulo~\ref{chap:despliegue}, de modo que ningún requisito no funcional queda respaldado únicamente por una afirmación de diseño.

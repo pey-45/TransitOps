@@ -1,6 +1,8 @@
 \chapter{Despliegue y reproducibilidad}
 \label{chap:despliegue}
 
+Este capítulo describe cómo se ejecuta el sistema, tanto en la máquina de quien lo desarrolla como en un entorno accesible desde internet. Se ocupa de tres preguntas encadenadas: qué se necesita para levantar la aplicación, dónde se decidió alojarla y por qué, y cómo llega a esa máquina una versión nueva sin intervención manual. Las respuestas comparten un criterio: el entorno accesible no es una configuración paralela mantenida aparte, sino la misma composición de contenedores con otros parámetros, porque dos descripciones distintas del mismo sistema divergen en cuanto una de las dos deja de usarse. El capítulo termina enunciando los límites de lo conseguido, que son los que separan una demostración reproducible de un servicio en explotación.
+
 \section{Reproducibilidad local}
 
 Desde el primer sprint, \texttt{docker compose up --build} crea tres servicios. PostgreSQL mantiene un volumen persistente y expone una comprobación de salud; la API espera a que la base esté disponible, aplica migraciones y escucha en el puerto 8080; Nginx sirve la SPA en el puerto 5173 y reenvía \texttt{/api} al backend. El fichero \texttt{.env.example} enumera las variables que deben sustituirse y \texttt{.env} queda excluido del control de versiones, de modo que claves JWT, token de arranque y contraseña de base de datos nunca viajan en el repositorio.
@@ -13,7 +15,9 @@ El destino elegido es una máquina virtual Ubuntu Server 24.04 LTS con Docker Co
 
 La máquina se dimensionó deliberadamente al mínimo: un procesador virtual, 2~GB de memoria y 15~GB de disco. Los cuatro contenedores ---PostgreSQL, API, servidor web y túnel--- conviven en ese presupuesto, y un ciclo completo del despliegue periódico consume alrededor de un segundo de CPU sobre ese único núcleo. No constituye una medición de rendimiento bajo carga, que este trabajo no realizó, pero sí respalda de forma concreta la proporcionalidad que pide RNF-06: la aplicación prevista para una empresa con decenas de vehículos y conductores no necesita infraestructura compleja para funcionar.
 
-La composición de despliegue define cuatro servicios ---base de datos, API, servidor web y túnel--- y **no publica ningún puerto en la máquina anfitriona**, tampoco el de PostgreSQL. Los tres primeros se comunican por la red privada de Compose; el cuarto, \texttt{cloudflared}, establece una conexión saliente con Cloudflare y ofrece una \gls{url} \gls{https} temporal. No hay, por tanto, ninguna regla de entrada que abrir en el router ni superficie HTTP alternativa que quede a medio funcionar. El diagnóstico se realiza desde dentro de la máquina, consultando la salud a través del contenedor web.
+La composición de despliegue define cuatro servicios ---base de datos, API, servidor web y túnel--- y \emph{no publica ningún puerto en la máquina anfitriona}, tampoco el de PostgreSQL. Los tres primeros se comunican por la red privada de Compose; el cuarto, \texttt{cloudflared}, establece una conexión saliente con Cloudflare y ofrece una \gls{url} \gls{https} temporal. No hay, por tanto, ninguna regla de entrada que abrir en el router ni superficie HTTP alternativa que quede a medio funcionar. El diagnóstico se realiza desde dentro de la máquina, consultando la salud a través del contenedor web.
+
+La Figura~\ref{fig:despliegue-tunel-s7} muestra la aplicación respondiendo en esa dirección pública. La captura documenta dos hechos a la vez: que el sistema es alcanzable desde fuera de la red donde se ejecuta, y que lo es por HTTPS con un certificado que el navegador acepta sin advertencias, pese a que en la máquina no se instaló ningún certificado ni se configuró ningún servidor TLS. Ambas propiedades proceden de la misma decisión de topología, y es la razón de que el túnel sustituya a la apertura de puertos en lugar de complementarla.
 
 \begin{figure}[htbp]
 \centering
@@ -28,13 +32,15 @@ La terminación \gls{tls} ocurre en Cloudflare, de modo que el tramo interno ent
 
 GitHub Actions no puede alcanzar la máquina virtual, que no tiene dirección pública ni puertos entrantes. En lugar de forzar esa conectividad, la entrega se invierte: el flujo de trabajo construye las dos imágenes y las publica en el registro de contenedores de GitHub solo después de superar compilación, pruebas unitarias, pruebas de integración y los cuatro flujos de sistema. La máquina virtual las descarga cuando le corresponde.
 
-Esta inversión tiene una propiedad que conviene enunciar, porque no es un efecto colateral sino el motivo de la elección: **la existencia de la imagen es la prueba de que la validación pasó**. No hay forma de desplegar un artefacto que no haya superado la suite, porque el artefacto no llega a existir. Las imágenes se etiquetan con el identificador del \emph{commit} además de \texttt{latest}, y llevan etiquetas \gls{oci} con el origen y la revisión, lo que permite recuperar desde un contenedor en marcha el código exacto que ejecuta.
+Esta inversión tiene una propiedad que conviene enunciar, porque no es un efecto colateral sino el motivo de la elección: \emph{la existencia de la imagen es la prueba de que la validación pasó}. No hay forma de desplegar un artefacto que no haya superado la suite, porque el artefacto no llega a existir. Las imágenes se etiquetan con el identificador del \emph{commit} además de \texttt{latest}, y llevan etiquetas \gls{oci} con el origen y la revisión, lo que permite recuperar desde un contenedor en marcha el código exacto que ejecuta.
 
 El registro es público, así que la máquina descarga sin credenciales y no hay ningún secreto de registro que custodiar en ella. El flujo de trabajo se autentica con el token efímero que Actions provee a cada ejecución.
 
 \section{Procedimiento y automatización}
 
 Un único script, \texttt{scripts/deploy.sh}, valida la configuración, descarga las imágenes, aplica la composición, espera a las comprobaciones de salud, consulta la API a través del proxy interno y muestra la revisión y el digest de lo que ha quedado en ejecución, junto con la dirección pública del túnel. Es idempotente: si nada ha cambiado, la descarga no trae capas nuevas y ningún contenedor se recrea.
+
+La Figura~\ref{fig:deploy-script-s7} reproduce una ejecución completa. Merece leerse de abajo arriba: las últimas líneas imprimen la revisión del repositorio y el \emph{digest} de cada imagen en marcha, y son las que permiten afirmar qué código exacto está sirviendo la aplicación en un momento dado. Sin ese par de datos, la única forma de responder a esa pregunta sería la confianza en que nadie tocó la máquina.
 
 \begin{figure}[htbp]
 \centering
@@ -44,6 +50,8 @@ Un único script, \texttt{scripts/deploy.sh}, valida la configuración, descarga
 \end{figure}
 
 El mismo script se invoca a mano y desde una unidad de \emph{systemd} activada por un temporizador cada cinco minutos. No se eligió esa periodicidad por necesidad operativa ---no hay tráfico que atender--- sino para que la automatización sea observable dentro de una sesión de trabajo. Un ciclo sin novedades cuesta unos cinco segundos y alrededor de un segundo de CPU, coste que se registra aquí porque es la contrapartida honesta de sondear en lugar de ser notificado.
+
+Las dos capturas siguientes documentan que esa automatización funciona sin nadie delante. La Figura~\ref{fig:timer-s7} muestra el temporizador activo, con la marca de la ejecución anterior y la de la siguiente separadas por cinco minutos, que es la prueba de que el ciclo está en marcha y no simplemente instalado. La Figura~\ref{fig:despliegue-automatico-s7} recoge el registro de una de esas ejecuciones iniciadas por \emph{systemd}: comprueba la configuración, descarga, aplica la composición y verifica la salud igual que la invocación manual, y termina imprimiendo la misma revisión y los mismos \emph{digests}. Esa coincidencia es el argumento de fondo del apartado, porque demuestra que la vía automática no es una variante simplificada del procedimiento documentado sino exactamente el mismo.
 
 \begin{figure}[htbp]
 \centering
