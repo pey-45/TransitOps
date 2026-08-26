@@ -2,7 +2,7 @@
 
 El trabajo se desarrolla como TFG del Grado en Ingeniería Informática de la Universidade da Coruña, en la mención de Ingeniería del Software. Su objeto es el diseño y la construcción íntegra de una aplicación de gestión operativa para una empresa de transporte, junto con el ciclo de vida de ingeniería que la produce: desde la elicitación de necesidades hasta el despliegue verificado del producto.
 
-La situación de partida combina dos necesidades. Desde el dominio, una empresa de transporte pequeña requiere visibilidad compartida y reglas que eviten inconsistencias. Desde el TFG, se necesita demostrar competencias de ingeniería más amplias que la programación de una capa: comprender a la parte interesada, delimitar alcance, justificar arquitectura, probar comportamiento, reproducir entornos y evaluar el producto. TransitOps une ambos objetivos en un caso suficientemente rico para contener estados, relaciones, roles y trazabilidad, pero bastante pequeño para completarlo.
+La situación de partida combina dos necesidades. Desde el dominio, una empresa de transporte pequeña requiere visibilidad compartida y reglas que eviten inconsistencias. Desde el TFG, se necesita demostrar competencias de ingeniería más amplias que la programación de una capa: comprender a la parte interesada, delimitar alcance, justificar arquitectura, probar comportamiento, reproducir entornos y evaluar el producto. TransitOps une ambos objetivos en un caso suficientemente rico para contener estados, relaciones, roles y trazabilidad, pero lo bastante pequeño para completarlo.
 
 \section{Objetivo general}
 
@@ -23,7 +23,7 @@ Diseñar, construir, probar y desplegar una aplicación web mantenible que permi
 
 \section{Criterios de éxito y límites}
 
-Los criterios funcionales son el cumplimiento verificable de RF-01 a RF-14 y la ejecución satisfactoria de los cuatro flujos de negocio. En calidad, se exige build reproducible, suites automatizadas correctas, esquema migrable desde cero, autorización efectiva en servidor, errores comprensibles y conservación del historial. En operación, la aplicación debe poder levantarse siguiendo documentación explícita y sin incorporar credenciales reales a ficheros versionados.
+Los criterios funcionales son el cumplimiento verificable de RF-01 a RF-14 y la ejecución satisfactoria de los cuatro flujos de negocio. En calidad, se exige una compilación reproducible, suites automatizadas correctas, esquema migrable desde cero, autorización efectiva en servidor, errores comprensibles y conservación del historial. En operación, la aplicación debe poder levantarse siguiendo documentación explícita y sin incorporar credenciales reales a ficheros versionados.
 
 Los criterios funcionales se alcanzaron durante los seis primeros incrementos con pruebas de componente e integración y verificaciones manuales por rebanada. El séptimo añadió las pruebas \gls{e2e} de los cuatro flujos, las garantías de concurrencia sostenidas por el motor relacional, una sesión endurecida y el despliegue en un entorno accesible con su evidencia recogida. El éxito solo se declara en ese punto, porque una cobertura amplia y automatizada no equivale a un cierre de sistema demostrado sobre el entorno real.
 

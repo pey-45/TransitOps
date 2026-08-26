@@ -4,11 +4,11 @@ Este capítulo explica cómo se organizó el trabajo: qué proceso de desarrollo
 
 \section{De la necesidad al incremento}
 
-La entrevista simulada con una responsable de operaciones constituye la fuente primaria. Sus respuestas se transforman en requisitos funcionales, reglas de negocio, requisitos no funcionales y cuatro flujos. El roadmap agrupa después ese material en ocho sprints. La cadena entrevista $\rightarrow$ requisito $\rightarrow$ diseño $\rightarrow$ prueba conserva la razón de cada decisión y evita que el backlog sea una lista de ideas técnicas sin necesidad asociada.
+La entrevista simulada con una responsable de operaciones constituye la fuente primaria. Sus respuestas se transforman en requisitos funcionales, reglas de negocio, requisitos no funcionales y cuatro flujos. El \emph{roadmap} agrupa después ese material en ocho sprints. La cadena entrevista $\rightarrow$ requisito $\rightarrow$ diseño $\rightarrow$ prueba conserva la razón de cada decisión y evita que el \emph{backlog} sea una lista de ideas técnicas sin necesidad asociada.
 
 La unidad de planificación es la \gls{rebanada-vertical}. Por ejemplo, ``gestionar vehículos'' incluye entidad, migración, servicio, endpoint, pantallas y pruebas; no se planifica como una fase de todas las tablas seguida meses después por todas las interfaces. Una estrategia horizontal habría producido mucho código no demostrable hasta el final y habría retrasado el descubrimiento de incompatibilidades entre navegador, API y PostgreSQL. Las rebanadas pequeñas entregan evidencia y permiten reajustar la siguiente decisión.
 
-El Sprint 1 usa un \gls{walking-skeleton}: login y ruta protegida cruzan configuración, base de datos, API, proxy y SPA. Esa base no pretende anticipar toda la funcionalidad, sino retirar pronto los riesgos transversales. Los Sprints 2 a 6 añaden catálogos, envíos, operación, eventos y administración. Sprint 7 reúne endurecimiento, pruebas de sistema y despliegue; Sprint 8 cierra documentación y defensa.
+El Sprint 1 usa un \gls{walking-skeleton}: login y ruta protegida cruzan configuración, base de datos, API, proxy y SPA. Esa base no pretende anticipar toda la funcionalidad, sino retirar pronto los riesgos transversales. Los Sprints 2 a 6 añaden catálogos, envíos, operación, eventos y administración. El Sprint 7 reúne endurecimiento, pruebas de sistema y despliegue; el Sprint 8 cierra documentación y defensa.
 
 La Tabla~\ref{tab:plan-incremental} resume ese reparto asociando cada sprint con los requisitos que lo justifican. Conviene leerla como una asignación de responsabilidad y no como un cronograma: su valor está en que ningún sprint aparece sin requisitos que lo motiven y ningún requisito queda sin sprint asignado. Los dos últimos incrementos se salen del patrón deliberadamente, porque no añaden funcionalidad nueva: el séptimo consolida cualidades transversales sobre lo ya construido y el octavo cierra la documentación.
 
@@ -34,9 +34,9 @@ Sprint & Incremento & Requisitos principales \\
 
 \section{Diseño anticipado e implementación incremental}
 
-En Sprint 1 se diseñó el modelo conceptual completo. Esta visión reduce el riesgo de que cada rebanada invente nombres, cardinalidades o políticas de borrado incompatibles. Sin embargo, solo se migró \texttt{AppUser}; cada tabla posterior apareció cuando existían reglas, endpoints y pruebas que la utilizaban. El equilibrio es deliberado: arquitectura suficiente para orientar, implementación justa para demostrar.
+En el Sprint 1 se diseñó el modelo conceptual completo. Esta visión reduce el riesgo de que cada rebanada invente nombres, cardinalidades o políticas de borrado incompatibles. Sin embargo, solo se migró \texttt{AppUser}; cada tabla posterior apareció cuando existían reglas, endpoints y pruebas que la utilizaban. El equilibrio es deliberado: arquitectura suficiente para orientar, implementación justa para demostrar.
 
-Las decisiones se registran en artefactos versionados. \texttt{docs/design/} conserva el modelo y la integración; cada \texttt{SprintNPlan.md} fija decisiones antes de implementar; \texttt{CONTEXT.md} mantiene un log fechado; y \texttt{docs/Roadmap.md} preserva cierres y evidencia. El código implementado prevalece sobre un plan si aparece una diferencia, y la documentación se corrige para describir el resultado real.
+Las decisiones se registran en artefactos versionados. \texttt{docs/design/} conserva el modelo y la integración; cada \texttt{SprintNPlan.md} fija decisiones antes de implementar; \texttt{CONTEXT.md} mantiene un \emph{log} fechado; y \texttt{docs/Roadmap.md} preserva cierres y evidencia. El código implementado prevalece sobre un plan si aparece una diferencia, y la documentación se corrige para describir el resultado real.
 
 \section{Planificación temporal}
 
@@ -111,7 +111,7 @@ Redacción de la memoria & 25 & 8 \\
 
 El proyecto no tuvo coste monetario para su autor, pero estimar el que tendría en un contexto profesional es parte del ejercicio de ingeniería: permite comprobar si las decisiones técnicas son proporcionadas al valor del producto. La Tabla~\ref{tab:costes} recoge esa estimación.
 
-El personal domina el resultado, como es esperable en un proyecto de software sin inversión en infraestructura. Se valora a razón de veinte euros por hora, tarifa correspondiente al coste para la empresa de un ingeniero junior, aplicada a las trescientas horas planificadas. El equipo de desarrollo es un portátil de 1.200~euros amortizado a cuatro años, del que el proyecto consume dos meses y medio. Los costes indirectos de energía y conectividad se estiman de forma agregada, sin desglosarlos, porque una precisión mayor sería falsa.
+El personal domina el resultado, como es esperable en un proyecto de software sin inversión en infraestructura. Se valora a razón de veinte euros por hora, tarifa correspondiente al coste para la empresa de un ingeniero \emph{junior}, aplicada a las trescientas horas planificadas. El equipo de desarrollo es un portátil de 1.200~euros amortizado a cuatro años, del que el proyecto consume dos meses y medio. Los costes indirectos de energía y conectividad se estiman de forma agregada, sin desglosarlos, porque una precisión mayor sería falsa.
 
 \begin{table}[htbp]
 \centering
@@ -146,9 +146,9 @@ Un sprint no se considera terminado cuando el código ``parece funcionar''. Su d
   \item flujo de frontend completo cuando la capacidad es visible;
   \item migración reproducible si cambia el esquema;
   \item pruebas de comportamiento nuevas o actualizadas;
-  \item lint, builds y suites en verde;
+  \item \emph{lint}, compilaciones y suites en verde;
   \item verificación integrada proporcional al riesgo, incluida PostgreSQL real cuando importa;
-  \item actualización de roadmap, contexto, diseño y memoria con evidencia del incremento.
+  \item actualización de \emph{roadmap}, contexto, diseño y memoria con evidencia del incremento.
 \end{itemize}
 
 Esta lista aproxima una política de calidad repetible y evita cierres basados solo en percepción. La CI aporta una comprobación independiente, pero no sustituye las decisiones ni la inspección del flujo real. Capturas, recuentos de pruebas y verificaciones Docker registran lo observado en el momento del cierre.

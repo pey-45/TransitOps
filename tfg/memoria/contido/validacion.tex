@@ -21,7 +21,7 @@ La Tabla~\ref{tab:val-s1} corresponde al primer incremento. Su contenido revela 
 \label{tab:val-s1}
 \begin{tabular}{p{6.2cm}p{2cm}p{2.5cm}}
 \hline Comportamiento & Capa & Resultado \\ \hline
-Primer administrador y hash de contraseña & Backend & Correcto \\
+Primer administrador y \emph{hash} de contraseña & Backend & Correcto \\
 Bloqueo de un segundo bootstrap & Backend & Correcto \\
 Login válido, erróneo y usuario inactivo & Backend & Correcto \\
 Rutas protegidas 401 y 403 & Backend & Correcto \\
@@ -33,7 +33,7 @@ Navegación adaptada al rol administrador & Frontend & Correcto \\
 \end{tabular}
 \end{table}
 
-La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de build de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16.
+La ejecución local al cierre del incremento produjo dieciséis pruebas backend, organizadas por servicio y controlador, y cuatro frontend correctas, además de la compilación de producción de ambos proyectos. La CI repite las mismas comprobaciones y valida la migración sobre PostgreSQL 16.
 
 \clearpage
 La Tabla~\ref{tab:val-s23} agrupa los incrementos segundo y tercero, porque comparten un mismo tipo de riesgo: la conservación de datos históricos y la corrección de las representaciones. Dos filas concentran el valor del conjunto. La de unicidad y reutilización tras baja demuestra que un identificador queda libre cuando su registro se da de baja pero el historial que lo menciona no se pierde, que es la tensión que resuelve la baja lógica. Y la de normalización UTC comprueba los tres formatos de entrada posibles, porque una fecha que cambia de significado al cruzar de navegador a base de datos produce errores que no se manifiestan hasta que alguien opera en otro horario.
@@ -55,9 +55,9 @@ Cliente activo y conservación del vínculo histórico & Backend & Correcto \\
 \end{tabular}
 \end{table}
 
-Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 añadió 16 y 6 respectivamente, elevando el total a 45 pruebas backend y 13 frontend, todas correctas junto con el lint y las compilaciones de producción.
+Tras el Sprint 2 se ejecutaban 29 pruebas backend y 7 frontend. El Sprint 3 añadió 16 y 6 respectivamente, elevando el total a 45 pruebas backend y 13 frontend, todas correctas junto con el \emph{lint} y las compilaciones de producción.
 
-La Tabla~\ref{tab:val-s4} cubre el incremento con más reglas de negocio del proyecto. Conviene fijarse en la columna de capa: es la primera vez que aparecen las marcas de sistema y de PostgreSQL, y no por afán de exhaustividad. La regla anti-doble-reserva y el sellado de fechas reales dependen del motor relacional, así que comprobarlas únicamente contra un proveedor en memoria habría producido una confianza infundada.
+La Tabla~\ref{tab:val-s4} cubre el incremento con más reglas de negocio del proyecto. Conviene fijarse en la columna de capa: es la primera vez que aparecen las marcas de sistema y de PostgreSQL, y no por afán de exhaustividad. La regla anti-doble reserva y el sellado de fechas reales dependen del motor relacional, así que comprobarlas únicamente contra un proveedor en memoria habría producido una confianza infundada.
 
 \begin{table}[htbp]
 \centering
@@ -67,7 +67,7 @@ La Tabla~\ref{tab:val-s4} cubre el incremento con más reglas de negocio del pro
 \hline Comportamiento & Capa & Resultado \\ \hline
 Asignación conjunta y retirada idempotente & Backend/\allowbreak Frontend & Correcto \\
 Recursos activos y exclusión del propio envío & Backend & Correcto \\
-Anti-doble-reserva en estados abiertos & Backend/\allowbreak Sistema & Correcto \\
+Anti-doble reserva en estados abiertos & Backend/\allowbreak Sistema & Correcto \\
 Aviso no bloqueante de capacidad & Backend/\allowbreak Frontend & Correcto \\
 Transiciones válidas, inválidas y terminales & Backend/\allowbreak Frontend & Correcto \\
 Sellado UTC de recogida y entrega reales & Backend/\allowbreak PostgreSQL & Correcto \\
@@ -98,7 +98,7 @@ Refresco tras asignación o transición & Frontend & Correcto \\
 \end{tabular}
 \end{table}
 
-El Sprint 5 elevó el total a 96 pruebas backend y 24 frontend. Las pruebas de controlador verifican la asociación del evento con el usuario real del token, no solo con un doble; las de servicio comprueban el orden estable, el aislamiento entre envíos y que una transición rechazada no deja rastro. Lint y compilaciones de producción permanecieron correctos.
+El Sprint 5 elevó el total a 96 pruebas backend y 24 frontend. Las pruebas de controlador verifican la asociación del evento con el usuario real del token, no solo con un doble; las de servicio comprueban el orden estable, el aislamiento entre envíos y que una transición rechazada no deja rastro. El \emph{lint} y las compilaciones de producción permanecieron correctos.
 
 La Tabla~\ref{tab:val-s6} cierra la cobertura funcional. Su fila más significativa es la protección del último administrador, porque describe una regla cuyo incumplimiento dejaría el sistema inutilizable de forma irreversible: sin ningún administrador activo no existe vía para crear otro, ya que el arranque solo funciona una vez. Las dos filas de agregaciones sobre PostgreSQL responden a que los contadores del resumen se calculan en la base de datos y no en memoria.
 
@@ -150,6 +150,6 @@ Todas las suites descritas se ejecutan además en la integración continua, que 
 
 \section{Validación sobre el entorno desplegado}
 
-La validación sobre el entorno desplegado completó los criterios que no pueden observarse en local. La aplicación respondió por HTTPS con certificado válido; la comprobación de salud devolvió estado correcto a través del túnel; el punto final retirado en el saneado responde ya con ausencia y el de reconstrucción de sesión con falta de autenticación, lo que confirma que el artefacto desplegado corresponde al código revisado; y una petición con origen ajeno no obtiene cabeceras de intercambio entre orígenes, coherente con la eliminación de esa política. La revisión y los digests que el script imprime permiten atar cada una de esas observaciones a un \emph{commit} concreto.
+La validación sobre el entorno desplegado completó los criterios que no pueden observarse en local. La aplicación respondió por HTTPS con certificado válido; la comprobación de salud devolvió estado correcto a través del túnel; el punto final retirado en el saneado responde ya con ausencia y el de reconstrucción de sesión con falta de autenticación, lo que confirma que el artefacto desplegado corresponde al código revisado; y una petición con origen ajeno no obtiene cabeceras de intercambio entre orígenes, coherente con la eliminación de esa política. La revisión y los \emph{digests} que el script imprime permiten atar cada una de esas observaciones a un \emph{commit} concreto.
 
 Esas cuatro comprobaciones comparten una propiedad que conviene enunciar: ninguna de ellas podría haberse sustituido por una prueba automatizada del repositorio, porque todas verifican el sistema tal como quedó configurado en su destino y no tal como se construye. Es la razón de que el capítulo no termine con la suite en verde, sino aquí.

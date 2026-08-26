@@ -38,14 +38,14 @@ El registro es público, así que la máquina descarga sin credenciales y no hay
 
 \section{Procedimiento y automatización}
 
-Un único script, \texttt{scripts/deploy.sh}, valida la configuración, descarga las imágenes, aplica la composición, espera a las comprobaciones de salud, consulta la API a través del proxy interno y muestra la revisión y el digest de lo que ha quedado en ejecución, junto con la dirección pública del túnel. Es idempotente: si nada ha cambiado, la descarga no trae capas nuevas y ningún contenedor se recrea.
+Un único script, \texttt{scripts/deploy.sh}, valida la configuración, descarga las imágenes, aplica la composición, espera a las comprobaciones de salud, consulta la API a través del proxy interno y muestra la revisión y el \emph{digest} de lo que ha quedado en ejecución, junto con la dirección pública del túnel. Es idempotente: si nada ha cambiado, la descarga no trae capas nuevas y ningún contenedor se recrea.
 
 La Figura~\ref{fig:deploy-script-s7} reproduce una ejecución completa. Merece leerse de abajo arriba: las últimas líneas imprimen la revisión del repositorio y el \emph{digest} de cada imagen en marcha, y son las que permiten afirmar qué código exacto está sirviendo la aplicación en un momento dado. Sin ese par de datos, la única forma de responder a esa pregunta sería la confianza en que nadie tocó la máquina.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imaxes/deploy-script-sprint7}
-\caption{Ejecución del procedimiento: descarga, salud de los cuatro servicios, revisión y digest desplegados y dirección pública}
+\caption{Ejecución del procedimiento: descarga, salud de los cuatro servicios, revisión y \emph{digest} desplegados y dirección pública}
 \label{fig:deploy-script-s7}
 \end{figure}
 
@@ -63,14 +63,14 @@ Las dos capturas siguientes documentan que esa automatización funciona sin nadi
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{imaxes/despliegue-automatico-sprint7}
-\caption{Despliegue completo iniciado por \emph{systemd} sin intervención, con la misma revisión y los mismos digests}
+\caption{Despliegue completo iniciado por \emph{systemd} sin intervención, con la misma revisión y los mismos \emph{digests}}
 \label{fig:despliegue-automatico-s7}
 \end{figure}
 
-La verificación del procedimiento consistió en seguirlo desde una máquina recién creada sin desviarse del documento. Se aplicó sin correcciones: provisionar la máquina, instalar Docker, clonar el repositorio, crear la configuración privada, ejecutar el script, arrancar el primer administrador y activar el temporizador. El registro del servicio muestra después ejecuciones completas iniciadas por \emph{systemd}, con la misma revisión y los mismos digests que la ejecución manual, lo que confirma que la vía automática no es una variante teórica del procedimiento sino la misma.
+La verificación del procedimiento consistió en seguirlo desde una máquina recién creada sin desviarse del documento. Se aplicó sin correcciones: provisionar la máquina, instalar Docker, clonar el repositorio, crear la configuración privada, ejecutar el script, arrancar el primer administrador y activar el temporizador. El registro del servicio muestra después ejecuciones completas iniciadas por \emph{systemd}, con la misma revisión y los mismos \emph{digests} que la ejecución manual, lo que confirma que la vía automática no es una variante teórica del procedimiento sino la misma.
 
 \section{Observabilidad mínima y límites conocidos}
 
 La monitorización es deliberadamente proporcionada: comprobaciones de salud en los cuatro contenedores, política de reinicio \texttt{unless-stopped}, y una verificación de salud en el propio script que hace fallar el despliegue si la aplicación no responde. No se incorporó recolección de métricas ni agregación de registros; para un entorno de demostración habría sido infraestructura sin lector.
 
-Tres límites merecen quedar escritos. El primero es que el túnel rápido genera un nombre efímero: sirve para demostrar y grabar, no como alojamiento estable, y recrear el contenedor cambia la dirección. Por eso la imagen del túnel se fija por digest, de modo que el despliegue periódico actualice la aplicación sin mover la dirección pública. El segundo es que las pruebas de sistema validan imágenes construidas en su propio trabajo de integración, mientras que la publicación construye las que se despliegan: son construcciones distintas del mismo \emph{commit}, y resolverlo exigiría construir una vez y publicar ese mismo artefacto. El tercero es que la base de datos desplegada es independiente de la de desarrollo, de modo que los datos de una demostración no coinciden con los locales.
+Tres límites merecen quedar escritos. El primero es que el túnel rápido genera un nombre efímero: sirve para demostrar y grabar, no como alojamiento estable, y recrear el contenedor cambia la dirección. Por eso la imagen del túnel se fija por \emph{digest}, de modo que el despliegue periódico actualice la aplicación sin mover la dirección pública. El segundo es que las pruebas de sistema validan imágenes construidas en su propio trabajo de integración, mientras que la publicación construye las que se despliegan: son construcciones distintas del mismo \emph{commit}, y resolverlo exigiría construir una vez y publicar ese mismo artefacto. El tercero es que la base de datos desplegada es independiente de la de desarrollo, de modo que los datos de una demostración no coinciden con los locales.
