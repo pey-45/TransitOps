@@ -161,8 +161,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[LO]{{\small\leftmark}}
-\fancyhead[R]{{\small\nouppercase{\textsl{\rightmark}}}}
+% fancyhdr separa os rótulos con pegamento infinitamente encollible, así que un
+% par longo solápase en silencio en lugar de avisar. A \small, «CAPÍTULO 3.
+% METODOLOGÍA Y PLANIFICACIÓN» máis «3.2. Diseño anticipado e implementación
+% incremental» mide 420,8 pt para un \headwidth de 412,6 pt. A \footnotesize
+% ningún par do documento pasa dos 380 pt e todos quedan separados.
+\fancyhead[LO]{{\footnotesize\leftmark}}
+\fancyhead[R]{{\footnotesize\nouppercase{\textsl{\rightmark}}}}
 \fancyfoot{}
 \fancyfoot[C,CO]{\thepage}
 \setlength{\headheight}{14pt}
