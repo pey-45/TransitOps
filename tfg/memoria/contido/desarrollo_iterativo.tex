@@ -133,7 +133,7 @@ El cambio de contraseña propia reutiliza \texttt{ICurrentUser}: carga la cuenta
 
 El endpoint \texttt{/summary} combina tres consultas. Los contadores por estado son globales y representan la situación actual. La actividad de vehículo y conductor usa la fecha prevista de recogida dentro de un periodo configurable ---treinta días por defecto---, mientras que las incidencias se cuentan por \texttt{OccurredAt}. Las etiquetas se resuelven sin filtrar recursos inactivos, de modo que una baja no borra actividad histórica. En el Inicio de la SPA, cada contador enlaza al listado de envíos ya filtrado y la interfaz explica expresamente qué cifras dependen del periodo.
 
-La Figura~\ref{fig:resumen-s6} recoge ese panel. Su diseño responde a lo que la clienta pidió en la entrevista, que era ver la situación de un vistazo y no un informe elaborado, y por eso los indicadores son recuentos y no gráficas. La decisión con más consecuencias, sin embargo, no se ve en la captura: cada cifra es un enlace al listado ya filtrado por el criterio que la produjo. Eso convierte el resumen en un punto de entrada al trabajo operativo en lugar de un cuadro que hay que leer y luego traducir a mano a una búsqueda.
+La Figura~\ref{fig:resumen-s6} recoge ese panel. Su diseño responde a lo que la clienta pidió en la entrevista, que era ver la situación de un vistazo y no un informe elaborado, y por eso los indicadores son recuentos y no gráficas. La decisión con más consecuencias, sin embargo, no se ve en la captura: cada cifra es un enlace al listado ya filtrado por el criterio que la produjo. Eso convierte el resumen en un punto de entrada al trabajo operativo en lugar de un panel que hay que leer y luego traducir a mano a una búsqueda.
 
 \begin{figure}[htbp]
 \centering

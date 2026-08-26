@@ -49,11 +49,12 @@
                  {\end{english}}
   \def\dataacceso{consultado el}
   \renewcommand{\appendixpagename}{Apéndices}
-  \ifdefined\renomearcadros
-    \message{Estilo TFG: renomeando cadros en español}
-    \gappto\captionsspanish{\renewcommand{\tablename}{Tabla}}
-    \gappto\captionsspanish{\renewcommand{\listtablename}{Índice de tablas}}
-  \fi
+  % babel-spanish rotula as táboas como «Cuadro» e a súa lista como «Índice de
+  % cuadros». Nesta memoria a denominación é «Tabla», que é a que emprega o
+  % texto ao referirse a elas, así que o renomeado deixa de ser opcional.
+  \message{Estilo TFG: renomeando cadros como tablas en español}
+  \gappto\captionsspanish{\renewcommand{\tablename}{Tabla}}
+  \gappto\captionsspanish{\renewcommand{\listtablename}{Índice de tablas}}
   \def\bibconfig{bibliografia/bibconf-es}
 }{%
 \ifthenelse{\equal{\lingua}{eng}}{%
