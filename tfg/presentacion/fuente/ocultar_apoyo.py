@@ -10,9 +10,9 @@ ns = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
 # The exporter replaces manual image crops with automatic cover cropping.
 # Set the authored crop in OOXML without changing the embedded source image.
 crops = {
-    9: (70/1265, 165/712, 85/1265, 39/712),
-    10: (85/1265, 156/712, 348/1265, 62/712),
-    15: (70/1264, 220/977, 69/1264, 241/977),
+    11: (70/1265, 165/712, 85/1265, 39/712),
+    12: (85/1265, 156/712, 348/1265, 62/712),
+    13: (70/1264, 220/977, 69/1264, 241/977),
 }
 with zipfile.ZipFile(source) as src, zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as dst:
     for item in src.infolist():

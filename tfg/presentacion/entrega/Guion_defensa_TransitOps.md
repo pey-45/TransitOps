@@ -1,202 +1,246 @@
 # Guion de defensa de TransitOps
 
-Duración objetivo: **18:20**. Diapositivas 1–18 para la exposición; 19–22 son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo, no una duración automática.
+Duración objetivo: **16:50**. Diapositivas 1–18 para la exposición; 19–22 son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo.
 
-La presentación se sostiene con sus capturas y no necesita conexión ni demostración en vivo. Las capturas son evidencias de la memoria con datos de prueba. Ensaya con vista del moderador. Para una versión de 15 minutos, resume las diapositivas 4, 6, 11, 12 y 13 en 50 segundos cada una y ajusta las diapositivas 3 y 10 a 55 segundos, la 7 a 45 segundos y las 9, 14 y 16 a 50 segundos. Mantén las conclusiones y los límites.
+La defensa está organizada en siete secciones visibles. La diapositiva 2 presenta el recorrido y el rótulo superior identifica la sección actual en todo momento. Las capturas proceden de la memoria y usan datos de prueba o demostración.
 
-| Diapositiva | Duración | Acumulado |
-| --- | ---: | ---: |
-| 1. TransitOps | 0:30 | 0:30 |
-| 2. El problema operativo | 0:55 | 1:25 |
-| 3. Objetivo y alcance | 1:05 | 2:30 |
-| 4. Desarrollo por incrementos verticales | 1:10 | 3:40 |
-| 5. Planificación y coste estimado | 0:50 | 4:30 |
-| 6. Arquitectura e integración | 1:15 | 5:45 |
-| 7. Un modelo centrado en el envío | 0:55 | 6:40 |
-| 8. Ciclo de vida del envío | 1:05 | 7:45 |
-| 9. Una regla visible en la interfaz | 1:00 | 8:45 |
-| 10. Historial inmutable y con autoría | 1:05 | 9:50 |
-| 11. Garantías frente a la concurrencia | 1:20 | 11:10 |
-| 12. Sesiones revocables y permisos efectivos | 1:10 | 12:20 |
-| 13. Validación en varias capas | 1:25 | 13:45 |
-| 14. Despliegue reproducible y ligero | 1:10 | 14:55 |
-| 15. Resultado funcional integrado | 0:50 | 15:45 |
-| 16. La revisión documental detectó una carencia | 1:00 | 16:45 |
-| 17. Límites y próximos pasos | 0:55 | 17:40 |
-| 18. Conclusiones | 0:40 | 18:20 |
+| Diapositiva | Sección | Duración | Acumulado |
+| --- | --- | ---: | ---: |
+| 1. TransitOps | Portada | 0:25 | 0:25 |
+| 2. Estructura de la presentación | Recorrido | 0:30 | 0:55 |
+| 3. Problema de partida | 01 · Problema y objetivos | 0:50 | 1:45 |
+| 4. Objetivos y criterios de éxito | 01 · Problema y objetivos | 0:55 | 2:40 |
+| 5. Requisitos y alcance | 02 · Requisitos y alcance | 1:00 | 3:40 |
+| 6. Casos de uso del sistema | 02 · Requisitos y alcance | 0:55 | 4:35 |
+| 7. Metodología incremental | 03 · Metodología | 1:10 | 5:45 |
+| 8. Arquitectura del sistema | 04 · Diseño y arquitectura | 1:05 | 6:50 |
+| 9. Modelo y reglas del dominio | 04 · Diseño y arquitectura | 1:05 | 7:55 |
+| 10. Flujo operativo completo | 05 · Demostración funcional | 1:00 | 8:55 |
+| 11. Planificación y asignación | 05 · Demostración funcional | 1:05 | 10:00 |
+| 12. Ejecución y trazabilidad | 05 · Demostración funcional | 1:05 | 11:05 |
+| 13. Administración e indicadores | 05 · Demostración funcional | 0:50 | 11:55 |
+| 14. Estrategia de validación | 06 · Validación y despliegue | 1:10 | 13:05 |
+| 15. Despliegue reproducible | 06 · Validación y despliegue | 1:05 | 14:10 |
+| 16. Evaluación del resultado | 07 · Conclusiones y trabajo futuro | 1:00 | 15:10 |
+| 17. Límites y trabajo futuro | 07 · Conclusiones y trabajo futuro | 0:55 | 16:05 |
+| 18. Conclusiones | 07 · Conclusiones y trabajo futuro | 0:45 | 16:50 |
 
 ## 1. TransitOps
 
-Tiempo orientativo: 0:30. Tramo 0:00–0:30.
+**Portada**
 
-Buenos días. Soy Pablo Manzanares López y voy a presentar TransitOps, mi Trabajo Fin de Grado, dirigido por Paula María Castro Castro. El trabajo consiste en diseñar y desarrollar una aplicación de gestión de transportes y recorrer de forma verificable su ciclo de vida completo. Explicaré el problema y el alcance, las decisiones de construcción y las evidencias con las que evalué el resultado.
+Tiempo orientativo: 0:25. Tramo 0:00–0:25.
+
+Buenos días. Soy Pablo Manzanares López y voy a presentar TransitOps, mi Trabajo Fin de Grado. El proyecto recorre el ciclo de vida completo de una aplicación de gestión de transportes, desde el análisis de necesidades hasta su validación y despliegue.
 
 Fuente: Memoria, portada y capítulo 1, pp. 1–3.
 
-## 2. El problema operativo
+## 2. Estructura de la presentación
 
-Tiempo orientativo: 0:55. Tramo 0:30–1:25.
+**Recorrido**
 
-El punto de partida es una pyme de transporte que coordina vehículos, conductores, clientes y envíos. Si la información está repartida entre hojas de cálculo, mensajes y llamadas, saber qué recurso está libre o reconstruir una incidencia exige consultar varias fuentes. Esto favorece reservas incompatibles y pérdida de contexto. Para concretar las necesidades utilicé una entrevista simulada con una responsable de operaciones de una empresa ficticia. Es una distinción relevante: el proyecto responde a un caso de dominio definido, pero no parte de un estudio de campo ni permite afirmar mejoras de productividad medidas en una empresa real. TransitOps centraliza la operación y hace explícitas sus reglas.
+Tiempo orientativo: 0:30. Tramo 0:25–0:55.
+
+La exposición sigue el mismo razonamiento con el que se construyó el proyecto. Primero presentaré el problema, los objetivos y el alcance. Después explicaré la metodología y las decisiones de diseño. La parte central mostrará el producto mediante un flujo operativo. Terminaré con la validación, el despliegue y una evaluación crítica del resultado.
+
+Fuente: Estructura de la defensa elaborada a partir de los capítulos 1–13 de la memoria.
+
+## 3. Problema de partida
+
+**01 · Problema y objetivos**
+
+Tiempo orientativo: 0:50. Tramo 0:55–1:45.
+
+El caso de partida es una pyme de transporte que coordina vehículos, conductores, clientes y envíos. Cuando la información queda repartida entre hojas de cálculo, mensajes y llamadas, responder qué recurso está disponible o qué ocurrió con una entrega exige reconstruir varias fuentes. Esto favorece dobles reservas, el uso de datos obsoletos y la pérdida de autoría de las incidencias. El caso de negocio se definió mediante una entrevista simulada, por lo que el trabajo no afirma mejoras medidas en una empresa real.
 
 Fuente: Memoria, capítulos 1 y 4.1, pp. 1–3 y 15. docs/ClientRequirements.md.
 
-## 3. Objetivo y alcance
+## 4. Objetivos y criterios de éxito
 
-Tiempo orientativo: 1:05. Tramo 1:25–2:30.
+**01 · Problema y objetivos**
 
-El objetivo general fue construir una aplicación mantenible y demostrar cómo se pasa de una necesidad a un sistema integrado, probado y desplegado. La especificación contiene catorce requisitos funcionales, diecisiete reglas de negocio y seis requisitos no funcionales. El operador gestiona catálogos y envíos, asigna recursos y registra lo que ocurre. El administrador añade la gestión de cuentas y permisos. Conductores y clientes son datos del dominio, no usuarios de la aplicación. Delimité el alcance al núcleo operativo. Optimización de rutas, GPS, facturación y acceso externo quedaron fuera. Esa decisión permitió dedicar esfuerzo a pruebas, reproducibilidad y evaluación, además de a la funcionalidad. Los cuatro casos de uso completos son el criterio de integración que retomaré en la validación.
+Tiempo orientativo: 0:55. Tramo 1:45–2:40.
 
-Fuente: Memoria, apartados 1.2, 1.3 y capítulo 4, pp. 2–3 y 15–21. docs/Requirements.md.
+El objetivo principal fue construir una aplicación web mantenible para centralizar la operación diaria y demostrar el ciclo de vida completo que la produce. El resultado debía permitir gestionar datos maestros, planificar envíos, asignar recursos, controlar estados y consultar una cronología verificable. El proyecto se consideraría completo si cubría los cuatro casos de uso de extremo a extremo, mantenía trazabilidad entre requisitos y pruebas, podía ejecutarse de forma reproducible y quedaba accesible en un entorno desplegado.
 
-## 4. Desarrollo por incrementos verticales
+Fuente: Memoria, apartados 1.2–1.3, pp. 2–3.
 
-Tiempo orientativo: 1:10. Tramo 2:30–3:40.
+## 5. Requisitos y alcance
 
-Seguí un proceso iterativo e incremental adaptado a un trabajo individual. Cada incremento incluye las partes necesarias para usar una capacidad: datos, servicio, API, pantalla y pruebas. El primer sprint fue un esqueleto autenticado que cruzaba todas las capas y comprobaba pronto la integración. Después añadí catálogos, envíos, operación, historial y administración. El séptimo incremento consolidó seguridad, concurrencia y despliegue. El octavo corresponde al cierre documental y la defensa. Diseñé el modelo conceptual completo al principio para mantener coherencia, pero incorporé físicamente las tablas cuando existía comportamiento que las utilizaba. Para cerrar un incremento exigí flujo integrado, pruebas, compilación y evidencia documentada. La trazabilidad conserva la relación entre la necesidad inicial y la forma de comprobarla.
+**02 · Requisitos y alcance**
+
+Tiempo orientativo: 1:00. Tramo 2:40–3:40.
+
+La especificación contiene catorce requisitos funcionales, diecisiete reglas de negocio y seis requisitos no funcionales. El operador gestiona catálogos, envíos, asignaciones, estados y eventos. El administrador añade la gestión de usuarios. Conductores y clientes son entidades del dominio, no usuarios del sistema. El alcance se limita al núcleo operativo. La optimización de rutas, el GPS, la facturación y el acceso de clientes externos quedan fuera para reservar esfuerzo a la calidad, la reproducibilidad y la evaluación del producto.
+
+Fuente: Memoria, capítulo 4, pp. 15–21. docs/Requirements.md.
+
+## 6. Casos de uso del sistema
+
+**02 · Requisitos y alcance**
+
+Tiempo orientativo: 0:55. Tramo 3:40–4:35.
+
+Cuatro casos de uso organizan el alcance. El primero cubre el acceso y la sesión. El segundo mantiene vehículos, conductores y clientes. El tercero recorre la operación del envío, desde su creación y asignación hasta la entrega o cancelación, con eventos durante el trayecto. El cuarto reúne administración e indicadores. Esta división convierte una lista extensa de requisitos en recorridos demostrables y proporciona la base de las pruebas de sistema.
+
+Fuente: Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.
+
+## 7. Metodología incremental
+
+**03 · Metodología**
+
+Tiempo orientativo: 1:10. Tramo 4:35–5:45.
+
+El desarrollo se organizó en incrementos verticales. Cada sprint añadió una capacidad completa, con datos, servicio, API, interfaz y pruebas. El primer sprint dejó un esqueleto autenticado que atravesaba todas las capas. Los siguientes añadieron catálogos, envíos, operación, historial y administración. El séptimo consolidó concurrencia, seguridad, pruebas de sistema y despliegue. El modelo conceptual se diseñó al principio para evitar contradicciones, mientras el esquema físico evolucionó mediante migraciones. Cada incremento se cerró solo cuando el flujo funcionaba integrado y sus comprobaciones quedaban documentadas.
 
 Fuente: Memoria, capítulo 3 y tabla 3.1, pp. 9–14. docs/Roadmap.md.
 
-## 5. Planificación y coste estimado
+## 8. Arquitectura del sistema
 
-Tiempo orientativo: 0:50. Tramo 3:40–4:30.
+**04 · Diseño y arquitectura**
 
-La planificación parte de trescientas horas, equivalentes a doce créditos a veinticinco horas, distribuidas en diez semanas efectivas. Son una estimación de alcance, no una medición retrospectiva. La implementación suma ciento cuarenta horas. Las otras ciento sesenta corresponden a análisis, diseño, verificación, despliegue y documentación. El reparto expresa el enfoque de ciclo completo. La valoración profesional estimada asciende a seis mil ciento treinta y siete euros con cincuenta céntimos, principalmente por las trescientas horas a veinte euros. No representa un desembolso del autor ni una tarifa de mercado contrastada en este trabajo. El detalle de cálculo queda en las diapositivas de apoyo.
+Tiempo orientativo: 1:05. Tramo 5:45–6:50.
 
-Fuente: Memoria, apartados 3.3–3.4 y tablas 3.2–3.3, pp. 11–13. Las 300 h son planificación, no registro real de dedicación. Agrupación de horas: análisis/diseño 30+40, implementación 80+60, verificación/despliegue 45+20, memoria 25.
+La solución separa una SPA React con TypeScript, una API ASP.NET Core sobre .NET 10 y una base PostgreSQL mediante Entity Framework Core. Nginx sirve la interfaz y reenvía las peticiones bajo el mismo origen. La API concentra la autorización, la validación y las reglas de negocio. El backend se organiza por funcionalidades y los controladores delegan en servicios, lo que permite probar las reglas sin levantar todo el servidor. Una API modular única aporta separación suficiente para este alcance sin introducir coordinación distribuida.
 
-## 6. Arquitectura e integración
+Fuente: Memoria, capítulo 5 y figura 5.1, pp. 22–24. docs/design/IntegrationArchitecture.md.
 
-Tiempo orientativo: 1:15. Tramo 4:30–5:45.
+## 9. Modelo y reglas del dominio
 
-La arquitectura separa React con TypeScript, una API ASP.NET Core sobre .NET 10 y PostgreSQL mediante Entity Framework Core. En contenedores, Nginx sirve la aplicación y reenvía las peticiones bajo /api, por lo que el navegador trabaja en un mismo origen. La API concentra autorización, validación y reglas. El frontend se ocupa de interacción y presentación. En el backend, los controladores traducen HTTP y delegan en servicios organizados por funcionalidad. Esta estructura permite probar reglas sin levantar todo el servidor y reservar otras pruebas para el contrato HTTP. Elegí una única API modular porque el alcance no justificaba coordinación entre servicios distribuidos. PostgreSQL aporta las relaciones y las garantías de integridad que exige el dominio. Docker Compose hace reproducible la integración. El JWT del esquema viaja actualmente en una cookie HttpOnly.
+**04 · Diseño y arquitectura**
 
-Fuente: Memoria, capítulos 2 y 5, pp. 4–8 y 22–24. Figura 5.1, p. 22, reproducida del PDF. docs/design/IntegrationArchitecture.md.
+Tiempo orientativo: 1:05. Tramo 6:50–7:55.
 
-## 7. Un modelo centrado en el envío
+El envío es el centro del modelo. Se vincula con un cliente y puede recibir una pareja de vehículo y conductor. Los eventos pertenecen al envío y conservan la identidad del usuario que actúa. Los catálogos y usuarios emplean baja lógica para preservar referencias históricas. El ciclo de estados se expresa mediante acciones explícitas y cerradas: un envío nace planificado, puede iniciarse si tiene recursos y termina entregado o cancelado. PostgreSQL refuerza las invariantes que deben mantenerse incluso cuando llegan peticiones simultáneas.
 
-Tiempo orientativo: 0:55. Tramo 5:45–6:40.
+Fuente: Memoria, apartados 5.2 y 6.4–6.7, pp. 23 y 27–32. Figura 5.2.
 
-El envío es el agregado operativo central. Puede vincular un cliente y, cuando se asigna, una pareja de vehículo y conductor. Los eventos pertenecen al envío y conservan la identidad de quien actúa. El modelo tiene seis entidades principales. La decisión relevante es cómo conservar la historia: usuarios y catálogos se desactivan mediante baja lógica, mientras las referencias históricas siguen siendo resolubles. Los estados indican la vigencia del envío y la API no ofrece su borrado. Un recurso inactivo deja de estar disponible para nuevas operaciones, pero no desaparece de una operación pasada. El esquema evoluciona con migraciones versionadas. La figura resume las relaciones del dominio, sin pretender enumerar todos los atributos e índices del endurecimiento.
+## 10. Flujo operativo completo
 
-Fuente: Memoria, apartado 5.2 y figura 5.2, p. 23. Apartados 6.4 y 6.7, pp. 27–28 y 30–32. docs/design/DataModel.md. La figura representa las relaciones principales, no todos los campos ni índices finales.
+**05 · Demostración funcional**
 
-## 8. Ciclo de vida del envío
+Tiempo orientativo: 1:00. Tramo 7:55–8:55.
 
-Tiempo orientativo: 1:05. Tramo 6:40–7:45.
+La demostración funcional sigue un único envío. Primero se preparan los catálogos y se crea el envío. Después se asignan conjuntamente un vehículo y un conductor. El operador inicia el trayecto, registra puntos de control o incidencias y termina la operación con la entrega o la cancelación. El resumen refleja el resultado. Este recorrido es útil porque conecta la mayor parte del dominio y permite observar las reglas en la interfaz sin separar artificialmente frontend y backend.
 
-El comportamiento principal se expresa mediante una máquina de estados cerrada. Un envío nace planificado. Puede iniciarse solo cuando tiene vehículo y conductor, y desde ese momento puede entregarse o cancelarse. También puede cancelarse antes de comenzar. Entregado y cancelado son estados terminales. La asignación se modifica únicamente en estado planificado y siempre recibe la pareja completa. Para iniciar y entregar, el servidor sella las fechas reales con su reloj UTC. Estas acciones tienen endpoints explícitos, lo que expresa la intención y centraliza las precondiciones. No se permite modificar libremente el estado dentro de una edición genérica. La interfaz ofrece las acciones pertinentes, mientras el servidor vuelve a comprobar cada regla.
+Fuente: Memoria, capítulos 6–7 y casos de uso 2–3, pp. 18–20 y 27–46.
 
-Fuente: Memoria, apartado 6.6 y figura 6.1, pp. 29–30. RF-09, RF-10 y RN-02–RN-08. TransitOps.Api/Features/Shipments/ShipmentService.cs.
+## 11. Planificación y asignación
 
-## 9. Una regla visible en la interfaz
+**05 · Demostración funcional**
 
-Tiempo orientativo: 1:00. Tramo 7:45–8:45.
+Tiempo orientativo: 1:05. Tramo 8:55–10:00.
 
-Esta captura de la memoria muestra un ejemplo concreto del flujo. El envío tiene una carga estimada de cuatro mil quinientos kilos y se asigna un vehículo con capacidad registrada de tres mil. Según RN-05, el sistema confirma la asignación y presenta una advertencia. La regla especificada es informativa, a diferencia de una doble reserva, que sí bloquea la operación. La respuesta devuelve capacityWarning como un dato transitorio, sin guardar un indicador que podría quedar obsoleto al cambiar la carga. La captura corresponde a datos de prueba del Sprint 4. Sirve para observar cómo una decisión de negocio se convierte en comportamiento de API y en un mensaje comprensible para el operador.
+El envío se crea en estado planificado y la asignación recibe siempre el vehículo y el conductor juntos. La aplicación impide utilizar recursos inactivos o ya ocupados en otro envío abierto. La capacidad insuficiente se trata de forma distinta: la asignación se confirma y el operador recibe una advertencia. En el ejemplo, la carga estimada es de cuatro mil quinientos kilos y el vehículo registra una capacidad de tres mil. La regla de negocio pedía informar, no bloquear.
 
-Fuente: Memoria, apartado 6.6 y figura 7.5, pp. 30 y 39. Captura original: imaxes/aviso-capacidad-sprint4.png. Datos de prueba del Sprint 4, no operación real.
+Fuente: Memoria, apartado 6.6 y figura 7.5, pp. 29–30 y 39. Datos de prueba del Sprint 4.
 
-## 10. Historial inmutable y con autoría
+## 12. Ejecución y trazabilidad
 
-Tiempo orientativo: 1:05. Tramo 8:45–9:50.
+**05 · Demostración funcional**
 
-El historial combina eventos automáticos con puntos de control e incidencias introducidos por el operador. La API solo permite añadir y consultar, sin editar ni borrar eventos. Distingo OccurredAt, cuándo sucede el hecho, de CreatedAt, cuándo se registra. Así se puede anotar tarde una incidencia y mantener la cronología de negocio. El autor procede de la identidad autenticada, no de un identificador libre enviado por el cliente. Los eventos de creación, asignación y cambio de estado están reservados al sistema. La operación y su evento automático se confirman en la misma transacción de EF Core: se guardan ambos o ninguno. Esta atomicidad mantiene coherentes el estado actual y la explicación de cómo se llegó a él.
+Tiempo orientativo: 1:05. Tramo 10:00–11:05.
 
-Fuente: Memoria, apartado 6.7 y figura 7.8, pp. 30–32 y 42. Captura original: imaxes/historial-eventos-sprint5.png. Datos de prueba del Sprint 5.
+Durante el trayecto, el sistema combina eventos automáticos con puntos de control e incidencias introducidos por el operador. El historial solo permite añadir y consultar. Distingue cuándo ocurrió un hecho de cuándo se registró y obtiene el autor de la identidad autenticada. Los cambios de estado y su evento automático se confirman en la misma transacción, de forma que el estado actual y la explicación de cómo se alcanzó no puedan divergir.
 
-## 11. Garantías frente a la concurrencia
+Fuente: Memoria, apartado 6.7 y figura 7.8, pp. 30–32 y 42. Datos de prueba del Sprint 5.
 
-Tiempo orientativo: 1:20. Tramo 9:50–11:10.
+## 13. Administración e indicadores
 
-Una consulta de disponibilidad no basta para garantizar la asignación: dos peticiones pueden comprobar a la vez que un recurso está libre. Por eso añadí dos índices únicos parciales en PostgreSQL, uno por vehículo y otro por conductor, aplicados a los envíos abiertos. La comprobación previa da un mensaje descriptivo. El índice conserva la regla cuando las peticiones compiten, y su violación se traduce en HTTP 409. La protección del último administrador necesita otra solución. Dos administradores podrían degradarse simultáneamente después de comprobar que existe el otro. Un bloqueo transaccional de PostgreSQL serializa ese tramo, de modo que la segunda operación reevalúa la regla tras la primera. Son dos invariantes distintas y por eso no uso el mismo mecanismo. Las pruebas lanzan operaciones concurrentes contra PostgreSQL real para comprobar ambas garantías.
+**05 · Demostración funcional**
 
-Fuente: Memoria, apartados 6.6, 6.8 y 8.3, pp. 29–30, 32–33 y 52–54. TransitOps.Api/Persistence/TransitOpsDbContext.cs y TransitOps.Tests/Persistence/PostgreSqlConcurrencyTests.cs.
+Tiempo orientativo: 0:50. Tramo 11:05–11:55.
 
-## 12. Sesiones revocables y permisos efectivos
+El administrador puede crear cuentas, cambiar roles, activar o desactivar usuarios y reasignar contraseñas. La API protege que siempre permanezca al menos un administrador activo. El panel resume los envíos por estado, la actividad de vehículos y conductores y las incidencias del periodo seleccionado. Los indicadores sirven para orientar la operación y enlazan con los listados filtrados. La captura usa datos de demostración y no representa actividad empresarial real.
 
-Tiempo orientativo: 1:10. Tramo 11:10–12:20.
+Fuente: Memoria, apartados 6.8 y 7.6, pp. 32–33 y 44–46. Datos de demostración del Sprint 6.
 
-En el endurecimiento trasladé el JWT desde localStorage a una cookie HttpOnly, con SameSite Strict y Secure fuera de desarrollo. Esto reduce la posibilidad de extraer el token desde JavaScript, aunque no elimina el riesgo de XSS. El mismo origen y SameSite Strict mitigan la superficie CSRF asociada a las cookies. Como el frontend ya no lee el token, reconstruye la sesión consultando /auth/me al cargar. Cada cuenta tiene además un contador TokenVersion. Cambiar contraseña, rol o activación incrementa esa versión, y los tokens anteriores fallan en la siguiente petición. El coste aceptado es una consulta de usuario por petición protegida. Finalmente, la API impone las políticas de rol. Ocultar una pantalla mejora la experiencia, pero la autorización efectiva sigue estando en el servidor.
+## 14. Estrategia de validación
 
-Fuente: Memoria, apartados 6.1–6.3 y 8.3, pp. 25–27 y 52–54. TransitOps.Api/Security/AuthSession.cs y TransitOps.Api/Program.cs.
+**06 · Validación y despliegue**
 
-## 13. Validación en varias capas
+Tiempo orientativo: 1:10. Tramo 11:55–13:05.
 
-Tiempo orientativo: 1:25. Tramo 12:20–13:45.
+La validación se reparte según el tipo de riesgo. Ciento treinta y nueve pruebas de backend comprueban reglas, contratos HTTP, persistencia y concurrencia. Treinta y tres pruebas de frontend verifican los flujos de interacción. Cuatro pruebas de sistema con Playwright recorren los casos de uso sobre la composición completa. Las restricciones de concurrencia se prueban contra PostgreSQL real, y la integración continua repite compilación, suites y migraciones sobre un entorno limpio. Los recuentos indican casos ejecutados, no porcentaje de cobertura.
 
-La memoria documenta ciento treinta y nueve pruebas backend, treinta y tres frontend y cuatro flujos de sistema. Son recuentos de pruebas y no una medida de cobertura de código. Lo más relevante es qué demuestra cada nivel. xUnit comprueba reglas y contratos HTTP. Vitest y React Testing Library observan formularios, rutas y sesión. Las pruebas con PostgreSQL real ejercitan restricciones y concurrencia que el proveedor en memoria no reproduce. Playwright recorre el primer administrador, el alta de un operador, la ejecución completa de un envío y la desactivación de un usuario. La integración continua repite compilaciones, pruebas y migraciones en un entorno limpio. Hay una frontera explícita: CI usa HTTP en desarrollo, por lo que Secure se comprobó manualmente sobre el despliegue HTTPS. Así distingo lo automatizado de la evidencia puntual sobre el destino.
+Fuente: Memoria, capítulo 8, pp. 48–55. Recuentos documentados al cierre del Sprint 7.
 
-Fuente: Memoria, capítulo 8, especialmente apartado 8.3, pp. 48–55. Recuentos documentados al cierre de Sprint 7: 139 backend, 33 frontend y cuatro flujos Playwright. Son números de pruebas, no porcentajes de cobertura.
+## 15. Despliegue reproducible
 
-## 14. Despliegue reproducible y ligero
+**06 · Validación y despliegue**
 
-Tiempo orientativo: 1:10. Tramo 13:45–14:55.
+Tiempo orientativo: 1:05. Tramo 13:05–14:10.
 
-El destino es una máquina virtual Ubuntu con Docker Compose. La composición ejecuta PostgreSQL, API, servidor web y cloudflared, sin publicar puertos de los contenedores en el host. El túnel abre una conexión saliente y proporciona acceso HTTPS temporal. GitHub Actions publica las imágenes de API y web en GHCR después de superar CI. La máquina las descarga mediante un mismo script, que se puede ejecutar a mano o con un temporizador de cinco minutos. El script aplica la composición, comprueba salud y muestra revisión y digest de las imágenes. El procedimiento se ejecutó desde una máquina recién creada y quedó documentado. Es una entrega ligera y reproducible. Existe una limitación: E2E y publicación construyen imágenes distintas del mismo commit. Publicar exactamente el artefacto probado queda como mejora identificada.
+Tras superar la validación, GitHub Actions publica las imágenes de la API y la web en GHCR. Una máquina Ubuntu descarga esas imágenes y aplica la misma composición de contenedores descrita en la documentación. Un script comprueba la configuración, la salud, la revisión y los digests desplegados. Systemd ejecuta periódicamente ese procedimiento. El acceso público usa un túnel saliente de Cloudflare, de modo que ningún puerto de los contenedores queda publicado en el host. Es un entorno de demostración reproducible, no un servicio en producción.
 
-Fuente: Memoria, capítulo 9, pp. 56–60. Captura original: imaxes/despliegue-tunel-sprint7.png. .github/workflows/ci.yml, scripts/deploy.sh y docs/Deployment.md. La captura acredita el despliegue documentado, no la vigencia actual de su URL temporal.
+Fuente: Memoria, capítulo 9, pp. 56–60. docs/Deployment.md.
 
-## 15. Resultado funcional integrado
+## 16. Evaluación del resultado
 
-Tiempo orientativo: 0:50. Tramo 14:55–15:45.
+**07 · Conclusiones y trabajo futuro**
 
-El resultado es una aplicación que conecta administración, catálogos, operación e historial. Los catorce requisitos funcionales están integrados, incluida la asignación de contraseña por un administrador que se completó durante el cierre. El panel resume la situación y permite entrar al trabajo mediante filtros. Los contadores por estado describen el conjunto de envíos, mientras actividad e incidencias dependen del periodo. Evité mezclar esas dos semánticas en una misma cifra. Los valores de esta captura son datos de demostración, no resultados de una empresa. La evidencia permite afirmar cumplimiento funcional e integración del núcleo elegido, sin atribuirle una mejora de productividad que no se midió.
+Tiempo orientativo: 1:00. Tramo 14:10–15:10.
 
-Fuente: Memoria, apartados 6.8, 7.6 y capítulo 12, pp. 32–33, 44–45 y 66–67. Figura 7.10, captura original imaxes/resumen-sprint6.png. Los contadores mostrados son datos de demostración.
+El producto cubre RF-01 a RF-14 y los cuatro casos de uso completos. La trazabilidad relaciona cada necesidad con su diseño, su implementación y su evidencia. La arquitectura demostró que podía crecer por incrementos sin abandonar la integración de extremo a extremo. El despliegue verificó además que los procedimientos podían reproducirse fuera de la máquina de desarrollo. El resultado cumple los criterios técnicos definidos al inicio, aunque no permite afirmar impacto empresarial porque no se evaluó con usuarios reales.
 
-## 16. La revisión documental detectó una carencia
+Fuente: Memoria, capítulos 10, 12 y 13, pp. 61–62 y 66–69.
 
-Tiempo orientativo: 1:00. Tramo 15:45–16:45.
+## 17. Límites y trabajo futuro
 
-Un aprendizaje del proceso apareció al redactar el manual. La entrevista esperaba que el administrador pudiese reasignar una contraseña olvidada. Sin embargo, el autoservicio exigía la contraseña actual y la primera especificación no había cubierto correctamente la alternativa administrativa. La revisión detectó ese hueco entre necesidad y comportamiento. Lo cerré mediante RN-17, actualizando requisitos, API, interfaz y pruebas. El administrador puede asignar una contraseña a otra cuenta y la operación invalida sus sesiones, mientras la propia cuenta conserva la confirmación de la contraseña anterior. Este ejemplo muestra que documentar también sirve para verificar el producto. La revisión posterior al cambio de sesión reforzó la misma lección: hay que comprobar los clientes y contratos que una decisión transversal deja afectados.
+**07 · Conclusiones y trabajo futuro**
 
-Fuente: Memoria, apartado 6.8, p. 33, matriz del capítulo 10 y conclusiones, p. 68. docs/UserManual.md, docs/Requirements.md (RN-17).
+Tiempo orientativo: 0:55. Tramo 15:10–16:05.
 
-## 17. Límites y próximos pasos
+La evaluación tiene límites claros. El caso de negocio es simulado, no hubo pruebas con usuarios ni pruebas de carga, y el despliegue carece de alojamiento estable, copias y métricas. Además, las imágenes publicadas se construyen de nuevo después de las pruebas de sistema, aunque parten del mismo commit. La continuación prioritaria sería validar el núcleo con usuarios y estabilizar la operación. Solo después tendría sentido ampliar el producto con rutas, GPS, facturación o acceso externo.
 
-Tiempo orientativo: 0:55. Tramo 16:45–17:40.
-
-El alcance demostrado es un entorno de demostración reproducible. El túnel es temporal y no se incorporaron copias de seguridad ni recolección de métricas. Tampoco realicé pruebas de carga que permitan afirmar capacidad o latencia bajo un volumen concreto. El caso procede de una entrevista simulada, así que la utilidad y la usabilidad deben contrastarse con usuarios reales. Los siguientes pasos que priorizaría son validar ese uso, estabilizar el alojamiento con recuperación de datos y publicar el mismo artefacto que pasa E2E. Después tendría sentido valorar extensiones como GPS, rutas o facturación. Estas prioridades separan las mejoras de calidad y operación de una ampliación funcional, y mantienen la conclusión dentro de lo que las evidencias sostienen.
-
-Fuente: Memoria, apartados 9.2, 9.5 y capítulos 12–13, pp. 57, 60 y 66–69. La validación con usuarios reales se plantea como siguiente paso, no como resultado realizado.
+Fuente: Memoria, apartados 9.5, 12.2 y capítulo 13, pp. 60 y 66–69.
 
 ## 18. Conclusiones
 
-Tiempo orientativo: 0:40. Tramo 17:40–18:20.
+**07 · Conclusiones y trabajo futuro**
 
-TransitOps alcanza el objetivo de construir un núcleo operativo completo, mantener trazabilidad entre requisitos y pruebas y desplegar una versión reproducible. La aportación principal es haber relacionado las decisiones de cada fase con evidencias observables. Los incrementos verticales permitieron detectar pronto problemas de integración, y declarar las deudas hizo posible cerrarlas de forma verificable. El resultado incluye la aplicación y el proceso documentado que permite entenderla, probarla y evolucionarla. Muchas gracias. Quedo a disposición del tribunal para las preguntas.
+Tiempo orientativo: 0:45. Tramo 16:05–16:50.
 
-Fuente: Memoria, capítulos 12–13, pp. 66–69.
+TransitOps entrega un núcleo operativo completo y demostrable. El proyecto vincula las necesidades iniciales con decisiones de diseño, reglas de negocio, pruebas y un despliegue reproducible. La principal aportación del trabajo está en esa continuidad: cada incremento produjo una capacidad utilizable y dejó evidencia suficiente para evaluar el resultado. Muchas gracias. Quedo a vuestra disposición para las preguntas.
 
-## 19. Apoyo · trazabilidad de requisitos
+Fuente: Memoria, capítulo 13, pp. 68–69.
+
+## 19. Trazabilidad de requisitos
+
+**Anexo**
 
 Apoyo para preguntas. Fuera del tiempo principal.
 
-Material para preguntas. La tabla resume la matriz de la memoria. El requisito transversal RF-13 aparece desde S1 y se aplica en todas las áreas. RF-04 recibió en S7 la extensión de asignación de contraseña asociada a RN-17. Todos los grupos enlazan con componente y evidencia, sin afirmar que el simple número de pruebas pruebe exhaustividad.
+Diapositiva de apoyo para preguntas sobre la relación entre requisitos, incrementos y evidencias.
 
 Fuente: Memoria, capítulo 10, pp. 61–62. docs/Requirements.md y docs/Roadmap.md.
 
-## 20. Apoyo · evolución de las pruebas
+## 20. Concurrencia y seguridad
+
+**Anexo**
 
 Apoyo para preguntas. Fuera del tiempo principal.
 
-Material para preguntas. La gráfica conserva los recuentos documentados al cierre de cada sprint. No representa porcentaje de cobertura ni una comparación de calidad entre capas. En S7, el valor adicional está en probar invalidación y carreras contra el motor real, además de los cuatro flujos E2E que no se suman a estas dos series.
+Diapositiva de apoyo para explicar las garantías de doble reserva, último administrador y revocación de sesiones.
 
-Fuente: Memoria, capítulo 8, pp. 48–54. S1: 16/4, S2: 29/7, S3: 45/13, S4: 74/19, S5: 96/24, S6: 127/30, S7: 139/33, backend/frontend. S7 añade cuatro flujos E2E.
+Fuente: Memoria, apartados 6.1–6.3, 6.6, 6.8 y 8.3, pp. 25–33 y 52–54.
 
-## 21. Apoyo · estimación económica
+## 21. Planificación y coste
 
-Apoyo para preguntas. Fuera del tiempo principal.
-
-Material para preguntas. Esta es una valoración profesional hipotética, no gasto efectivo del autor ni una contabilidad de operación sostenida. La tarifa de veinte euros por hora es una hipótesis de la memoria. La amortización equivale a 1200 por 2,5 dividido entre 48 meses. Las partidas a cero corresponden a las condiciones de uso del proyecto. Energía y conectividad aparecen en costes indirectos, por lo que no debe interpretarse la infraestructura a cero como ausencia absoluta de coste operativo.
-
-Fuente: Memoria, tabla 3.3 y apartado 3.4, pp. 11–13. Cálculo: 6000 + 62,50 + 0 + 0 + 75 = 6137,50 EUR.
-
-## 22. Apoyo · decisiones y alternativas
+**Anexo**
 
 Apoyo para preguntas. Fuera del tiempo principal.
 
-Material para preguntas. Las decisiones se justifican por el dominio y la escala del proyecto. Una API modular limita la coordinación y conserva responsabilidades claras. EF Core facilita migraciones, sin impedir restricciones específicas del motor. Los eventos se guardan junto a la operación porque no hay necesidad de propagación entre servicios. TokenVersion sacrifica la validación puramente autocontenida del JWT a cambio de revocación en la siguiente petición. Ninguna elección demuestra superioridad universal de una tecnología.
+Diapositiva de apoyo. Las 300 horas y los 6.137,50 euros son estimaciones académicas, no registros reales de dedicación o gasto.
 
-Fuente: Memoria, capítulos 2, 5 y 6, pp. 4–8 y 22–33. docs/design/IntegrationArchitecture.md.
+Fuente: Memoria, apartados 3.3–3.4 y tablas 3.2–3.3, pp. 11–13.
+
+## 22. Evolución de las pruebas
+
+**Anexo**
+
+Apoyo para preguntas. Fuera del tiempo principal.
+
+Diapositiva de apoyo con los recuentos acumulados de pruebas al cierre de cada sprint. No representan porcentaje de cobertura.
+
+Fuente: Memoria, apartado 8.2, pp. 49–52.

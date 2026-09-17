@@ -10,7 +10,7 @@ target = root / 'entrega/TransitOps_Presentacion_TFG.pdf'
 doc = canvas.Canvas(str(target), pagesize=(960, 540), pageCompression=1)
 doc.setTitle('TransitOps - Defensa del Trabajo Fin de Grado')
 doc.setAuthor('Pablo Manzanares López')
-doc.setSubject('18 diapositivas principales y 4 de apoyo. Duración orientativa: 18 minutos y 20 segundos.')
+doc.setSubject('18 diapositivas principales y 4 de apoyo. Duración orientativa: 16 minutos y 50 segundos.')
 for i, slide in enumerate(content, 1):
     key = f'slide-{i}'
     doc.bookmarkPage(key)

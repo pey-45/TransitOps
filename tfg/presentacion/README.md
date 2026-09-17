@@ -1,6 +1,6 @@
 # Presentación de defensa de TransitOps
 
-Material de defensa del Trabajo Fin de Grado de Pablo Manzanares López, dirigido por Paula María Castro Castro, preparado el 5 de septiembre de 2026.
+Material de defensa del Trabajo Fin de Grado de Pablo Manzanares López, dirigido por Paula María Castro Castro, revisado el 17 de septiembre de 2026.
 
 ## Entrega
 
@@ -8,9 +8,9 @@ Material de defensa del Trabajo Fin de Grado de Pablo Manzanares López, dirigid
 - [PDF para proyectar](entrega/TransitOps_Presentacion_TFG.pdf).
 - [Guion de exposición y tiempos](entrega/Guion_defensa_TransitOps.md).
 
-La exposición principal consta de **18 diapositivas** y tiene una pauta de **18 minutos y 20 segundos**. El guion incluye ajustes para una versión de 15 minutos. Los tiempos son orientativos y deben contrastarse en el ensayo.
+La exposición principal consta de **18 diapositivas** y tiene una pauta de **16 minutos y 50 segundos**. Los tiempos son orientativos y deben contrastarse en el ensayo.
 
-Hay cuatro diapositivas de apoyo: trazabilidad, evolución de pruebas, estimación económica y alternativas de diseño. Están ocultas en el pase normal del PowerPoint y se pueden abrir desde la vista del moderador durante las preguntas. El PDF las conserva al final, tras las conclusiones.
+Hay cuatro diapositivas de apoyo: trazabilidad de requisitos, concurrencia y seguridad, planificación y coste, y evolución de las pruebas. Están ocultas en el pase normal del PowerPoint y se pueden abrir desde la vista del moderador durante las preguntas. El PDF las conserva al final, tras las conclusiones.
 
 El PowerPoint contiene texto, tablas y gráficos editables, notas de exposición y referencias por diapositiva. Los diagramas proceden de la memoria y son imágenes, al igual que las capturas reales. La presentación se puede exponer sin conexión a la aplicación. El PDF conserva el aspecto del pase a partir de las diapositivas renderizadas en Full HD y contiene marcadores de navegación.
 
@@ -20,7 +20,7 @@ La fuente principal es [memoria_tfg.pdf](../memoria/memoria_tfg.pdf), de 83 pág
 
 La presentación se apoya también en `AGENTS.md`, `CONTEXT.md`, `README.md`, requisitos, documentación de diseño, despliegue y código del repositorio activo. Conserva los recuentos de pruebas documentados en la memoria como evidencia histórica de S7, sin afirmar una nueva ejecución de esas suites. Las cifras de esfuerzo y coste son estimaciones. Las capturas contienen datos de prueba y la URL del despliegue es temporal. La entrevista es simulada y no se atribuyen al proyecto resultados de productividad, estudios de usuarios ni pruebas de carga.
 
-La narrativa prioriza problema, alcance, método, arquitectura, reglas críticas, evidencia y evaluación. Los documentos académicos y sus registros permanecen dentro de `tfg/`.
+La defensa sigue siete secciones visibles y ordenadas: problema y objetivos, requisitos y alcance, metodología, diseño y arquitectura, demostración funcional, validación y despliegue, y conclusiones y trabajo futuro. La estimación económica y los detalles técnicos que interrumpen ese recorrido quedan en el anexo. Los documentos académicos y sus registros permanecen dentro de `tfg/`.
 
 ## Fuentes editables y regeneración
 
