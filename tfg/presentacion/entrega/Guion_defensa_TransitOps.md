@@ -11,7 +11,7 @@ La defensa está organizada en siete secciones visibles. La diapositiva 2 presen
 | 3. Problema de partida | 01 · Problema y objetivos | 0:50 | 1:45 |
 | 4. Objetivos y criterios de éxito | 01 · Problema y objetivos | 0:55 | 2:40 |
 | 5. Requisitos y alcance | 02 · Requisitos y alcance | 1:00 | 3:40 |
-| 6. Casos de uso del sistema | 02 · Requisitos y alcance | 0:55 | 4:35 |
+| 6. Casos de uso definidos en la memoria | 02 · Requisitos y alcance | 0:55 | 4:35 |
 | 7. Metodología incremental | 03 · Metodología | 1:10 | 5:45 |
 | 8. Arquitectura del sistema | 04 · Diseño y arquitectura | 1:05 | 6:50 |
 | 9. Modelo y reglas del dominio | 04 · Diseño y arquitectura | 1:05 | 7:55 |
@@ -75,13 +75,13 @@ La especificación contiene catorce requisitos funcionales, diecisiete reglas de
 
 Fuente: Memoria, capítulo 4, pp. 15–21. docs/Requirements.md.
 
-## 6. Casos de uso del sistema
+## 6. Casos de uso definidos en la memoria
 
 **02 · Requisitos y alcance**
 
 Tiempo orientativo: 0:55. Tramo 3:40–4:35.
 
-Cuatro casos de uso organizan el alcance. El primero cubre el acceso y la sesión. El segundo mantiene vehículos, conductores y clientes. El tercero recorre la operación del envío, desde su creación y asignación hasta la entrega o cancelación, con eventos durante el trayecto. El cuarto reúne administración e indicadores. Esta división convierte una lista extensa de requisitos en recorridos demostrables y proporciona la base de las pruebas de sistema.
+La memoria define cuatro casos de uso concretos. En CU-1, el instalador crea el primer administrador y el punto de arranque queda bloqueado. En CU-2 intervienen dos roles en momentos distintos: el administrador crea la cuenta y el operador realiza el primer acceso y cambia la contraseña inicial. En CU-3, el operador ejecuta un envío de principio a fin y deja una cronología verificable. En CU-4, el administrador desactiva una cuenta sin borrar la actividad que ya produjo. Operador y administrador son roles separados; la tabla indica quién actúa en cada recorrido.
 
 Fuente: Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.
 

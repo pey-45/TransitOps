@@ -35,11 +35,11 @@
     "notes": "La especificación contiene catorce requisitos funcionales, diecisiete reglas de negocio y seis requisitos no funcionales. El operador gestiona catálogos, envíos, asignaciones, estados y eventos. El administrador añade la gestión de usuarios. Conductores y clientes son entidades del dominio, no usuarios del sistema. El alcance se limita al núcleo operativo. La optimización de rutas, el GPS, la facturación y el acceso de clientes externos quedan fuera para reservar esfuerzo a la calidad, la reproducibilidad y la evaluación del producto."
   },
   {
-    "title": "Casos de uso del sistema",
+    "title": "Casos de uso definidos en la memoria",
     "section": "02 · Requisitos y alcance",
     "seconds": 55,
     "source": "Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.",
-    "notes": "Cuatro casos de uso organizan el alcance. El primero cubre el acceso y la sesión. El segundo mantiene vehículos, conductores y clientes. El tercero recorre la operación del envío, desde su creación y asignación hasta la entrega o cancelación, con eventos durante el trayecto. El cuarto reúne administración e indicadores. Esta división convierte una lista extensa de requisitos en recorridos demostrables y proporciona la base de las pruebas de sistema."
+    "notes": "La memoria define cuatro casos de uso concretos. En CU-1, el instalador crea el primer administrador y el punto de arranque queda bloqueado. En CU-2 intervienen dos roles en momentos distintos: el administrador crea la cuenta y el operador realiza el primer acceso y cambia la contraseña inicial. En CU-3, el operador ejecuta un envío de principio a fin y deja una cronología verificable. En CU-4, el administrador desactiva una cuenta sin borrar la actividad que ya produjo. Operador y administrador son roles separados; la tabla indica quién actúa en cada recorrido."
   },
   {
     "title": "Metodología incremental",

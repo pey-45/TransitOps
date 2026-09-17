@@ -244,13 +244,13 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
 {
   const slide = base(5);
   table(slide, [
-    ['Caso de uso', 'Actor principal', 'Resultado observable'],
-    ['Acceso y sesión', 'Operador / administrador', 'Entrada segura y permisos efectivos'],
-    ['Catálogos', 'Operador', 'Vehículos, conductores y clientes vigentes'],
-    ['Operación del envío', 'Operador', 'Planificación, asignación, estados y eventos'],
-    ['Administración y resumen', 'Administrador / operador', 'Cuentas controladas e indicadores operativos']
-  ], 64, 178, 1152, 430, [315, 310, 527], 23);
-  caption(slide, 'Los cuatro recorridos definen el alcance integrado y las pruebas de sistema. Memoria, pp. 17–21.');
+    ['Caso de uso', 'Actor y responsabilidad', 'Resultado observable'],
+    ['CU-1 · Poner en marcha una instalación vacía', 'Instalador', 'Primer administrador creado; arranque bloqueado'],
+    ['CU-2 · Incorporar a una persona al sistema', 'Administrador: crea la cuenta\nOperador: realiza el primer acceso', 'Cuenta activa con contraseña propia'],
+    ['CU-3 · Ejecutar un envío de principio a fin', 'Operador', 'Envío terminal con cronología verificable'],
+    ['CU-4 · Retirar el acceso sin perder historial', 'Administrador', 'Cuenta desactivada; historial conservado']
+  ], 64, 170, 1152, 446, [375, 350, 427], 19);
+  caption(slide, 'Operador y administrador son roles separados; en CU-2 intervienen en momentos distintos. Memoria, pp. 17–21.');
 }
 
 // 07. Methodology
