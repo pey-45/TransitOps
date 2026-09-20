@@ -1,0 +1,105 @@
+DIAPOSITIVA 1 · TransitOps
+- Buenos días. Soy Pablo Manzanares López y vengo a presentar TransitOps, mi Trabajo Fin de Grado. 
+- Es una aplicación para organizar el trabajo diario de una empresa de transporte.
+- Además de enseñar lo que hace, explicaré cómo pasé de una necesidad inicial a un sistema real en producción.
+
+
+DIAPOSITIVA 2 · Estructura de la presentación
+- Primero explicaré el problema y qué alcance decidí darle al proyecto. 
+- Después contaré la metodología, el diseño y la arquitectura.
+- En la parte central veremos un envío de principio a fin. 
+- Y para terminar, enseñaré cómo validé y desplegué la aplicación y qué límites tiene todavía.
+
+
+DIAPOSITIVA 3 · Problema de partida
+- El problema surge de una pequeña empresa de transporte que sigue utilizando métodos de gestión manuales: una persona lleva los vehículos en una hoja de cálculo. Otra confirma conductores por teléfono. Y las incidencias llegan por mensajes.
+- Cuando hay que preparar un envío, cuesta saber si un recurso está libre de verdad. Y si surge un problema durante el trayecto, cuesta reconstruir qué pasó y quién lo registró.
+- TransitOps nace para reunir toda esa información en un mismo lugar. 
+- Cabe aclarar que la empresa y la entrevista de partida son simuladas.
+
+
+DIAPOSITIVA 4 · Objetivos y criterios de éxito
+- Mis objetivos son, por un lado, construir una aplicación útil para esas tareas diarias, y por otro, mostrar el proceso de ingeniería completo que hay detrás.
+- La aplicación debía permitir preparar los datos de clientes y recursos, crear envíos, asignar vehículo y conductor, seguir su estado y consultar después lo ocurrido.
+- Para saber si el trabajo estaba terminado, fijé cuatro señales concretas. Que los casos de uso funcionaran de principio a fin, que las reglas importantes tuvieran pruebas, que otra persona pudiera poner el sistema en marcha siguiendo la documentación, y que existiera trazabilidad de los cambios que se fueran haciendo. Así puedo evaluar el resultado con algo más que una lista de pantallas.
+
+
+DIAPOSITIVA 5 · Requisitos y alcance
+- A partir de la entrevista redacté catorce funciones que debía ofrecer la aplicación, diecisiete reglas sobre cómo debe comportarse y seis requisitos de calidad.
+- La aplicación la usarán 2 actores. El operador se ocupa del trabajo diario: vehículos, conductores, clientes y envíos. El administrador también puede hacer ese trabajo, pero además gestiona las cuentas y sus permisos. Los conductores y los clientes aparecen como datos en la aplicación; no entran en ella con una cuenta propia.
+
+
+DIAPOSITIVA 6 · Casos de uso definidos en la memoria
+- De los requisitos se extrajeron 4 casos de uso. 
+- El primero ocurre una sola vez: quien instala el sistema crea la primera cuenta de administrador.
+- El segundo permite a un administrador crear una cuenta (administradora u operadora), luego el nuevo usuario entra y cambia su contraseña.
+- El tercero es el trabajo principal: el operador lleva un envío desde su planificación hasta su cierre. 
+- Y la permite a un administrador retirar el acceso a una persona sin borrar lo que hizo antes. 
+
+
+DIAPOSITIVA 7 · Metodología incremental
+- Organicé el desarrollo en siete etapas. En cada una intenté dejar una parte que ya se pudiera usar, con su pantalla, su lógica en el servidor, sus datos y sus pruebas.
+- Empecé por el acceso al sistema. 
+- Después llegaron los catálogos, envíos y filtros. 
+- Más adelante añadí las asignaciones, el seguimiento y la administración. 
+- La última etapa se dedicó a reforzar la seguridad, comprobar el sistema completo y desplegarlo.
+- Al cerrar cada etapa, se comprobó el recorrido completo, no solo una parte aislada.
+
+
+DIAPOSITIVA 8 · Arquitectura del sistema
+- Esta imagen muestra el camino que sigue una acción del usuario. 
+- La persona utiliza la interfaz web, hecha con React y TypeScript. 
+- Cuando, por ejemplo, crea un envío, la interfaz se comunica con el servidor, desarrollado en .NET. 
+- Ahí se comprueba si tiene permiso y si la operación respeta las reglas. Solo entonces se guarda el cambio en PostgreSQL.
+- Elegí un monolito en lugar de microservicios, que para este tamaño de proyecto permite separar responsabilidades y probar el sistema de forma simple.
+
+
+DIAPOSITIVA 9 · Modelo y reglas del dominio
+- El envío es la pieza central del modelo. Puede estar vinculado a un cliente y, cuando se prepara para salir, recibe un vehículo y un conductor como pareja. Todo lo que ocurre después queda asociado a ese envío.
+- Para asegurar trazabilidad, si un vehículo o una persona deja de estar disponible, se desactiva su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Y los hechos del trayecto ni se editan ni se eliminan.
+- Y las reglas más delicadas están reforzadas en la base de datos. Por ejemplo, impedir que dos envíos abiertos reserven el mismo recurso. Así se mantienen incluso si llegan dos peticiones casi a la vez.
+
+
+DIAPOSITIVA 10 · Flujo operativo completo
+- Para explicar el producto voy a seguir un solo envío. 
+- Primero preparo los datos necesarios: cliente, vehículo y conductor. Creo el envío con sus fechas y su carga prevista. 
+- Después asigno los dos recursos y comienzo el trayecto.
+- Durante el recorrido puedo anotar un punto de control o una incidencia. 
+- Y finalmente, el envío termina como entregado o cancelado, y su historia queda disponible para consultarla.
+- Este ejemplo también deja clara una cosa: un envío cerrado no vuelve a un estado anterior. Si hubo un error, debe quedar constancia en el historial.
+
+
+DIAPOSITIVA 11 · Planificación y asignación
+- Aquí se ve una de las decisiones de negocio más fáciles de comprobar. Mientras el envío está planificado, se le asignan juntos un vehículo y un conductor. Si uno de ellos ya está ocupado en otro envío que sigue abierto, la aplicación rechaza la asignación. Así evita reservar el mismo recurso dos veces.
+- La capacidad del vehículo se trata de otra manera. En esta captura de prueba, la carga estimada es de cuatro mil quinientos kilos y el vehículo admite tres mil. El sistema avisa claramente de la diferencia, pero permite continuar. Esa fue la regla definida para este caso: advertir al operador, no decidir por él.
+
+
+DIAPOSITIVA 12 · Ejecución y trazabilidad
+- Una vez iniciado el trayecto, el historial va reuniendo dos tipos de hechos. Unos los crea el sistema, cuando cambia el estado del envío. Otros los escribe el operador, por ejemplo al pasar por un punto de control o al registrar una incidencia.
+- Cada entrada conserva cuándo ocurrió el hecho, cuándo se anotó y qué usuario lo registró. Ese usuario se toma de la sesión iniciada, para que no se pueda escribir un nombre cualquiera.
+
+
+DIAPOSITIVA 13 · Administración e indicadores
+- La administración de usuarios tiene su propia parte de la aplicación. Desde ahí, un administrador crea cuentas, cambia permisos y puede desactivar a alguien sin perder su historial.
+- En la captura vemos el resumen operativo. Permite hacerse una idea de cuántos envíos hay en cada estado, qué actividad tienen los recursos y cuántas incidencias aparecen en el periodo elegido.
+
+
+DIAPOSITIVA 14 · Estrategia de validación
+- Para comprobar el trabajo usé pruebas a distintos niveles. Hay 139 pruebas de backend, 33 de frontend y 4 de sistema, una por cada caso de uso que vimos antes.
+- En las reglas donde dos personas podrían actuar al mismo tiempo, probé además con PostgreSQL real para verificar que la concurrencia era gestionada de forma adecuada. 
+
+
+DIAPOSITIVA 15 · Despliegue reproducible
+- Cuando el proyecto pasa CI, se preparan versiones listas para ejecutar de la web y del servidor. 
+- Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Y un procedimiento automático comprueba después que responde y qué versión está instalada.
+- Para la demostración, el acceso se hace por HTTPS, mediante un túnel saliente, lo que permite utilizar la aplicación desde fuera sin publicar directamente los puertos de los contenedores.
+
+
+DIAPOSITIVA 16 · Evaluación del resultado
+- Volviendo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso, cumple los estándares de calidad con pruebas por capas y reglas de concurrencia y permite reproducibilidad con CI/CD documentado
+- Sin embargo, no puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales.
+
+
+DIAPOSITIVA 17 · Conclusiones
+- Para terminar. TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla.
+Muchas gracias por vuestra atención. Quedo a vuestra disposición para las preguntas.
