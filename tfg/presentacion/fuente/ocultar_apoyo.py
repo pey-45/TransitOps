@@ -21,7 +21,7 @@ with zipfile.ZipFile(source) as src, zipfile.ZipFile(target, 'w', zipfile.ZIP_DE
         if match:
             doc = etree.fromstring(data)
             number = int(match[1])
-            if number > 18:
+            if number > 17:
                 doc.set('show', '0')
             if number in crops:
                 blip = doc.find('.//p:pic/p:blipFill', ns)

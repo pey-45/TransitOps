@@ -8,7 +8,7 @@ Material de defensa del Trabajo Fin de Grado de Pablo Manzanares López, dirigid
 - [PDF para proyectar](entrega/TransitOps_Presentacion_TFG.pdf).
 - [Guion de exposición y tiempos](entrega/Guion_defensa_TransitOps.md).
 
-La exposición principal consta de **18 diapositivas** y tiene una pauta de **16 minutos y 50 segundos**. Los tiempos son orientativos y deben contrastarse en el ensayo.
+La exposición principal consta de **17 diapositivas** y tiene una pauta de **17 minutos y 10 segundos**. Los tiempos son orientativos y deben contrastarse en el ensayo.
 
 Hay cuatro diapositivas de apoyo: trazabilidad de requisitos, concurrencia y seguridad, planificación y coste, y evolución de las pruebas. Están ocultas en el pase normal del PowerPoint y se pueden abrir desde la vista del moderador durante las preguntas. El PDF las conserva al final, tras las conclusiones.
 

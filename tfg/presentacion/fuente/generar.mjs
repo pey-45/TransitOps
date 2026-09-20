@@ -480,7 +480,7 @@ const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 const total = content.slice(0, 18).reduce((sum, item) => sum + item.seconds, 0);
 let guide = '# Guion de defensa de TransitOps\n\n';
 guide += `Duración objetivo: **${mmss(total)}**. Diapositivas 1–18 para la exposición; 19–22 son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo.\n\n`;
-guide += 'La defensa está organizada en siete secciones visibles. La diapositiva 2 presenta el recorrido y el rótulo superior identifica la sección actual en todo momento. Las capturas proceden de la memoria y usan datos de prueba o demostración.\n\n';
+guide += 'Este texto está escrito para decirlo en voz alta. Úsalo como apoyo y adáptalo a tu forma de hablar: no hace falta memorizarlo palabra por palabra. Las referencias son para preparar posibles preguntas, no para leerlas durante la exposición. Las capturas usan datos de prueba o demostración.\n\n';
 guide += '| Diapositiva | Sección | Duración | Acumulado |\n| --- | --- | ---: | ---: |\n';
 for (let i = 0; i < 18; i++) {
   cumulative += content[i].seconds;

@@ -2,155 +2,148 @@
   {
     "title": "TransitOps",
     "section": "Portada",
-    "seconds": 25,
+    "seconds": 30,
     "source": "Memoria, portada y capítulo 1, pp. 1–3.",
-    "notes": "Buenos días. Soy Pablo Manzanares López y voy a presentar TransitOps, mi Trabajo Fin de Grado. El proyecto recorre el ciclo de vida completo de una aplicación de gestión de transportes, desde el análisis de necesidades hasta su validación y despliegue."
+    "notes": "Buenos días. Soy Pablo Manzanares López y voy a presentar TransitOps, mi Trabajo Fin de Grado. Es una aplicación para organizar el trabajo diario de una empresa de transporte. Además de enseñar lo que hace, quiero contar cómo pasé de una necesidad inicial a un sistema que se puede probar y poner en marcha."
   },
   {
     "title": "Estructura de la presentación",
     "section": "Recorrido",
     "seconds": 30,
     "source": "Estructura de la defensa elaborada a partir de los capítulos 1–13 de la memoria.",
-    "notes": "La exposición sigue el mismo razonamiento con el que se construyó el proyecto. Primero presentaré el problema, los objetivos y el alcance. Después explicaré la metodología y las decisiones de diseño. La parte central mostrará el producto mediante un flujo operativo. Terminaré con la validación, el despliegue y una evaluación crítica del resultado."
+    "notes": "Voy a seguir un recorrido sencillo. Primero explicaré el problema y qué decidí incluir en el proyecto. Después contaré cómo lo fui construyendo y por qué elegí esta arquitectura. En la parte central veremos un envío de principio a fin. Por último, enseñaré cómo comprobé el resultado, cómo lo desplegué y qué límites tiene todavía."
   },
   {
     "title": "Problema de partida",
     "section": "01 · Problema y objetivos",
-    "seconds": 50,
+    "seconds": 55,
     "source": "Memoria, capítulos 1 y 4.1, pp. 1–3 y 15. docs/ClientRequirements.md.",
-    "notes": "El caso de partida es una pyme de transporte que coordina vehículos, conductores, clientes y envíos. Cuando la información queda repartida entre hojas de cálculo, mensajes y llamadas, responder qué recurso está disponible o qué ocurrió con una entrega exige reconstruir varias fuentes. Esto favorece dobles reservas, el uso de datos obsoletos y la pérdida de autoría de las incidencias. El caso de negocio se definió mediante una entrevista simulada, por lo que el trabajo no afirma mejoras medidas en una empresa real."
+    "notes": "Imaginemos una pequeña empresa de transporte. Una persona lleva los vehículos en una hoja de cálculo, otra confirma conductores por teléfono y las incidencias llegan por mensajes. Cuando hay que preparar un envío, cuesta saber si un recurso está libre de verdad. Y, si surge un problema durante el trayecto, también cuesta reconstruir qué pasó y quién lo registró.\n\nTransitOps nace para reunir esa información en un mismo lugar. Conviene aclarar algo desde el principio: la empresa y la entrevista de partida son simuladas. El proyecto demuestra una solución técnica; no he medido mejoras en una empresa real."
   },
   {
     "title": "Objetivos y criterios de éxito",
     "section": "01 · Problema y objetivos",
-    "seconds": 55,
+    "seconds": 60,
     "source": "Memoria, apartados 1.2–1.3, pp. 2–3.",
-    "notes": "El objetivo principal fue construir una aplicación web mantenible para centralizar la operación diaria y demostrar el ciclo de vida completo que la produce. El resultado debía permitir gestionar datos maestros, planificar envíos, asignar recursos, controlar estados y consultar una cronología verificable. El proyecto se consideraría completo si cubría los cuatro casos de uso de extremo a extremo, mantenía trazabilidad entre requisitos y pruebas, podía ejecutarse de forma reproducible y quedaba accesible en un entorno desplegado."
+    "notes": "Mi objetivo era construir una aplicación útil para esas tareas diarias y, al mismo tiempo, mostrar el proceso completo de ingeniería que hay detrás. La aplicación debía permitir preparar los datos de clientes y recursos, crear envíos, asignar vehículo y conductor, seguir su estado y consultar lo ocurrido después.\n\nPara saber si el trabajo estaba terminado, fijé cuatro señales concretas: que los casos de uso funcionaran de principio a fin, que las reglas importantes tuvieran pruebas, que otra persona pudiera poner el sistema en marcha siguiendo la documentación y que existiera un despliegue accesible. Así puedo evaluar el resultado con algo más que una lista de pantallas."
   },
   {
     "title": "Requisitos y alcance",
     "section": "02 · Requisitos y alcance",
-    "seconds": 60,
+    "seconds": 65,
     "source": "Memoria, capítulo 4, pp. 15–21. docs/Requirements.md.",
-    "notes": "La especificación contiene catorce requisitos funcionales, diecisiete reglas de negocio y seis requisitos no funcionales. El operador gestiona catálogos, envíos, asignaciones, estados y eventos. El administrador añade la gestión de usuarios. Conductores y clientes son entidades del dominio, no usuarios del sistema. El alcance se limita al núcleo operativo. La optimización de rutas, el GPS, la facturación y el acceso de clientes externos quedan fuera para reservar esfuerzo a la calidad, la reproducibilidad y la evaluación del producto."
+    "notes": "A partir de la entrevista redacté catorce funciones que debía ofrecer la aplicación, diecisiete reglas sobre cómo debe comportarse y seis requisitos de calidad. Aquí me interesa sobre todo aclarar quién la usa. El operador se ocupa del trabajo diario: vehículos, conductores, clientes y envíos. El administrador también puede hacer ese trabajo, pero además gestiona las cuentas y sus permisos. Los conductores y los clientes aparecen como datos en la aplicación; no entran en ella con una cuenta propia.\n\nAcoté el proyecto al núcleo de la operación. Por eso no incluí optimización de rutas, seguimiento GPS ni facturación. Eran ampliaciones posibles, pero no hacían falta para demostrar el recorrido completo con calidad."
   },
   {
     "title": "Casos de uso definidos en la memoria",
     "section": "02 · Requisitos y alcance",
-    "seconds": 55,
+    "seconds": 65,
     "source": "Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.",
-    "notes": "La memoria define cuatro casos de uso concretos. En CU-1, el instalador crea el primer administrador y el punto de arranque queda bloqueado. En CU-2 intervienen dos roles en momentos distintos: el administrador crea la cuenta y el operador realiza el primer acceso y cambia la contraseña inicial. En CU-3, el operador ejecuta un envío de principio a fin y deja una cronología verificable. En CU-4, el administrador desactiva una cuenta sin borrar la actividad que ya produjo. Operador y administrador son roles separados; la tabla indica quién actúa en cada recorrido."
+    "notes": "La memoria concreta ese alcance en cuatro situaciones. La primera ocurre una sola vez: quien instala el sistema crea la primera cuenta de administrador. Después, esa vía de entrada ya no se puede repetir.\n\nEn la segunda, el administrador crea una cuenta y, más tarde, el operador que la recibe entra y cambia su contraseña inicial. Son dos roles distintos que intervienen en momentos diferentes. La tercera situación es el trabajo principal: el operador lleva un envío desde su planificación hasta su cierre. Y la cuarta vuelve al administrador: puede retirar el acceso a una persona sin borrar lo que hizo antes. Estos son los cuatro casos de uso que luego compruebo en las pruebas de sistema."
   },
   {
     "title": "Metodología incremental",
     "section": "03 · Metodología",
-    "seconds": 70,
+    "seconds": 75,
     "source": "Memoria, capítulo 3 y tabla 3.1, pp. 9–14. docs/Roadmap.md.",
-    "notes": "El desarrollo se organizó en incrementos verticales. Cada sprint añadió una capacidad completa, con datos, servicio, API, interfaz y pruebas. El primer sprint dejó un esqueleto autenticado que atravesaba todas las capas. Los siguientes añadieron catálogos, envíos, operación, historial y administración. El séptimo consolidó concurrencia, seguridad, pruebas de sistema y despliegue. El modelo conceptual se diseñó al principio para evitar contradicciones, mientras el esquema físico evolucionó mediante migraciones. Cada incremento se cerró solo cuando el flujo funcionaba integrado y sus comprobaciones quedaban documentadas."
+    "notes": "Organicé el desarrollo en siete etapas. En cada una intenté dejar una parte que ya se pudiera usar, con su pantalla, su lógica en el servidor, sus datos y sus pruebas. Empecé por el acceso al sistema. Después llegaron las fichas de vehículos, conductores y clientes, seguidas de los envíos. Más adelante añadí las asignaciones, el seguimiento y la administración. La última etapa se dedicó a reforzar la seguridad, comprobar el sistema completo y desplegarlo.\n\nHay una decisión importante detrás de esta forma de trabajar. Diseñé desde el principio cómo se relacionaban las piezas principales, para evitar contradicciones. Pero fui creando las tablas y las funciones a medida que cada etapa las necesitaba. Al cerrar una etapa, comprobaba el recorrido completo, no solo una parte aislada."
   },
   {
     "title": "Arquitectura del sistema",
     "section": "04 · Diseño y arquitectura",
-    "seconds": 65,
+    "seconds": 70,
     "source": "Memoria, capítulo 5 y figura 5.1, pp. 22–24. docs/design/IntegrationArchitecture.md.",
-    "notes": "La solución separa una SPA React con TypeScript, una API ASP.NET Core sobre .NET 10 y una base PostgreSQL mediante Entity Framework Core. Nginx sirve la interfaz y reenvía las peticiones bajo el mismo origen. La API concentra la autorización, la validación y las reglas de negocio. El backend se organiza por funcionalidades y los controladores delegan en servicios, lo que permite probar las reglas sin levantar todo el servidor. Una API modular única aporta separación suficiente para este alcance sin introducir coordinación distribuida."
+    "notes": "Esta imagen muestra el camino que sigue una acción del usuario. La persona utiliza la interfaz web, hecha con React y TypeScript. Cuando, por ejemplo, crea un envío, la interfaz se comunica con el servidor, desarrollado en .NET. Ahí se comprueba si tiene permiso y si la operación respeta las reglas. Solo entonces se guarda el cambio en PostgreSQL.\n\nNginx entrega la interfaz y dirige esas peticiones al servidor desde una misma dirección. Elegí una única aplicación de servidor, organizada por funciones. Para este tamaño de proyecto me permitió separar responsabilidades y probarlas con claridad, sin añadir la complejidad de varios servicios que tendrían que coordinarse entre sí."
   },
   {
     "title": "Modelo y reglas del dominio",
     "section": "04 · Diseño y arquitectura",
-    "seconds": 65,
+    "seconds": 70,
     "source": "Memoria, apartados 5.2 y 6.4–6.7, pp. 23 y 27–32. Figura 5.2.",
-    "notes": "El envío es el centro del modelo. Se vincula con un cliente y puede recibir una pareja de vehículo y conductor. Los eventos pertenecen al envío y conservan la identidad del usuario que actúa. Los catálogos y usuarios emplean baja lógica para preservar referencias históricas. El ciclo de estados se expresa mediante acciones explícitas y cerradas: un envío nace planificado, puede iniciarse si tiene recursos y termina entregado o cancelado. PostgreSQL refuerza las invariantes que deben mantenerse incluso cuando llegan peticiones simultáneas."
+    "notes": "El envío es la pieza central del modelo. Puede estar vinculado a un cliente y, cuando se prepara para salir, recibe un vehículo y un conductor como pareja. Todo lo que ocurre después queda asociado a ese envío.\n\nTambién necesitaba conservar la historia. Si un vehículo o una persona deja de estar disponible, desactivo su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Los hechos del trayecto tampoco se editan ni se eliminan. Y las reglas más delicadas, como impedir que dos envíos abiertos reserven el mismo recurso, están reforzadas en la base de datos. Así se mantienen incluso si llegan dos peticiones casi a la vez."
   },
   {
     "title": "Flujo operativo completo",
     "section": "05 · Demostración funcional",
     "seconds": 60,
     "source": "Memoria, capítulos 6–7 y casos de uso 2–3, pp. 18–20 y 27–46.",
-    "notes": "La demostración funcional sigue un único envío. Primero se preparan los catálogos y se crea el envío. Después se asignan conjuntamente un vehículo y un conductor. El operador inicia el trayecto, registra puntos de control o incidencias y termina la operación con la entrega o la cancelación. El resumen refleja el resultado. Este recorrido es útil porque conecta la mayor parte del dominio y permite observar las reglas en la interfaz sin separar artificialmente frontend y backend."
+    "notes": "Para explicar el producto voy a seguir un solo envío. Primero preparo los datos necesarios: cliente, vehículo y conductor. Creo el envío con sus fechas y su carga prevista. Después asigno los dos recursos y comienzo el trayecto. Durante el recorrido puedo anotar un punto de control o una incidencia. Finalmente, el envío termina como entregado o cancelado, y su historia queda disponible para consultarla.\n\nEste ejemplo conecta las pantallas con las reglas que acabamos de ver. También deja claro que un envío cerrado no vuelve a un estado anterior: si hubo un error, debe quedar constancia en el historial."
   },
   {
     "title": "Planificación y asignación",
     "section": "05 · Demostración funcional",
-    "seconds": 65,
+    "seconds": 70,
     "source": "Memoria, apartado 6.6 y figura 7.5, pp. 29–30 y 39. Datos de prueba del Sprint 4.",
-    "notes": "El envío se crea en estado planificado y la asignación recibe siempre el vehículo y el conductor juntos. La aplicación impide utilizar recursos inactivos o ya ocupados en otro envío abierto. La capacidad insuficiente se trata de forma distinta: la asignación se confirma y el operador recibe una advertencia. En el ejemplo, la carga estimada es de cuatro mil quinientos kilos y el vehículo registra una capacidad de tres mil. La regla de negocio pedía informar, no bloquear."
+    "notes": "Aquí se ve una de las decisiones de negocio más fáciles de comprobar. Mientras el envío está planificado, se le asignan juntos un vehículo y un conductor. Si uno de ellos ya está ocupado en otro envío que sigue abierto, la aplicación rechaza la asignación. Así evita reservar el mismo recurso dos veces.\n\nLa capacidad del vehículo se trata de otra manera. En esta captura de prueba, la carga estimada es de 4.500 kilos y el vehículo admite 3.000. El sistema avisa claramente de la diferencia, pero permite continuar. Esa fue la regla definida para este caso: advertir al operador, no decidir por él. La captura utiliza datos de prueba."
   },
   {
     "title": "Ejecución y trazabilidad",
     "section": "05 · Demostración funcional",
-    "seconds": 65,
+    "seconds": 70,
     "source": "Memoria, apartado 6.7 y figura 7.8, pp. 30–32 y 42. Datos de prueba del Sprint 5.",
-    "notes": "Durante el trayecto, el sistema combina eventos automáticos con puntos de control e incidencias introducidos por el operador. El historial solo permite añadir y consultar. Distingue cuándo ocurrió un hecho de cuándo se registró y obtiene el autor de la identidad autenticada. Los cambios de estado y su evento automático se confirman en la misma transacción, de forma que el estado actual y la explicación de cómo se alcanzó no puedan divergir."
+    "notes": "Una vez iniciado el trayecto, el historial va reuniendo dos tipos de hechos. Algunos los crea el sistema cuando cambia el estado del envío. Otros los escribe el operador, por ejemplo al pasar por un punto de control o al registrar una incidencia.\n\nCada entrada conserva cuándo ocurrió el hecho, cuándo se anotó y qué usuario lo registró. Ese usuario se toma de la sesión iniciada, para que no se pueda escribir un nombre cualquiera. Además, cuando el sistema cambia un estado, guarda ese cambio y su anotación en el historial a la vez. De ese modo, el envío no queda marcado como «entregado» sin el hecho que explica cuándo se entregó. La imagen muestra datos de prueba."
   },
   {
     "title": "Administración e indicadores",
     "section": "05 · Demostración funcional",
-    "seconds": 50,
+    "seconds": 55,
     "source": "Memoria, apartados 6.8 y 7.6, pp. 32–33 y 44–46. Datos de demostración del Sprint 6.",
-    "notes": "El administrador puede crear cuentas, cambiar roles, activar o desactivar usuarios y reasignar contraseñas. La API protege que siempre permanezca al menos un administrador activo. El panel resume los envíos por estado, la actividad de vehículos y conductores y las incidencias del periodo seleccionado. Los indicadores sirven para orientar la operación y enlazan con los listados filtrados. La captura usa datos de demostración y no representa actividad empresarial real."
+    "notes": "La administración de usuarios tiene su propia parte de la aplicación. Desde ahí, un administrador crea cuentas, cambia permisos y puede desactivar a alguien sin perder su historial. Hay una protección importante: no puede dejar el sistema sin ningún administrador activo.\n\nEn la captura vemos el resumen operativo. Permite hacerse una idea de cuántos envíos hay en cada estado, qué actividad tienen los recursos y cuántas incidencias aparecen en el periodo elegido. Sirve como punto de entrada a los listados filtrados; no pretende ser un sistema de análisis avanzado. Los números de la captura son de demostración, no de una empresa real."
   },
   {
     "title": "Estrategia de validación",
     "section": "06 · Validación y despliegue",
-    "seconds": 70,
+    "seconds": 75,
     "source": "Memoria, capítulo 8, pp. 48–55. Recuentos documentados al cierre del Sprint 7.",
-    "notes": "La validación se reparte según el tipo de riesgo. Ciento treinta y nueve pruebas de backend comprueban reglas, contratos HTTP, persistencia y concurrencia. Treinta y tres pruebas de frontend verifican los flujos de interacción. Cuatro pruebas de sistema con Playwright recorren los casos de uso sobre la composición completa. Las restricciones de concurrencia se prueban contra PostgreSQL real, y la integración continua repite compilación, suites y migraciones sobre un entorno limpio. Los recuentos indican casos ejecutados, no porcentaje de cobertura."
+    "notes": "Para comprobar el trabajo usé pruebas a distintos niveles. Hay 139 pruebas del servidor que se centran en las reglas, los permisos y la forma en que responde la aplicación. Otras 33 comprueban las acciones que una persona realiza desde la interfaz. Y hay cuatro pruebas que recorren el sistema completo, una por cada caso de uso que vimos antes.\n\nEn las reglas donde dos personas podrían actuar al mismo tiempo, probé también con PostgreSQL real; una simulación sencilla no bastaba para comprobar ese riesgo. Cada cambio pasa además por una comprobación automática antes de publicarse. Estos números son pruebas ejecutadas, no un porcentaje de cobertura ni una medida de calidad por sí solos."
   },
   {
     "title": "Despliegue reproducible",
     "section": "06 · Validación y despliegue",
     "seconds": 65,
     "source": "Memoria, capítulo 9, pp. 56–60. docs/Deployment.md.",
-    "notes": "Tras superar la validación, GitHub Actions publica las imágenes de la API y la web en GHCR. Una máquina Ubuntu descarga esas imágenes y aplica la misma composición de contenedores descrita en la documentación. Un script comprueba la configuración, la salud, la revisión y los digests desplegados. Systemd ejecuta periódicamente ese procedimiento. El acceso público usa un túnel saliente de Cloudflare, de modo que ningún puerto de los contenedores queda publicado en el host. Es un entorno de demostración reproducible, no un servicio en producción."
+    "notes": "Quería que el resultado pudiera arrancarse fuera de mi ordenador. Cuando el proyecto supera las comprobaciones automáticas, se preparan versiones listas para ejecutar de la web y del servidor. Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Un procedimiento automático comprueba después que responde y qué versión está instalada.\n\nPara la demostración, el acceso se hace por HTTPS mediante un túnel saliente. Eso permite abrir la aplicación desde fuera sin publicar directamente los puertos de los contenedores. Es una forma reproducible de enseñar el sistema, pero no la presento como un servicio listo para producción."
   },
   {
     "title": "Evaluación del resultado",
     "section": "07 · Conclusiones y trabajo futuro",
-    "seconds": 60,
+    "seconds": 65,
     "source": "Memoria, capítulos 10, 12 y 13, pp. 61–62 y 66–69.",
-    "notes": "El producto cubre RF-01 a RF-14 y los cuatro casos de uso completos. La trazabilidad relaciona cada necesidad con su diseño, su implementación y su evidencia. La arquitectura demostró que podía crecer por incrementos sin abandonar la integración de extremo a extremo. El despliegue verificó además que los procedimientos podían reproducirse fuera de la máquina de desarrollo. El resultado cumple los criterios técnicos definidos al inicio, aunque no permite afirmar impacto empresarial porque no se evaluó con usuarios reales."
-  },
-  {
-    "title": "Límites y trabajo futuro",
-    "section": "07 · Conclusiones y trabajo futuro",
-    "seconds": 55,
-    "source": "Memoria, apartados 9.5, 12.2 y capítulo 13, pp. 60 y 66–69.",
-    "notes": "La evaluación tiene límites claros. El caso de negocio es simulado, no hubo pruebas con usuarios ni pruebas de carga, y el despliegue carece de alojamiento estable, copias y métricas. Además, las imágenes publicadas se construyen de nuevo después de las pruebas de sistema, aunque parten del mismo commit. La continuación prioritaria sería validar el núcleo con usuarios y estabilizar la operación. Solo después tendría sentido ampliar el producto con rutas, GPS, facturación o acceso externo."
+    "notes": "Si vuelvo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso. También puedo seguir el rastro desde una necesidad hasta la parte de la aplicación que la resuelve y la prueba que la comprueba. Las distintas etapas terminaron integradas en una sola aplicación, y el despliegue mostró que podía ponerla en marcha fuera del entorno de desarrollo.\n\nEsta evaluación tiene un límite importante: puedo afirmar que el sistema funciona según los requisitos y las pruebas realizadas. No puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales."
   },
   {
     "title": "Conclusiones",
     "section": "07 · Conclusiones y trabajo futuro",
-    "seconds": 45,
+    "seconds": 50,
     "source": "Memoria, capítulo 13, pp. 68–69.",
-    "notes": "TransitOps entrega un núcleo operativo completo y demostrable. El proyecto vincula las necesidades iniciales con decisiones de diseño, reglas de negocio, pruebas y un despliegue reproducible. La principal aportación del trabajo está en esa continuidad: cada incremento produjo una capacidad utilizable y dejó evidencia suficiente para evaluar el resultado. Muchas gracias. Quedo a vuestra disposición para las preguntas."
+    "notes": "Para terminar, TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla. El valor del trabajo está tanto en las funciones del sistema como en poder explicar y verificar las decisiones que las hicieron posibles.\n\nEl producto todavía necesita validación con personas reales, pero el núcleo operativo está construido y documentado. Muchas gracias por vuestra atención. Quedo a vuestra disposición para las preguntas."
   },
   {
     "title": "Trazabilidad de requisitos",
     "section": "Anexo",
     "seconds": 0,
     "source": "Memoria, capítulo 10, pp. 61–62. docs/Requirements.md y docs/Roadmap.md.",
-    "notes": "Diapositiva de apoyo para preguntas sobre la relación entre requisitos, incrementos y evidencias."
+    "notes": "Si preguntan cómo sé que una función responde a una necesidad, esta tabla permite seguir su rastro. Cada requisito se relaciona con la etapa en la que se implementó y con la prueba o evidencia correspondiente. Conviene escoger una fila concreta y recorrerla de izquierda a derecha, en lugar de leer toda la tabla."
   },
   {
     "title": "Concurrencia y seguridad",
     "section": "Anexo",
     "seconds": 0,
     "source": "Memoria, apartados 6.1–6.3, 6.6, 6.8 y 8.3, pp. 25–33 y 52–54.",
-    "notes": "Diapositiva de apoyo para explicar las garantías de doble reserva, último administrador y revocación de sesiones."
+    "notes": "Si preguntan por la doble reserva, explicaría que la aplicación la comprueba al asignar recursos y que la base de datos añade una protección cuando llegan operaciones simultáneas. Si preguntan por las cuentas, señalaría que no se puede desactivar el último administrador. Y, al retirar el acceso, una sesión abierta deja de ser válida sin tener que borrar el historial del usuario."
   },
   {
     "title": "Planificación y coste",
     "section": "Anexo",
     "seconds": 0,
     "source": "Memoria, apartados 3.3–3.4 y tablas 3.2–3.3, pp. 11–13.",
-    "notes": "Diapositiva de apoyo. Las 300 horas y los 6.137,50 euros son estimaciones académicas, no registros reales de dedicación o gasto."
+    "notes": "Las 300 horas y los 6.137,50 euros de esta diapositiva son una estimación académica para planificar y valorar el trabajo. No son un registro de horas reales ni una factura. Si preguntan por el coste, distinguiría claramente esa estimación del esfuerzo efectivamente medido, que no se presenta aquí."
   },
   {
     "title": "Evolución de las pruebas",
     "section": "Anexo",
     "seconds": 0,
     "source": "Memoria, apartado 8.2, pp. 49–52.",
-    "notes": "Diapositiva de apoyo con los recuentos acumulados de pruebas al cierre de cada sprint. No representan porcentaje de cobertura."
+    "notes": "La tabla muestra cómo creció el número de pruebas a medida que se añadían funciones. Los recuentos son acumulados al cierre de cada etapa. Sirven para ver que las comprobaciones acompañaron al desarrollo, pero no expresan qué porcentaje del código está cubierto ni garantizan por sí solos que no haya errores."
   }
 ]
