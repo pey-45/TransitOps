@@ -1,10 +1,8 @@
 # Guion de defensa de TransitOps
 
-**Duración objetivo: 17:10.** Diapositivas 1–17 para la exposición. Las 18–21 son apoyo y están ocultas en el PowerPoint.
+Duración objetivo: **15:07**, incluida la demo en vídeo de 2:12. Diapositivas 1–13 para la exposición; 14–17 son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo.
 
-Este texto está escrito para decirlo en voz alta: frases cortas, una idea por frase. Úsalo como apoyo y adáptalo a tu forma de hablar; no hace falta memorizarlo palabra por palabra. Las cifras van escritas tal y como se dicen. Los bloques *Fuente* no se leen: son para preparar el turno de preguntas. Todas las capturas usan datos de prueba o de demostración, y conviene decirlo cuando aparezcan.
-
-### Reparto de tiempos
+Este texto está escrito para decirlo en voz alta. Úsalo como apoyo y adáptalo a tu forma de hablar: no hace falta memorizarlo palabra por palabra. Las referencias son para preparar posibles preguntas, no para leerlas durante la exposición. Las capturas usan datos de prueba o demostración.
 
 | Diapositiva | Sección | Duración | Acumulado |
 | --- | --- | ---: | ---: |
@@ -17,285 +15,208 @@ Este texto está escrito para decirlo en voz alta: frases cortas, una idea por f
 | 7. Metodología incremental | 03 · Metodología | 1:15 | 6:20 |
 | 8. Arquitectura del sistema | 04 · Diseño y arquitectura | 1:10 | 7:30 |
 | 9. Modelo y reglas del dominio | 04 · Diseño y arquitectura | 1:10 | 8:40 |
-| 10. Flujo operativo completo | 05 · Demostración funcional | 1:00 | 9:40 |
-| 11. Planificación y asignación | 05 · Demostración funcional | 1:10 | 10:50 |
-| 12. Ejecución y trazabilidad | 05 · Demostración funcional | 1:10 | 12:00 |
-| 13. Administración e indicadores | 05 · Demostración funcional | 0:55 | 12:55 |
-| 14. Estrategia de validación | 06 · Validación y despliegue | 1:15 | 14:10 |
-| 15. Despliegue reproducible | 06 · Validación y despliegue | 1:05 | 15:15 |
-| 16. Evaluación del resultado | 07 · Conclusiones y trabajo futuro | 1:05 | 16:20 |
-| 17. Conclusiones | 07 · Conclusiones y trabajo futuro | 0:50 | 17:10 |
-
----
+| Vídeo DEMO | Demostración funcional | 2:12 | 10:52 |
+| 10. Estrategia de validación | 05 · Validación y despliegue | 1:15 | 12:07 |
+| 11. Despliegue reproducible | 05 · Validación y despliegue | 1:05 | 13:12 |
+| 12. Evaluación del resultado | 06 · Conclusiones y trabajo futuro | 1:05 | 14:17 |
+| 13. Conclusiones | 06 · Conclusiones y trabajo futuro | 0:50 | 15:07 |
 
 ## 1. TransitOps
 
-**Portada** — 0:30 · tramo 0:00–0:30
+**Portada**
 
-Buenos días. Soy Pablo Manzanares López y vengo a presentar TransitOps, mi Trabajo Fin de Grado. Es una aplicación para organizar el trabajo diario de una empresa de transporte.
+Tiempo orientativo: 0:30. Tramo 0:00–0:30.
 
-Además de enseñar lo que hace, quiero contaros cómo llegué hasta aquí. Es decir, cómo pasé de una necesidad inicial a un sistema que se puede probar y poner en marcha.
+Buenos días. Soy Pablo Manzanares López y voy a presentar TransitOps, mi Trabajo Fin de Grado. Es una aplicación para organizar el trabajo diario de una empresa de transporte. Además de enseñar lo que hace, quiero contar cómo pasé de una necesidad inicial a un sistema que se puede probar y poner en marcha.
 
-*Fuente (no leer): Memoria, portada y capítulo 1, pp. 1–3.*
-
----
+Fuente: Memoria, portada y capítulo 1, pp. 1–3.
 
 ## 2. Estructura de la presentación
 
-**Recorrido** — 0:30 · tramo 0:30–1:00
+**Recorrido**
 
-El recorrido va a ser sencillo. Primero explicaré el problema y qué decidí incluir en el proyecto. Después contaré cómo lo fui construyendo y por qué elegí esta arquitectura.
+Tiempo orientativo: 0:30. Tramo 0:30–1:00.
 
-En la parte central veremos un envío de principio a fin. Y para terminar, enseñaré cómo comprobé el resultado, cómo lo desplegué y qué límites tiene todavía.
+Voy a seguir un recorrido sencillo. Primero explicaré el problema y qué decidí incluir en el proyecto. Después contaré cómo lo fui construyendo y por qué elegí esta arquitectura. A continuación veremos una demo grabada de un envío de principio a fin. Por último, enseñaré cómo comprobé el resultado, cómo lo desplegué y qué límites tiene todavía.
 
-*Fuente (no leer): estructura elaborada a partir de los capítulos 1–13 de la memoria.*
-
----
+Fuente: Estructura de la defensa elaborada a partir de los capítulos 1–13 de la memoria.
 
 ## 3. Problema de partida
 
-**01 · Problema y objetivos** — 0:55 · tramo 1:00–1:55
+**01 · Problema y objetivos**
 
-Imaginemos una pequeña empresa de transporte. Una persona lleva los vehículos en una hoja de cálculo. Otra confirma conductores por teléfono. Y las incidencias llegan por mensajes.
+Tiempo orientativo: 0:55. Tramo 1:00–1:55.
 
-Cuando hay que preparar un envío, cuesta saber si un recurso está libre de verdad. Y si surge un problema durante el trayecto, cuesta reconstruir qué pasó y quién lo registró.
+Imaginemos una pequeña empresa de transporte. Una persona lleva los vehículos en una hoja de cálculo, otra confirma conductores por teléfono y las incidencias llegan por mensajes. Cuando hay que preparar un envío, cuesta saber si un recurso está libre de verdad. Y, si surge un problema durante el trayecto, también cuesta reconstruir qué pasó y quién lo registró.
 
-TransitOps nace para reunir toda esa información en un mismo lugar. Conviene que aclare algo desde el principio: la empresa y la entrevista de partida son simuladas. El proyecto demuestra una solución técnica; no he medido mejoras en una empresa real.
+TransitOps nace para reunir esa información en un mismo lugar. Conviene aclarar algo desde el principio: la empresa y la entrevista de partida son simuladas. El proyecto demuestra una solución técnica; no he medido mejoras en una empresa real.
 
-*Fuente (no leer): Memoria, capítulos 1 y 4.1, pp. 1–3 y 15. docs/ClientRequirements.md.*
-
----
+Fuente: Memoria, capítulos 1 y 4.1, pp. 1–3 y 15. docs/ClientRequirements.md.
 
 ## 4. Objetivos y criterios de éxito
 
-**01 · Problema y objetivos** — 1:00 · tramo 1:55–2:55
+**01 · Problema y objetivos**
 
-Mi objetivo era doble. Por un lado, construir una aplicación útil para esas tareas diarias. Por otro, mostrar el proceso de ingeniería completo que hay detrás.
+Tiempo orientativo: 1:00. Tramo 1:55–2:55.
 
-La aplicación debía permitir preparar los datos de clientes y recursos, crear envíos, asignar vehículo y conductor, seguir su estado y consultar después lo ocurrido.
+Mi objetivo era construir una aplicación útil para esas tareas diarias y, al mismo tiempo, mostrar el proceso completo de ingeniería que hay detrás. La aplicación debía permitir preparar los datos de clientes y recursos, crear envíos, asignar vehículo y conductor, seguir su estado y consultar lo ocurrido después.
 
-Para saber si el trabajo estaba terminado, fijé cuatro señales concretas. Una: que los casos de uso funcionaran de principio a fin. Dos: que las reglas importantes tuvieran pruebas. Tres: que otra persona pudiera poner el sistema en marcha siguiendo la documentación. Y cuatro: que existiera un despliegue accesible. Así puedo evaluar el resultado con algo más que una lista de pantallas.
+Para saber si el trabajo estaba terminado, fijé cuatro señales concretas: que los casos de uso funcionaran de principio a fin, que las reglas importantes tuvieran pruebas, que otra persona pudiera poner el sistema en marcha siguiendo la documentación y que existiera un despliegue accesible. Así puedo evaluar el resultado con algo más que una lista de pantallas.
 
-*Fuente (no leer): Memoria, apartados 1.2–1.3, pp. 2–3.*
-
----
+Fuente: Memoria, apartados 1.2–1.3, pp. 2–3.
 
 ## 5. Requisitos y alcance
 
-**02 · Requisitos y alcance** — 1:05 · tramo 2:55–4:00
+**02 · Requisitos y alcance**
 
-A partir de la entrevista redacté catorce funciones que debía ofrecer la aplicación, diecisiete reglas sobre cómo debe comportarse y seis requisitos de calidad.
+Tiempo orientativo: 1:05. Tramo 2:55–4:00.
 
-Aquí me interesa aclarar sobre todo quién la usa. El operador se ocupa del trabajo diario: vehículos, conductores, clientes y envíos. El administrador también puede hacer ese trabajo, pero además gestiona las cuentas y sus permisos. Los conductores y los clientes aparecen como datos en la aplicación; no entran en ella con una cuenta propia.
+A partir de la entrevista redacté catorce funciones que debía ofrecer la aplicación, diecisiete reglas sobre cómo debe comportarse y seis requisitos de calidad. Aquí me interesa sobre todo aclarar quién la usa. El operador se ocupa del trabajo diario: vehículos, conductores, clientes y envíos. El administrador también puede hacer ese trabajo, pero además gestiona las cuentas y sus permisos. Los conductores y los clientes aparecen como datos en la aplicación; no entran en ella con una cuenta propia.
 
-Acoté el proyecto al núcleo de la operación. Por eso no incluí optimización de rutas, seguimiento por GPS ni facturación. Eran ampliaciones posibles, pero no hacían falta para demostrar el recorrido completo con calidad.
+Acoté el proyecto al núcleo de la operación. Por eso no incluí optimización de rutas, seguimiento GPS ni facturación. Eran ampliaciones posibles, pero no hacían falta para demostrar el recorrido completo con calidad.
 
-*Fuente (no leer): Memoria, capítulo 4, pp. 15–21. docs/Requirements.md.*
-
----
+Fuente: Memoria, capítulo 4, pp. 15–21. docs/Requirements.md.
 
 ## 6. Casos de uso definidos en la memoria
 
-**02 · Requisitos y alcance** — 1:05 · tramo 4:00–5:05
+**02 · Requisitos y alcance**
+
+Tiempo orientativo: 1:05. Tramo 4:00–5:05.
 
 La memoria concreta ese alcance en cuatro situaciones. La primera ocurre una sola vez: quien instala el sistema crea la primera cuenta de administrador. Después, esa vía de entrada ya no se puede repetir.
 
-En la segunda, el administrador crea una cuenta y, más tarde, el operador que la recibe entra y cambia su contraseña inicial. Son dos roles distintos que intervienen en momentos diferentes.
+En la segunda, el administrador crea una cuenta y, más tarde, el operador que la recibe entra y cambia su contraseña inicial. Son dos roles distintos que intervienen en momentos diferentes. La tercera situación es el trabajo principal: el operador lleva un envío desde su planificación hasta su cierre. Y la cuarta vuelve al administrador: puede retirar el acceso a una persona sin borrar lo que hizo antes. Estos son los cuatro casos de uso que luego compruebo en las pruebas de sistema.
 
-La tercera es el trabajo principal: el operador lleva un envío desde su planificación hasta su cierre. Y la cuarta vuelve al administrador, que puede retirar el acceso a una persona sin borrar lo que hizo antes. Estos son los cuatro casos de uso que luego compruebo en las pruebas de sistema.
-
-*Fuente (no leer): Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.*
-
----
+Fuente: Memoria, apartado 4.4, pp. 17–21. docs/Requirements.md.
 
 ## 7. Metodología incremental
 
-**03 · Metodología** — 1:15 · tramo 5:05–6:20
+**03 · Metodología**
 
-Organicé el desarrollo en siete etapas. En cada una intenté dejar una parte que ya se pudiera usar, con su pantalla, su lógica en el servidor, sus datos y sus pruebas.
+Tiempo orientativo: 1:15. Tramo 5:05–6:20.
 
-Empecé por el acceso al sistema. Después llegaron las fichas de vehículos, conductores y clientes, seguidas de los envíos. Más adelante añadí las asignaciones, el seguimiento y la administración. La última etapa se dedicó a reforzar la seguridad, comprobar el sistema completo y desplegarlo.
+Organicé el desarrollo en siete etapas. En cada una intenté dejar una parte que ya se pudiera usar, con su pantalla, su lógica en el servidor, sus datos y sus pruebas. Empecé por el acceso al sistema. Después llegaron las fichas de vehículos, conductores y clientes, seguidas de los envíos. Más adelante añadí las asignaciones, el seguimiento y la administración. La última etapa se dedicó a reforzar la seguridad, comprobar el sistema completo y desplegarlo.
 
-Detrás de esta forma de trabajar hay una decisión importante. Diseñé desde el principio cómo se relacionaban las piezas principales, para evitar contradicciones. Pero fui creando las tablas y las funciones a medida que cada etapa las necesitaba. Y al cerrar una etapa, comprobaba el recorrido completo, no solo una parte aislada.
+Hay una decisión importante detrás de esta forma de trabajar. Diseñé desde el principio cómo se relacionaban las piezas principales, para evitar contradicciones. Pero fui creando las tablas y las funciones a medida que cada etapa las necesitaba. Al cerrar una etapa, comprobaba el recorrido completo, no solo una parte aislada.
 
-*Fuente (no leer): Memoria, capítulo 3 y tabla 3.1, pp. 9–14. docs/Roadmap.md.*
-
----
+Fuente: Memoria, capítulo 3 y tabla 3.1, pp. 9–14. docs/Roadmap.md.
 
 ## 8. Arquitectura del sistema
 
-**04 · Diseño y arquitectura** — 1:10 · tramo 6:20–7:30
+**04 · Diseño y arquitectura**
 
-Esta imagen muestra el camino que sigue una acción del usuario. La persona utiliza la interfaz web, hecha con React y TypeScript. Cuando, por ejemplo, crea un envío, la interfaz se comunica con el servidor, desarrollado en punto NET. Ahí se comprueba si tiene permiso y si la operación respeta las reglas. Solo entonces se guarda el cambio en PostgreSQL.
+Tiempo orientativo: 1:10. Tramo 6:20–7:30.
 
-Nginx entrega la interfaz y dirige esas peticiones al servidor desde una misma dirección.
+Esta imagen muestra el camino que sigue una acción del usuario. La persona utiliza la interfaz web, hecha con React y TypeScript. Cuando, por ejemplo, crea un envío, la interfaz se comunica con el servidor, desarrollado en .NET. Ahí se comprueba si tiene permiso y si la operación respeta las reglas. Solo entonces se guarda el cambio en PostgreSQL.
 
-Elegí una única aplicación de servidor, organizada por funciones. Para este tamaño de proyecto me permitió separar responsabilidades y probarlas con claridad, sin añadir la complejidad de varios servicios que tendrían que coordinarse entre sí.
+Nginx entrega la interfaz y dirige esas peticiones al servidor desde una misma dirección. Elegí una única aplicación de servidor, organizada por funciones. Para este tamaño de proyecto me permitió separar responsabilidades y probarlas con claridad, sin añadir la complejidad de varios servicios que tendrían que coordinarse entre sí.
 
-*Fuente (no leer): Memoria, capítulo 5 y figura 5.1, pp. 22–24. docs/design/IntegrationArchitecture.md.*
-
----
+Fuente: Memoria, capítulo 5 y figura 5.1, pp. 22–24. docs/design/IntegrationArchitecture.md.
 
 ## 9. Modelo y reglas del dominio
 
-**04 · Diseño y arquitectura** — 1:10 · tramo 7:30–8:40
+**04 · Diseño y arquitectura**
+
+Tiempo orientativo: 1:10. Tramo 7:30–8:40.
 
 El envío es la pieza central del modelo. Puede estar vinculado a un cliente y, cuando se prepara para salir, recibe un vehículo y un conductor como pareja. Todo lo que ocurre después queda asociado a ese envío.
 
-También necesitaba conservar la historia. Si un vehículo o una persona deja de estar disponible, desactivo su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Los hechos del trayecto tampoco se editan ni se eliminan.
+También necesitaba conservar la historia. Si un vehículo o una persona deja de estar disponible, desactivo su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Los hechos del trayecto tampoco se editan ni se eliminan. Y las reglas más delicadas, como impedir que dos envíos abiertos reserven el mismo recurso, están reforzadas en la base de datos. Así se mantienen incluso si llegan dos peticiones casi a la vez.
 
-Y las reglas más delicadas están reforzadas en la base de datos. Por ejemplo, impedir que dos envíos abiertos reserven el mismo recurso. Así se mantienen incluso si llegan dos peticiones casi a la vez.
+A continuación reproduciré una demo grabada de dos minutos y doce segundos para mostrar el flujo operativo completo en la aplicación.
 
-*Fuente (no leer): Memoria, apartados 5.2 y 6.4–6.7, pp. 23 y 27–32. Figura 5.2.*
+Fuente: Memoria, apartados 5.2 y 6.4–6.7, pp. 23 y 27–32. Figura 5.2.
 
----
+## Vídeo DEMO
 
-## 10. Flujo operativo completo
+**Demostración funcional**
 
-**05 · Demostración funcional** — 1:00 · tramo 8:40–9:40
+Duración: 2:12. Reproducir DEMO.mp4 y comentar el flujo operativo en directo.
 
-Para explicar el producto voy a seguir un solo envío. Primero preparo los datos necesarios: cliente, vehículo y conductor. Creo el envío con sus fechas y su carga prevista. Después asigno los dos recursos y comienzo el trayecto. Durante el recorrido puedo anotar un punto de control o una incidencia. Y finalmente, el envío termina como entregado o cancelado, y su historia queda disponible para consultarla.
+## 10. Estrategia de validación
 
-Este ejemplo conecta las pantallas con las reglas que acabamos de ver. También deja clara una cosa: un envío cerrado no vuelve a un estado anterior. Si hubo un error, debe quedar constancia en el historial.
+**05 · Validación y despliegue**
 
-*Fuente (no leer): Memoria, capítulos 6–7 y casos de uso 2–3, pp. 18–20 y 27–46.*
+Tiempo orientativo: 1:15. Tramo 10:52–12:07.
 
----
+Para comprobar el trabajo usé pruebas a distintos niveles. Hay 139 pruebas del servidor que se centran en las reglas, los permisos y la forma en que responde la aplicación. Otras 33 comprueban las acciones que una persona realiza desde la interfaz. Y hay cuatro pruebas que recorren el sistema completo, una por cada caso de uso que vimos antes.
 
-## 11. Planificación y asignación
+En las reglas donde dos personas podrían actuar al mismo tiempo, probé también con PostgreSQL real; una simulación sencilla no bastaba para comprobar ese riesgo. Cada cambio pasa además por una comprobación automática antes de publicarse. Estos números son pruebas ejecutadas, no un porcentaje de cobertura ni una medida de calidad por sí solos.
 
-**05 · Demostración funcional** — 1:10 · tramo 9:40–10:50
+Fuente: Memoria, capítulo 8, pp. 48–55. Recuentos documentados al cierre del Sprint 7.
 
-Aquí se ve una de las decisiones de negocio más fáciles de comprobar. Mientras el envío está planificado, se le asignan juntos un vehículo y un conductor. Si uno de ellos ya está ocupado en otro envío que sigue abierto, la aplicación rechaza la asignación. Así evita reservar el mismo recurso dos veces.
+## 11. Despliegue reproducible
 
-La capacidad del vehículo se trata de otra manera. En esta captura de prueba, la carga estimada es de cuatro mil quinientos kilos y el vehículo admite tres mil. El sistema avisa claramente de la diferencia, pero permite continuar. Esa fue la regla definida para este caso: advertir al operador, no decidir por él. La captura utiliza datos de prueba.
+**05 · Validación y despliegue**
 
-*Fuente (no leer): Memoria, apartado 6.6 y figura 7.5, pp. 29–30 y 39. Datos de prueba del Sprint 4.*
+Tiempo orientativo: 1:05. Tramo 12:07–13:12.
 
----
+Quería que el resultado pudiera arrancarse fuera de mi ordenador. Cuando el proyecto supera las comprobaciones automáticas, se preparan versiones listas para ejecutar de la web y del servidor. Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Un procedimiento automático comprueba después que responde y qué versión está instalada.
 
-## 12. Ejecución y trazabilidad
+Para la demostración, el acceso se hace por HTTPS mediante un túnel saliente. Eso permite abrir la aplicación desde fuera sin publicar directamente los puertos de los contenedores. Es una forma reproducible de enseñar el sistema, pero no la presento como un servicio listo para producción.
 
-**05 · Demostración funcional** — 1:10 · tramo 10:50–12:00
+Fuente: Memoria, capítulo 9, pp. 56–60. docs/Deployment.md.
 
-Una vez iniciado el trayecto, el historial va reuniendo dos tipos de hechos. Unos los crea el sistema, cuando cambia el estado del envío. Otros los escribe el operador, por ejemplo al pasar por un punto de control o al registrar una incidencia.
+## 12. Evaluación del resultado
 
-Cada entrada conserva cuándo ocurrió el hecho, cuándo se anotó y qué usuario lo registró. Ese usuario se toma de la sesión iniciada, para que no se pueda escribir un nombre cualquiera.
+**06 · Conclusiones y trabajo futuro**
 
-Además, cuando el sistema cambia un estado, guarda ese cambio y su anotación en el historial a la vez. De ese modo, el envío nunca queda marcado como entregado sin el hecho que explica cuándo se entregó. La imagen muestra datos de prueba.
+Tiempo orientativo: 1:05. Tramo 13:12–14:17.
 
-*Fuente (no leer): Memoria, apartado 6.7 y figura 7.8, pp. 30–32 y 42. Datos de prueba del Sprint 5.*
+Si vuelvo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso. También puedo seguir el rastro desde una necesidad hasta la parte de la aplicación que la resuelve y la prueba que la comprueba. Las distintas etapas terminaron integradas en una sola aplicación, y el despliegue mostró que podía ponerla en marcha fuera del entorno de desarrollo.
 
----
+Esta evaluación tiene un límite importante: puedo afirmar que el sistema funciona según los requisitos y las pruebas realizadas. No puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales.
 
-## 13. Administración e indicadores
+Fuente: Memoria, capítulos 10, 12 y 13, pp. 61–62 y 66–69.
 
-**05 · Demostración funcional** — 0:55 · tramo 12:00–12:55
+## 13. Conclusiones
 
-La administración de usuarios tiene su propia parte de la aplicación. Desde ahí, un administrador crea cuentas, cambia permisos y puede desactivar a alguien sin perder su historial. Y hay una protección importante: no puede dejar el sistema sin ningún administrador activo.
+**06 · Conclusiones y trabajo futuro**
 
-En la captura vemos el resumen operativo. Permite hacerse una idea de cuántos envíos hay en cada estado, qué actividad tienen los recursos y cuántas incidencias aparecen en el periodo elegido. Sirve como punto de entrada a los listados filtrados; no pretende ser un sistema de análisis avanzado. Los números de la captura son de demostración, no de una empresa real.
+Tiempo orientativo: 0:50. Tramo 14:17–15:07.
 
-*Fuente (no leer): Memoria, apartados 6.8 y 7.6, pp. 32–33 y 44–46. Datos de demostración del Sprint 6.*
+Para terminar, TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla. El valor del trabajo está tanto en las funciones del sistema como en poder explicar y verificar las decisiones que las hicieron posibles.
 
----
+El producto todavía necesita validación con personas reales, pero el núcleo operativo está construido y documentado. Muchas gracias por vuestra atención. Quedo a vuestra disposición para las preguntas.
 
-## 14. Estrategia de validación
+Fuente: Memoria, capítulo 13, pp. 68–69.
 
-**06 · Validación y despliegue** — 1:15 · tramo 12:55–14:10
+## 14. Trazabilidad de requisitos
 
-Para comprobar el trabajo usé pruebas a distintos niveles. Hay ciento treinta y nueve pruebas del servidor, centradas en las reglas, los permisos y la forma en que responde la aplicación. Otras treinta y tres comprueban las acciones que una persona realiza desde la interfaz. Y hay cuatro pruebas que recorren el sistema completo, una por cada caso de uso que vimos antes.
+**Anexo**
 
-En las reglas donde dos personas podrían actuar al mismo tiempo, probé además con PostgreSQL real. Una simulación sencilla no bastaba para comprobar ese riesgo. Cada cambio pasa también por una comprobación automática antes de publicarse.
+Apoyo para preguntas. Fuera del tiempo principal.
 
-Un matiz importante: estos números son pruebas ejecutadas. No son un porcentaje de cobertura ni una medida de calidad por sí solos.
+Si preguntan cómo sé que una función responde a una necesidad, esta tabla permite seguir su rastro. Cada requisito se relaciona con la etapa en la que se implementó y con la prueba o evidencia correspondiente. Conviene escoger una fila concreta y recorrerla de izquierda a derecha, en lugar de leer toda la tabla.
 
-*Fuente (no leer): Memoria, capítulo 8, pp. 48–55. Recuentos documentados al cierre del Sprint 7.*
+Fuente: Memoria, capítulo 10, pp. 61–62. docs/Requirements.md y docs/Roadmap.md.
 
----
+## 15. Concurrencia y seguridad
 
-## 15. Despliegue reproducible
+**Anexo**
 
-**06 · Validación y despliegue** — 1:05 · tramo 14:10–15:15
+Apoyo para preguntas. Fuera del tiempo principal.
 
-Quería que el resultado pudiera arrancarse fuera de mi ordenador. Cuando el proyecto supera las comprobaciones automáticas, se preparan versiones listas para ejecutar de la web y del servidor. Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Y un procedimiento automático comprueba después que responde y qué versión está instalada.
+Si preguntan por la doble reserva, explicaría que la aplicación la comprueba al asignar recursos y que la base de datos añade una protección cuando llegan operaciones simultáneas. Si preguntan por las cuentas, señalaría que no se puede desactivar el último administrador. Y, al retirar el acceso, una sesión abierta deja de ser válida sin tener que borrar el historial del usuario.
 
-Para la demostración, el acceso se hace por HTTPS, mediante un túnel saliente. Eso permite abrir la aplicación desde fuera sin publicar directamente los puertos de los contenedores. Es una forma reproducible de enseñar el sistema, pero no la presento como un servicio listo para producción.
+Fuente: Memoria, apartados 6.1–6.3, 6.6, 6.8 y 8.3, pp. 25–33 y 52–54.
 
-*Fuente (no leer): Memoria, capítulo 9, pp. 56–60. docs/Deployment.md.*
+## 16. Planificación y coste
 
----
+**Anexo**
 
-## 16. Evaluación del resultado
+Apoyo para preguntas. Fuera del tiempo principal.
 
-**07 · Conclusiones y trabajo futuro** — 1:05 · tramo 15:15–16:20
+Las 300 horas y los 6.137,50 euros de esta diapositiva son una estimación académica para planificar y valorar el trabajo. No son un registro de horas reales ni una factura. Si preguntan por el coste, distinguiría claramente esa estimación del esfuerzo efectivamente medido, que no se presenta aquí.
 
-Si vuelvo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso. También puedo seguir el rastro desde una necesidad hasta la parte de la aplicación que la resuelve y la prueba que la comprueba. Las distintas etapas terminaron integradas en una sola aplicación. Y el despliegue mostró que podía ponerla en marcha fuera del entorno de desarrollo.
+Fuente: Memoria, apartados 3.3–3.4 y tablas 3.2–3.3, pp. 11–13.
 
-Esta evaluación tiene un límite importante. Puedo afirmar que el sistema funciona según los requisitos y las pruebas realizadas. No puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales.
+## 17. Evolución de las pruebas
 
-*Fuente (no leer): Memoria, capítulos 10, 12 y 13, pp. 61–62 y 66–69.*
+**Anexo**
 
----
+Apoyo para preguntas. Fuera del tiempo principal.
 
-## 17. Conclusiones
+La tabla muestra cómo creció el número de pruebas a medida que se añadían funciones. Los recuentos son acumulados al cierre de cada etapa. Sirven para ver que las comprobaciones acompañaron al desarrollo, pero no expresan qué porcentaje del código está cubierto ni garantizan por sí solos que no haya errores.
 
-**07 · Conclusiones y trabajo futuro** — 0:50 · tramo 16:20–17:10
-
-Para terminar. TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla. El valor del trabajo está tanto en las funciones del sistema como en poder explicar y verificar las decisiones que las hicieron posibles.
-
-El producto todavía necesita validación con personas reales, pero el núcleo operativo está construido y documentado.
-
-Muchas gracias por vuestra atención. Quedo a vuestra disposición para las preguntas.
-
-*Fuente (no leer): Memoria, capítulo 13, pp. 68–69.*
-
----
-
-# Anexo · Diapositivas de apoyo (18–21)
-
-Están ocultas y fuera del tiempo principal. Se muestran solo si una pregunta lo pide. No están escritas para leerse: son la idea que tienes que explicar.
-
-## 18. Trazabilidad de requisitos
-
-**Si preguntan** cómo sé que una función responde a una necesidad:
-
-- Esta tabla permite seguir el rastro de cada requisito.
-- Cada uno se relaciona con la etapa en que se implementó y con la prueba o evidencia correspondiente.
-- Consejo de exposición: escoge una fila concreta y recórrela de izquierda a derecha. No leas la tabla entera.
-
-*Fuente: Memoria, capítulo 10, pp. 61–62. docs/Requirements.md y docs/Roadmap.md.*
-
-## 19. Concurrencia y seguridad
-
-**Si preguntan** por la doble reserva:
-
-- La aplicación lo comprueba al asignar los recursos.
-- Y la base de datos añade una segunda protección cuando llegan operaciones simultáneas.
-
-**Si preguntan** por las cuentas:
-
-- No se puede desactivar al último administrador.
-- Al retirar el acceso, la sesión abierta deja de ser válida, sin necesidad de borrar el historial del usuario.
-
-*Fuente: Memoria, apartados 6.1–6.3, 6.6, 6.8 y 8.3, pp. 25–33 y 52–54.*
-
-## 20. Planificación y coste
-
-**Si preguntan** por el coste:
-
-- Las trescientas horas y los seis mil ciento treinta y siete euros con cincuenta son una estimación académica para planificar y valorar el trabajo.
-- No son un registro de horas reales ni una factura.
-- Distingue con claridad esa estimación del esfuerzo efectivamente medido, que no se presenta aquí.
-
-*Fuente: Memoria, apartados 3.3–3.4 y tablas 3.2–3.3, pp. 11–13.*
-
-## 21. Evolución de las pruebas
-
-**Si preguntan** por la evolución de las pruebas:
-
-- La tabla muestra cómo creció el número de pruebas a medida que se añadían funciones.
-- Los recuentos son acumulados al cierre de cada etapa.
-- Sirven para ver que las comprobaciones acompañaron al desarrollo. No expresan qué porcentaje del código está cubierto ni garantizan por sí solos que no haya errores.
-
-*Fuente: Memoria, apartado 8.2, pp. 49–52.*
+Fuente: Memoria, apartado 8.2, pp. 49–52.

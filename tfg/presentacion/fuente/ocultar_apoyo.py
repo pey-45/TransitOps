@@ -7,13 +7,7 @@ from lxml import etree
 source, target = sys.argv[1:]
 ns = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
       'p': 'http://schemas.openxmlformats.org/presentationml/2006/main'}
-# The exporter replaces manual image crops with automatic cover cropping.
-# Set the authored crop in OOXML without changing the embedded source image.
-crops = {
-    11: (70/1265, 165/712, 85/1265, 39/712),
-    12: (85/1265, 156/712, 348/1265, 62/712),
-    13: (70/1264, 220/977, 69/1264, 241/977),
-}
+crops = {}
 with zipfile.ZipFile(source) as src, zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as dst:
     for item in src.infolist():
         data = src.read(item.filename)
@@ -21,7 +15,7 @@ with zipfile.ZipFile(source) as src, zipfile.ZipFile(target, 'w', zipfile.ZIP_DE
         if match:
             doc = etree.fromstring(data)
             number = int(match[1])
-            if number > 17:
+            if number > 13:
                 doc.set('show', '0')
             if number in crops:
                 blip = doc.find('.//p:pic/p:blipFill', ns)

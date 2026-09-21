@@ -75,37 +75,12 @@ También necesitaba conservar la historia. Si un vehículo o una persona deja de
 Y las reglas más delicadas están reforzadas en la base de datos. Por ejemplo, impedir que dos envíos abiertos reserven el mismo recurso. Así se mantienen incluso si llegan dos peticiones casi a la vez.
 
 
-DIAPOSITIVA 10 · Flujo operativo completo
+DEMO FUNCIONAL · VÍDEO (2:12)
 
-Para explicar el producto voy a seguir un solo envío. Primero preparo los datos necesarios: cliente, vehículo y conductor. Creo el envío con sus fechas y su carga prevista. Después asigno los dos recursos y comienzo el trayecto. Durante el recorrido puedo anotar un punto de control o una incidencia. Y finalmente, el envío termina como entregado o cancelado, y su historia queda disponible para consultarla.
-
-Este ejemplo conecta las pantallas con las reglas que acabamos de ver. También deja clara una cosa: un envío cerrado no vuelve a un estado anterior. Si hubo un error, debe quedar constancia en el historial.
+Reproducir DEMO.mp4 y comentar en directo la creación y operación de un envío, la asignación de recursos, el aviso de capacidad, la incidencia y la entrega.
 
 
-DIAPOSITIVA 11 · Planificación y asignación
-
-Aquí se ve una de las decisiones de negocio más fáciles de comprobar. Mientras el envío está planificado, se le asignan juntos un vehículo y un conductor. Si uno de ellos ya está ocupado en otro envío que sigue abierto, la aplicación rechaza la asignación. Así evita reservar el mismo recurso dos veces.
-
-La capacidad del vehículo se trata de otra manera. En esta captura de prueba, la carga estimada es de cuatro mil quinientos kilos y el vehículo admite tres mil. El sistema avisa claramente de la diferencia, pero permite continuar. Esa fue la regla definida para este caso: advertir al operador, no decidir por él. La captura utiliza datos de prueba.
-
-
-DIAPOSITIVA 12 · Ejecución y trazabilidad
-
-Una vez iniciado el trayecto, el historial va reuniendo dos tipos de hechos. Unos los crea el sistema, cuando cambia el estado del envío. Otros los escribe el operador, por ejemplo al pasar por un punto de control o al registrar una incidencia.
-
-Cada entrada conserva cuándo ocurrió el hecho, cuándo se anotó y qué usuario lo registró. Ese usuario se toma de la sesión iniciada, para que no se pueda escribir un nombre cualquiera.
-
-Además, cuando el sistema cambia un estado, guarda ese cambio y su anotación en el historial a la vez. De ese modo, el envío nunca queda marcado como entregado sin el hecho que explica cuándo se entregó. La imagen muestra datos de prueba.
-
-
-DIAPOSITIVA 13 · Administración e indicadores
-
-La administración de usuarios tiene su propia parte de la aplicación. Desde ahí, un administrador crea cuentas, cambia permisos y puede desactivar a alguien sin perder su historial. Y hay una protección importante: no puede dejar el sistema sin ningún administrador activo.
-
-En la captura vemos el resumen operativo. Permite hacerse una idea de cuántos envíos hay en cada estado, qué actividad tienen los recursos y cuántas incidencias aparecen en el periodo elegido. Sirve como punto de entrada a los listados filtrados; no pretende ser un sistema de análisis avanzado. Los números de la captura son de demostración, no de una empresa real.
-
-
-DIAPOSITIVA 14 · Estrategia de validación
+DIAPOSITIVA 10 · Estrategia de validación
 
 Para comprobar el trabajo usé pruebas a distintos niveles. Hay ciento treinta y nueve pruebas del servidor, centradas en las reglas, los permisos y la forma en que responde la aplicación. Otras treinta y tres comprueban las acciones que una persona realiza desde la interfaz. Y hay cuatro pruebas que recorren el sistema completo, una por cada caso de uso que vimos antes.
 
@@ -114,21 +89,21 @@ En las reglas donde dos personas podrían actuar al mismo tiempo, probé además
 Un matiz importante: estos números son pruebas ejecutadas. No son un porcentaje de cobertura ni una medida de calidad por sí solos.
 
 
-DIAPOSITIVA 15 · Despliegue reproducible
+DIAPOSITIVA 11 · Despliegue reproducible
 
 Quería que el resultado pudiera arrancarse fuera de mi ordenador. Cuando el proyecto supera las comprobaciones automáticas, se preparan versiones listas para ejecutar de la web y del servidor. Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Y un procedimiento automático comprueba después que responde y qué versión está instalada.
 
 Para la demostración, el acceso se hace por HTTPS, mediante un túnel saliente. Eso permite abrir la aplicación desde fuera sin publicar directamente los puertos de los contenedores. Es una forma reproducible de enseñar el sistema, pero no la presento como un servicio listo para producción.
 
 
-DIAPOSITIVA 16 · Evaluación del resultado
+DIAPOSITIVA 12 · Evaluación del resultado
 
 Si vuelvo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso. También puedo seguir el rastro desde una necesidad hasta la parte de la aplicación que la resuelve y la prueba que la comprueba. Las distintas etapas terminaron integradas en una sola aplicación. Y el despliegue mostró que podía ponerla en marcha fuera del entorno de desarrollo.
 
 Esta evaluación tiene un límite importante. Puedo afirmar que el sistema funciona según los requisitos y las pruebas realizadas. No puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales.
 
 
-DIAPOSITIVA 17 · Conclusiones
+DIAPOSITIVA 13 · Conclusiones
 
 Para terminar. TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla. El valor del trabajo está tanto en las funciones del sistema como en poder explicar y verificar las decisiones que las hicieron posibles.
 

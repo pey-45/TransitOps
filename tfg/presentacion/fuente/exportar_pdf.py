@@ -10,9 +10,11 @@ target = root / 'entrega/TransitOps_Presentacion_TFG.pdf'
 doc = canvas.Canvas(str(target), pagesize=(960, 540), pageCompression=1)
 doc.setTitle('TransitOps - Defensa del Trabajo Fin de Grado')
 doc.setAuthor('Pablo Manzanares López')
-duration = sum(slide['seconds'] for slide in content[:17])
+main_slide_count = 13
+demo_seconds = 132
+duration = sum(slide['seconds'] for slide in content[:main_slide_count]) + demo_seconds
 doc.setSubject(
-    f'17 diapositivas principales y 4 de apoyo. '
+    f'{main_slide_count} diapositivas principales, una demo en vídeo y 4 diapositivas de apoyo. '
     f'Duración orientativa: {duration // 60} minutos y {duration % 60} segundos.'
 )
 for i, slide in enumerate(content, 1):
@@ -23,6 +25,6 @@ for i, slide in enumerate(content, 1):
     doc.showPage()
 doc.save()
 reader = PdfReader(target)
-assert len(reader.pages) == 21
+assert len(reader.pages) == 17
 assert all(float(p.mediabox.width) == 960 and float(p.mediabox.height) == 540 for p in reader.pages)
 print(target)

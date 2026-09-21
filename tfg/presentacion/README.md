@@ -7,8 +7,10 @@ Material de defensa del Trabajo Fin de Grado de Pablo Manzanares López, dirigid
 - [PowerPoint con notas del ponente](entrega/TransitOps_Presentacion_TFG.pptx).
 - [PDF para proyectar](entrega/TransitOps_Presentacion_TFG.pdf).
 - [Guion de exposición y tiempos](entrega/Guion_defensa_TransitOps.md).
+- [Guion resumido para lectura o exportación a PDF](entrega/GUION.md).
+- [Demo funcional en vídeo](entrega/DEMO.mp4).
 
-La exposición principal consta de **17 diapositivas** y tiene una pauta de **17 minutos y 10 segundos**. Los tiempos son orientativos y deben contrastarse en el ensayo.
+La exposición principal consta de **13 diapositivas** y una demo funcional en vídeo de **2 minutos y 12 segundos**. La pauta completa es de **15 minutos y 7 segundos**. Los tiempos son orientativos y deben contrastarse en el ensayo.
 
 Hay cuatro diapositivas de apoyo: trazabilidad de requisitos, concurrencia y seguridad, planificación y coste, y evolución de las pruebas. Están ocultas en el pase normal del PowerPoint y se pueden abrir desde la vista del moderador durante las preguntas. El PDF las conserva al final, tras las conclusiones.
 
@@ -20,7 +22,7 @@ La fuente principal es [memoria_tfg.pdf](../memoria/memoria_tfg.pdf), de 83 pág
 
 La presentación se apoya también en `AGENTS.md`, `CONTEXT.md`, `README.md`, requisitos, documentación de diseño, despliegue y código del repositorio activo. Conserva los recuentos de pruebas documentados en la memoria como evidencia histórica de S7, sin afirmar una nueva ejecución de esas suites. Las cifras de esfuerzo y coste son estimaciones. Las capturas contienen datos de prueba y la URL del despliegue es temporal. La entrevista es simulada y no se atribuyen al proyecto resultados de productividad, estudios de usuarios ni pruebas de carga.
 
-La defensa sigue siete secciones visibles y ordenadas: problema y objetivos, requisitos y alcance, metodología, diseño y arquitectura, demostración funcional, validación y despliegue, y conclusiones y trabajo futuro. La estimación económica y los detalles técnicos que interrumpen ese recorrido quedan en el anexo. Los documentos académicos y sus registros permanecen dentro de `tfg/`.
+La defensa sigue seis secciones visibles y ordenadas: problema y objetivos, requisitos y alcance, metodología, diseño y arquitectura, validación y despliegue, y conclusiones y trabajo futuro. La demostración funcional se realiza con `DEMO.mp4` después de explicar el modelo y las reglas del dominio. La estimación económica y los detalles técnicos que interrumpen ese recorrido quedan en el anexo. Los documentos académicos y sus registros permanecen dentro de `tfg/`.
 
 ## Fuentes editables y regeneración
 

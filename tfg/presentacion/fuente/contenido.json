@@ -11,7 +11,7 @@
     "section": "Recorrido",
     "seconds": 30,
     "source": "Estructura de la defensa elaborada a partir de los capítulos 1–13 de la memoria.",
-    "notes": "Voy a seguir un recorrido sencillo. Primero explicaré el problema y qué decidí incluir en el proyecto. Después contaré cómo lo fui construyendo y por qué elegí esta arquitectura. En la parte central veremos un envío de principio a fin. Por último, enseñaré cómo comprobé el resultado, cómo lo desplegué y qué límites tiene todavía."
+    "notes": "Voy a seguir un recorrido sencillo. Primero explicaré el problema y qué decidí incluir en el proyecto. Después contaré cómo lo fui construyendo y por qué elegí esta arquitectura. A continuación veremos una demo grabada de un envío de principio a fin. Por último, enseñaré cómo comprobé el resultado, cómo lo desplegué y qué límites tiene todavía."
   },
   {
     "title": "Problema de partida",
@@ -60,60 +60,32 @@
     "section": "04 · Diseño y arquitectura",
     "seconds": 70,
     "source": "Memoria, apartados 5.2 y 6.4–6.7, pp. 23 y 27–32. Figura 5.2.",
-    "notes": "El envío es la pieza central del modelo. Puede estar vinculado a un cliente y, cuando se prepara para salir, recibe un vehículo y un conductor como pareja. Todo lo que ocurre después queda asociado a ese envío.\n\nTambién necesitaba conservar la historia. Si un vehículo o una persona deja de estar disponible, desactivo su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Los hechos del trayecto tampoco se editan ni se eliminan. Y las reglas más delicadas, como impedir que dos envíos abiertos reserven el mismo recurso, están reforzadas en la base de datos. Así se mantienen incluso si llegan dos peticiones casi a la vez."
-  },
-  {
-    "title": "Flujo operativo completo",
-    "section": "05 · Demostración funcional",
-    "seconds": 60,
-    "source": "Memoria, capítulos 6–7 y casos de uso 2–3, pp. 18–20 y 27–46.",
-    "notes": "Para explicar el producto voy a seguir un solo envío. Primero preparo los datos necesarios: cliente, vehículo y conductor. Creo el envío con sus fechas y su carga prevista. Después asigno los dos recursos y comienzo el trayecto. Durante el recorrido puedo anotar un punto de control o una incidencia. Finalmente, el envío termina como entregado o cancelado, y su historia queda disponible para consultarla.\n\nEste ejemplo conecta las pantallas con las reglas que acabamos de ver. También deja claro que un envío cerrado no vuelve a un estado anterior: si hubo un error, debe quedar constancia en el historial."
-  },
-  {
-    "title": "Planificación y asignación",
-    "section": "05 · Demostración funcional",
-    "seconds": 70,
-    "source": "Memoria, apartado 6.6 y figura 7.5, pp. 29–30 y 39. Datos de prueba del Sprint 4.",
-    "notes": "Aquí se ve una de las decisiones de negocio más fáciles de comprobar. Mientras el envío está planificado, se le asignan juntos un vehículo y un conductor. Si uno de ellos ya está ocupado en otro envío que sigue abierto, la aplicación rechaza la asignación. Así evita reservar el mismo recurso dos veces.\n\nLa capacidad del vehículo se trata de otra manera. En esta captura de prueba, la carga estimada es de 4.500 kilos y el vehículo admite 3.000. El sistema avisa claramente de la diferencia, pero permite continuar. Esa fue la regla definida para este caso: advertir al operador, no decidir por él. La captura utiliza datos de prueba."
-  },
-  {
-    "title": "Ejecución y trazabilidad",
-    "section": "05 · Demostración funcional",
-    "seconds": 70,
-    "source": "Memoria, apartado 6.7 y figura 7.8, pp. 30–32 y 42. Datos de prueba del Sprint 5.",
-    "notes": "Una vez iniciado el trayecto, el historial va reuniendo dos tipos de hechos. Algunos los crea el sistema cuando cambia el estado del envío. Otros los escribe el operador, por ejemplo al pasar por un punto de control o al registrar una incidencia.\n\nCada entrada conserva cuándo ocurrió el hecho, cuándo se anotó y qué usuario lo registró. Ese usuario se toma de la sesión iniciada, para que no se pueda escribir un nombre cualquiera. Además, cuando el sistema cambia un estado, guarda ese cambio y su anotación en el historial a la vez. De ese modo, el envío no queda marcado como «entregado» sin el hecho que explica cuándo se entregó. La imagen muestra datos de prueba."
-  },
-  {
-    "title": "Administración e indicadores",
-    "section": "05 · Demostración funcional",
-    "seconds": 55,
-    "source": "Memoria, apartados 6.8 y 7.6, pp. 32–33 y 44–46. Datos de demostración del Sprint 6.",
-    "notes": "La administración de usuarios tiene su propia parte de la aplicación. Desde ahí, un administrador crea cuentas, cambia permisos y puede desactivar a alguien sin perder su historial. Hay una protección importante: no puede dejar el sistema sin ningún administrador activo.\n\nEn la captura vemos el resumen operativo. Permite hacerse una idea de cuántos envíos hay en cada estado, qué actividad tienen los recursos y cuántas incidencias aparecen en el periodo elegido. Sirve como punto de entrada a los listados filtrados; no pretende ser un sistema de análisis avanzado. Los números de la captura son de demostración, no de una empresa real."
+    "notes": "El envío es la pieza central del modelo. Puede estar vinculado a un cliente y, cuando se prepara para salir, recibe un vehículo y un conductor como pareja. Todo lo que ocurre después queda asociado a ese envío.\n\nTambién necesitaba conservar la historia. Si un vehículo o una persona deja de estar disponible, desactivo su registro en vez de borrarlo, porque podría aparecer en envíos anteriores. Los hechos del trayecto tampoco se editan ni se eliminan. Y las reglas más delicadas, como impedir que dos envíos abiertos reserven el mismo recurso, están reforzadas en la base de datos. Así se mantienen incluso si llegan dos peticiones casi a la vez.\n\nA continuación reproduciré una demo grabada de dos minutos y doce segundos para mostrar el flujo operativo completo en la aplicación."
   },
   {
     "title": "Estrategia de validación",
-    "section": "06 · Validación y despliegue",
+    "section": "05 · Validación y despliegue",
     "seconds": 75,
     "source": "Memoria, capítulo 8, pp. 48–55. Recuentos documentados al cierre del Sprint 7.",
     "notes": "Para comprobar el trabajo usé pruebas a distintos niveles. Hay 139 pruebas del servidor que se centran en las reglas, los permisos y la forma en que responde la aplicación. Otras 33 comprueban las acciones que una persona realiza desde la interfaz. Y hay cuatro pruebas que recorren el sistema completo, una por cada caso de uso que vimos antes.\n\nEn las reglas donde dos personas podrían actuar al mismo tiempo, probé también con PostgreSQL real; una simulación sencilla no bastaba para comprobar ese riesgo. Cada cambio pasa además por una comprobación automática antes de publicarse. Estos números son pruebas ejecutadas, no un porcentaje de cobertura ni una medida de calidad por sí solos."
   },
   {
     "title": "Despliegue reproducible",
-    "section": "06 · Validación y despliegue",
+    "section": "05 · Validación y despliegue",
     "seconds": 65,
     "source": "Memoria, capítulo 9, pp. 56–60. docs/Deployment.md.",
     "notes": "Quería que el resultado pudiera arrancarse fuera de mi ordenador. Cuando el proyecto supera las comprobaciones automáticas, se preparan versiones listas para ejecutar de la web y del servidor. Una máquina Ubuntu las descarga y pone en marcha la aplicación con la configuración descrita en el repositorio. Un procedimiento automático comprueba después que responde y qué versión está instalada.\n\nPara la demostración, el acceso se hace por HTTPS mediante un túnel saliente. Eso permite abrir la aplicación desde fuera sin publicar directamente los puertos de los contenedores. Es una forma reproducible de enseñar el sistema, pero no la presento como un servicio listo para producción."
   },
   {
     "title": "Evaluación del resultado",
-    "section": "07 · Conclusiones y trabajo futuro",
+    "section": "06 · Conclusiones y trabajo futuro",
     "seconds": 65,
     "source": "Memoria, capítulos 10, 12 y 13, pp. 61–62 y 66–69.",
     "notes": "Si vuelvo a los criterios del principio, el resultado cubre las catorce funciones previstas y los cuatro casos de uso. También puedo seguir el rastro desde una necesidad hasta la parte de la aplicación que la resuelve y la prueba que la comprueba. Las distintas etapas terminaron integradas en una sola aplicación, y el despliegue mostró que podía ponerla en marcha fuera del entorno de desarrollo.\n\nEsta evaluación tiene un límite importante: puedo afirmar que el sistema funciona según los requisitos y las pruebas realizadas. No puedo afirmar que ahorre tiempo o dinero a una empresa, porque no se probó con usuarios reales."
   },
   {
     "title": "Conclusiones",
-    "section": "07 · Conclusiones y trabajo futuro",
+    "section": "06 · Conclusiones y trabajo futuro",
     "seconds": 50,
     "source": "Memoria, capítulo 13, pp. 68–69.",
     "notes": "Para terminar, TransitOps demuestra un recorrido completo: partir de una necesidad, convertirla en requisitos, construir una aplicación funcional, ponerla a prueba y desplegarla. El valor del trabajo está tanto en las funciones del sistema como en poder explicar y verificar las decisiones que las hicieron posibles.\n\nEl producto todavía necesita validación con personas reales, pero el núcleo operativo está construido y documentado. Muchas gracias por vuestra atención. Quedo a vuestra disposición para las preguntas."

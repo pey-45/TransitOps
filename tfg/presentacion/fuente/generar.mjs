@@ -182,19 +182,18 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
     ['02', 'Requisitos y alcance'],
     ['03', 'Metodología'],
     ['04', 'Diseño y arquitectura'],
-    ['05', 'Demostración funcional'],
-    ['06', 'Validación y despliegue'],
-    ['07', 'Conclusiones y trabajo futuro']
+    ['05', 'Validación y despliegue'],
+    ['06', 'Conclusiones y trabajo futuro']
   ];
   items.forEach(([number, name], i) => {
-    const left = i < 4 ? 64 : 681;
-    const row = i < 4 ? i : i - 4;
+    const left = i < 3 ? 64 : 681;
+    const row = i < 3 ? i : i - 3;
     const top = 183 + row * 112;
     text(slide, number, left, top, 70, 44, 28, C.accent, true);
     text(slide, name, left + 88, top, 500, 50, 29, C.ink, true);
     rule(slide, left, top + 63, 535, C.line, 1);
   });
-  caption(slide, 'Orden de la defensa: definición, construcción, demostración y evaluación.');
+  caption(slide, 'Orden de la defensa: definición, construcción, validación y evaluación.');
 }
 
 // 03. Problem
@@ -292,65 +291,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Figura 5.2, p. 23. Esquema resumido, sin todos los campos e índices finales.');
 }
 
-// 10. End-to-end flow
+// 10. Validation
 {
   const slide = base(9);
-  await pic(slide, path.join(build, 'estados.png'), 191, 171, 898, 309, 'Máquina de estados del envío, figura 6.1');
-  const steps = [
-    ['1', 'Preparar catálogos'],
-    ['2', 'Crear el envío'],
-    ['3', 'Asignar recursos'],
-    ['4', 'Registrar el trayecto'],
-    ['5', 'Cerrar y resumir']
-  ];
-  steps.forEach(([n, name], i) => {
-    const x = 64 + i * 230;
-    text(slide, n, x, 527, 42, 45, 27, C.accent, true);
-    text(slide, name, x + 44, 527, 180, 70, 23, C.ink, true);
-  });
-  caption(slide, 'El flujo reúne los casos de uso 2 y 3. Estado terminal tras entrega o cancelación. Memoria, pp. 18–20 y 29–30.');
-}
-
-// 11. Planning and assignment
-{
-  const slide = base(10);
-  await pic(slide, path.join(images, 'aviso-capacidad-sprint4.png'), 64, 186, 826, 433, 'Advertencia de capacidad durante la asignación', { left: 0.054, top: 0.215, right: 0.056, bottom: 0.219 });
-  label(slide, 'Asignación conjunta', 932, 188, 284);
-  para(slide, 'Vehículo y conductor solo mientras el envío está planificado.', 932, 234, 284, 112, 25);
-  label(slide, 'Dos respuestas', 932, 388, 284);
-  para(slide, 'Recurso ocupado: bloqueo\nCapacidad insuficiente: aviso', 932, 434, 284, 105, 25);
-  para(slide, '4.500 kg sobre 3.000 kg', 932, 574, 284, 45, 24, C.blue, true);
-  caption(slide, 'Captura con datos de prueba del Sprint 4. Figura 7.5 de la memoria, p. 39.');
-}
-
-// 12. Execution and traceability
-{
-  const slide = base(11);
-  await pic(slide, path.join(images, 'historial-eventos-sprint5.png'), 64, 181, 780, 449, 'Historial de eventos automáticos y manuales', { left: 0.062, top: 0.216, right: 0.3, bottom: 0 });
-  label(slide, 'Cronología verificable', 888, 184, 328);
-  para(slide, 'Eventos automáticos y manuales ordenados por ocurrencia.', 888, 230, 328, 104, 25);
-  label(slide, 'Autoría', 888, 372, 328);
-  para(slide, 'El usuario procede de la sesión, no de un dato libre del cliente.', 888, 418, 328, 104, 25);
-  label(slide, 'Consistencia', 888, 558, 328);
-  para(slide, 'Operación y evento se confirman juntos.', 888, 602, 328, 54, 24);
-  caption(slide, 'Captura con datos de prueba del Sprint 5. Figura 7.8 de la memoria, p. 42.');
-}
-
-// 13. Administration and summary
-{
-  const slide = base(12);
-  await pic(slide, path.join(images, 'resumen-sprint6.png'), 64, 188, 826, 425, 'Panel operativo con datos de demostración', { left: 0.042, top: 0.104, right: 0.039, bottom: 0.239 });
-  label(slide, 'Administración', 932, 190, 284);
-  para(slide, 'Cuentas, roles, activación y recuperación de contraseña.', 932, 236, 284, 121, 25);
-  label(slide, 'Resumen operativo', 932, 400, 284);
-  para(slide, 'Estados globales, actividad por recurso e incidencias por periodo.', 932, 446, 284, 130, 25);
-  para(slide, 'RF-01 a RF-14 integrados', 932, 603, 284, 40, 23, C.blue, true);
-  caption(slide, 'Captura con datos de demostración del Sprint 6. Memoria, pp. 32–33 y 45.');
-}
-
-// 14. Validation
-{
-  const slide = base(13);
   metric(slide, '139', 'pruebas backend\nxUnit', 64, 161, 280);
   metric(slide, '33', 'pruebas frontend\nVitest + RTL', 450, 161, 280);
   metric(slide, '4', 'flujos de sistema\nPlaywright', 836, 161, 330);
@@ -364,9 +307,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Recuentos al cierre del Sprint 7. Son casos ejecutados, no porcentaje de cobertura. Memoria, pp. 48–55.');
 }
 
-// 15. Deployment
+// 11. Deployment
 {
-  const slide = base(14);
+  const slide = base(10);
   table(slide, [
     ['Etapa', 'Responsabilidad'],
     ['GitHub Actions', 'Valida y publica API y web en GHCR'],
@@ -379,9 +322,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Entorno de demostración reproducible. El túnel saliente evita abrir puertos de entrada. Memoria, cap. 9.');
 }
 
-// 16. Evaluation
+// 12. Evaluation
 {
-  const slide = base(15);
+  const slide = base(11);
   table(slide, [
     ['Criterio inicial', 'Evidencia final', 'Evaluación'],
     ['Funcionalidad', 'RF-01 a RF-14 y cuatro casos de uso', 'Cumplido'],
@@ -393,21 +336,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Evaluación basada en la trazabilidad, los resultados y las conclusiones de la memoria, pp. 61–69.');
 }
 
-// 17. Limits and future work
+// 13. Conclusions
 {
-  const slide = base(16);
-  label(slide, 'Límites del resultado', 64, 179, 530);
-  para(slide, 'Caso de negocio simulado\nSin evaluación con usuarios reales\nSin pruebas de carga\nTúnel temporal, sin copias ni métricas', 64, 232, 545, 224, 28);
-  label(slide, 'Prioridades de continuación', 688, 179, 528, C.blue);
-  para(slide, 'Validar el núcleo con usuarios\nEstabilizar alojamiento y recuperación\nPublicar el mismo artefacto probado', 688, 232, 528, 190, 28);
-  rule(slide, 64, 500, 1152, C.line, 2);
-  para(slide, 'Rutas, GPS, facturación y acceso externo se valorarían después de validar el uso real', 64, 539, 1152, 76, 30, C.ink, true);
-  caption(slide, 'Límites y líneas futuras de la memoria, pp. 60 y 66–69.');
-}
-
-// 18. Conclusions
-{
-  const slide = base(17, true);
+  const slide = base(12, true);
   text(slide, 'Un núcleo operativo completo\ncon un ciclo de ingeniería verificable', 64, 184, 1120, 130, 45, '#FFFFFF', true);
   para(slide, 'Las necesidades se relacionan con el diseño y las pruebas.\nCada incremento entrega una capacidad utilizable.\nEl sistema puede reproducirse y desplegarse siguiendo la documentación.', 64, 374, 1120, 178, 29, '#DFE7EF');
   text(slide, 'Gracias', 64, 612, 600, 47, 34, '#FFFFFF', true);
@@ -415,9 +346,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Pablo Manzanares López · TransitOps', true);
 }
 
-// 19. Backup: traceability
+// 14. Backup: traceability
 {
-  const slide = base(18);
+  const slide = base(13);
   table(slide, [
     ['Requisitos', 'Incremento', 'Evidencia principal'],
     ['RF-01, RF-02, RF-13', 'S1', 'Acceso, bootstrap y contrato de error'],
@@ -430,9 +361,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'RF-04 incorpora la recuperación de contraseña administrativa en S7. Memoria, pp. 61–62.');
 }
 
-// 20. Backup: concurrency and security
+// 15. Backup: concurrency and security
 {
-  const slide = base(19);
+  const slide = base(14);
   table(slide, [
     ['Riesgo', 'Garantía aplicada', 'Resultado'],
     ['Doble reserva', 'Índices únicos parciales en PostgreSQL', 'La segunda operación recibe 409'],
@@ -443,9 +374,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Memoria, pp. 25–33 y 52–54.');
 }
 
-// 21. Backup: plan and cost
+// 16. Backup: plan and cost
 {
-  const slide = base(20);
+  const slide = base(15);
   table(slide, [
     ['Concepto', 'Hipótesis de cálculo', 'Importe'],
     ['Personal', '300 h × 20 €/h', '6.000,00 €'],
@@ -458,9 +389,9 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
   caption(slide, 'Estimación académica de la memoria, tabla 3.3, p. 13. No representa dedicación ni gasto reales.');
 }
 
-// 22. Backup: test evolution
+// 17. Backup: test evolution
 {
-  const slide = base(21);
+  const slide = base(16);
   table(slide, [
     ['Sprint', 'Backend', 'Frontend', 'Sistema'],
     ['S1', '16', '4', '—'],
@@ -477,26 +408,37 @@ function table(slide, values, x, y, width, height, widths, size = 23) {
 // Notes and rehearsal guide use the same source as the slide titles.
 let cumulative = 0;
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-const total = content.slice(0, 18).reduce((sum, item) => sum + item.seconds, 0);
+const mainSlideCount = 13;
+const demoSeconds = 132;
+const spokenTotal = content.slice(0, mainSlideCount).reduce((sum, item) => sum + item.seconds, 0);
+const total = spokenTotal + demoSeconds;
 let guide = '# Guion de defensa de TransitOps\n\n';
-guide += `Duración objetivo: **${mmss(total)}**. Diapositivas 1–18 para la exposición; 19–22 son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo.\n\n`;
+guide += `Duración objetivo: **${mmss(total)}**, incluida la demo en vídeo de ${mmss(demoSeconds)}. Diapositivas 1–${mainSlideCount} para la exposición; ${mainSlideCount + 1}–${content.length} son apoyo y están ocultas en el PowerPoint. Los tiempos son una pauta de ensayo.\n\n`;
 guide += 'Este texto está escrito para decirlo en voz alta. Úsalo como apoyo y adáptalo a tu forma de hablar: no hace falta memorizarlo palabra por palabra. Las referencias son para preparar posibles preguntas, no para leerlas durante la exposición. Las capturas usan datos de prueba o demostración.\n\n';
 guide += '| Diapositiva | Sección | Duración | Acumulado |\n| --- | --- | ---: | ---: |\n';
-for (let i = 0; i < 18; i++) {
+for (let i = 0; i < mainSlideCount; i++) {
   cumulative += content[i].seconds;
   guide += `| ${i + 1}. ${content[i].title} | ${content[i].section} | ${mmss(content[i].seconds)} | ${mmss(cumulative)} |\n`;
+  if (i === 8) {
+    cumulative += demoSeconds;
+    guide += `| Vídeo DEMO | Demostración funcional | ${mmss(demoSeconds)} | ${mmss(cumulative)} |\n`;
+  }
 }
 
 cumulative = 0;
 for (let i = 0; i < content.length; i++) {
   const entry = content[i];
   const start = cumulative;
-  if (i < 18) cumulative += entry.seconds;
-  const timing = i < 18
+  if (i < mainSlideCount) cumulative += entry.seconds;
+  const timing = i < mainSlideCount
     ? `Tiempo orientativo: ${mmss(entry.seconds)}. Tramo ${mmss(start)}–${mmss(cumulative)}.`
     : 'Apoyo para preguntas. Fuera del tiempo principal.';
   P.slides.items[i].speakerNotes.textFrame.setText(`${timing}\n\n${entry.notes}\n\nFUENTES\n${entry.source}`);
   guide += `\n## ${i + 1}. ${entry.title}\n\n**${entry.section}**\n\n${timing}\n\n${entry.notes}\n\nFuente: ${entry.source}\n`;
+  if (i === 8) {
+    guide += `\n## Vídeo DEMO\n\n**Demostración funcional**\n\nDuración: ${mmss(demoSeconds)}. Reproducir DEMO.mp4 y comentar el flujo operativo en directo.\n`;
+    cumulative += demoSeconds;
+  }
 }
 
 await fs.writeFile(path.join(out, 'Guion_defensa_TransitOps.md'), guide);
@@ -510,7 +452,7 @@ execFileSync(path.join(runtime, 'python/python.exe'), [
 ], { windowsHide: true });
 
 const final = path.join(out, process.env.TRANSITOPS_PPTX_NAME || 'TransitOps_Presentacion_TFG_Reorganizada.pptx');
-const tableOwners = [4, 6, 7, 14, 15, 16, 19, 20, 21, 22];
+const tableOwners = [4, 6, 7, 10, 11, 12, 14, 15, 16, 17];
 const result = await finalizePresentation({
   workspaceDir: root,
   candidatePath: hiddenCandidate,
